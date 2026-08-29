@@ -14,6 +14,24 @@ import type { DelegationCandidatesData, DelegationReadinessResult } from "@/lib/
 
 const REQUIRED_SELECTIONS = 3;
 
+function titleCase(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
+}
+
+/** Highest-strength dimension / primary barrier (brief section 13) --
+ * a generic "which dimension scored highest/lowest" reading of whatever
+ * dimensions the configured questions define, not final Yutori
+ * interpretation copy (that stays content-dependent). */
+function strengthAndBarrier(dimensionScores: Record<string, number>) {
+  const entries = Object.entries(dimensionScores).filter(([, v]) => typeof v === "number");
+  if (entries.length < 2) return null;
+  const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+  const [highestDimension] = sorted[0];
+  const [lowestDimension] = sorted[sorted.length - 1];
+  if (highestDimension === lowestDimension) return null;
+  return { highestDimension, lowestDimension };
+}
+
 export function DelegationFlow({
   assessment,
   assessmentKey,
@@ -59,10 +77,9 @@ export function DelegationFlow({
       }
       router.refresh();
       setReadinessResult({
-        overallResult: null,
-        interpretation:
-          "[YUTORI CONTENT PENDING] Your responses have been recorded. Your Delegation Readiness Profile will be calculated once Yutori's final scoring model is configured.",
-        dimensionScores: {},
+        overallResult: result.overallResult,
+        interpretation: result.interpretation,
+        dimensionScores: result.dimensionScores,
       });
     });
   }
@@ -142,6 +159,24 @@ export function DelegationFlow({
                   {readinessResult.overallResult ?? "Your Delegation Readiness result is pending."}
                 </p>
                 <p className="mt-2 text-sm text-(--color-ink-muted)">{readinessResult.interpretation}</p>
+                {(() => {
+                  const sb = strengthAndBarrier(readinessResult.dimensionScores);
+                  if (!sb) return null;
+                  return (
+                    <div className="mt-4 grid grid-cols-2 gap-4 border-t border-(--color-hairline) pt-4">
+                      <div>
+                        <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
+                          Highest-strength dimension
+                        </p>
+                        <p className="mt-1 text-sm text-(--color-ink)">{titleCase(sb.highestDimension)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary barrier</p>
+                        <p className="mt-1 text-sm text-(--color-ink)">{titleCase(sb.lowestDimension)}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             ) : (
               <Button onClick={handleCalculateReadiness} disabled={isPending}>

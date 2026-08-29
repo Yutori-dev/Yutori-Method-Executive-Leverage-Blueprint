@@ -11,6 +11,10 @@ export interface SupportingSignal {
 export interface ArchitectureRecommendationView {
   isTied: boolean;
   primarySignalLeverageLevel: LeverageLevel | null;
+  /** Only present for a genuine 2-1 split among the three priorities --
+   * see docs/CLIENT_QUESTIONS.md item 11 for how this differs from
+   * secondaryResult, which stays content-dependent and empty. */
+  secondarySignalLeverageLevel: LeverageLevel | null;
   primaryResult: string | null;
   primaryRole: string | null;
   secondaryResult: string | null;
@@ -52,7 +56,7 @@ export async function getArchitectureData(
     const { data: rec } = await supabase
       .from("architecture_recommendations")
       .select(
-        "is_tied, primary_signal_leverage_level, primary_result, primary_role, secondary_result, rationale, supporting_signals, reaction, reaction_note",
+        "is_tied, primary_signal_leverage_level, secondary_signal_leverage_level, primary_result, primary_role, secondary_result, rationale, supporting_signals, reaction, reaction_note",
       )
       .eq("participant_session_id", participantSessionId)
       .maybeSingle();
@@ -61,6 +65,7 @@ export async function getArchitectureData(
       recommendation = {
         isTied: rec.is_tied,
         primarySignalLeverageLevel: rec.primary_signal_leverage_level as LeverageLevel | null,
+        secondarySignalLeverageLevel: rec.secondary_signal_leverage_level as LeverageLevel | null,
         primaryResult: rec.primary_result,
         primaryRole: rec.primary_role,
         secondaryResult: rec.secondary_result,

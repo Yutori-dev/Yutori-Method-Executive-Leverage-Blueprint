@@ -7,6 +7,7 @@ import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import { RevealArchitectureControl } from "@/components/admin/RevealArchitectureControl";
+import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
 
@@ -32,16 +33,24 @@ export default async function SessionControlPanelPage({
     .order("last_active_at", { ascending: false });
 
   const participantIds = [...new Set((enrollments ?? []).map((e) => e.participant_id))];
-  const { data: participants } =
+  const participantSessionIds = (enrollments ?? []).map((e) => e.id);
+
+  const [{ data: participants }, { data: recommendations }, { data: followUps }] = await Promise.all([
     participantIds.length > 0
-      ? await supabase
-          .from("participants")
-          .select("id, first_name, last_name, email")
-          .in("id", participantIds)
-      : { data: [] };
+      ? supabase.from("participants").select("id, first_name, last_name, email").in("id", participantIds)
+      : Promise.resolve({ data: [] }),
+    participantSessionIds.length > 0
+      ? supabase.from("architecture_recommendations").select("participant_session_id").in("participant_session_id", participantSessionIds)
+      : Promise.resolve({ data: [] }),
+    participantSessionIds.length > 0
+      ? supabase.from("follow_up_interests").select("participant_session_id").in("participant_session_id", participantSessionIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const participantById = new Map((participants ?? []).map((p) => [p.id, p]));
   const moduleById = new Map(modules.map((m) => [m.id, m]));
+  const blueprintReadyIds = new Set((recommendations ?? []).map((r) => r.participant_session_id));
+  const discussRequestedIds = new Set((followUps ?? []).map((f) => f.participant_session_id));
 
   const roster = (enrollments ?? []).map((enrollment) => ({
     ...enrollment,
@@ -49,6 +58,8 @@ export default async function SessionControlPanelPage({
     currentModuleName: enrollment.current_module_id
       ? (moduleById.get(enrollment.current_module_id)?.name ?? null)
       : null,
+    blueprintReady: blueprintReadyIds.has(enrollment.id),
+    discussRequested: discussRequestedIds.has(enrollment.id),
   }));
 
   const activeModule = modules.find((m) => m.id === session.active_module_id);
@@ -68,6 +79,7 @@ export default async function SessionControlPanelPage({
   return (
     <main className="py-16">
       <Container>
+        <LiveRosterRefresher sessionId={sessionId} />
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-serif text-3xl">{session.name}</h1>
@@ -82,6 +94,18 @@ export default async function SessionControlPanelPage({
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
             >
               Aggregate results
+            </Link>
+            <Link
+              href={`/admin/sessions/${sessionId}/present`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Presentation mode
+            </Link>
+            <Link
+              href={`/admin/sessions/${sessionId}/follow-up`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Follow-up queue
             </Link>
             <a
               href={`/admin/sessions/${sessionId}/export`}
@@ -160,6 +184,8 @@ export default async function SessionControlPanelPage({
                     <th className="pb-2 pr-4">Email</th>
                     <th className="pb-2 pr-4">Current module</th>
                     <th className="pb-2 pr-4">Status</th>
+                    <th className="pb-2 pr-4">Blueprint ready?</th>
+                    <th className="pb-2 pr-4">Discuss?</th>
                     <th className="pb-2">Last active</th>
                   </tr>
                 </thead>
@@ -182,6 +208,8 @@ export default async function SessionControlPanelPage({
                         <td className="py-2 pr-4 capitalize">
                           {row.completion_state.replace("_", " ")}
                         </td>
+                        <td className="py-2 pr-4">{row.blueprintReady ? "Yes" : "—"}</td>
+                        <td className="py-2 pr-4">{row.discussRequested ? "Yes" : "—"}</td>
                         <td className="py-2 text-(--color-ink-muted)">
                           {new Date(row.last_active_at).toLocaleString()}
                         </td>
@@ -189,7 +217,7 @@ export default async function SessionControlPanelPage({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-(--color-ink-muted)">
+                      <td colSpan={7} className="py-6 text-center text-(--color-ink-muted)">
                         No one has registered yet.
                       </td>
                     </tr>

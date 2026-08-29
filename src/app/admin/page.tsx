@@ -35,9 +35,17 @@ export default async function AdminSessionsPage() {
       <Container>
         <div className="flex items-center justify-between">
           <h1 className="font-serif text-3xl">Sessions</h1>
-          <Link href="/admin/sessions/new">
-            <Button>New session</Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/analytics"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Analytics (all sessions)
+            </Link>
+            <Link href="/admin/sessions/new">
+              <Button>New session</Button>
+            </Link>
+          </div>
         </div>
 
         <div className="mt-8 space-y-3">

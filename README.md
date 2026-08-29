@@ -6,13 +6,14 @@ Engine), Milestone 2 (Zone of Investment + Delegation/Leverage), Milestone 3
 Intelligence + QA) — are implemented and connected to a live Supabase
 project.
 
-> **Before a real 75-person live session**, read the load test results in
-> `docs/TESTING.md`. The app is correct at that scale (74/75 simulated
-> participants succeeded) but not yet fast enough — page loads averaged
-> 4.5-9.5s and the worst case hit 26s under full concurrent load in local
-> testing. Re-testing against a real deployment (not this local machine) is
-> the recommended next step before committing to a live session at that
-> size; see the doc for the likely causes and what to do about them.
+> **Performance:** the original 75-participant load test found the app was
+> correct but too slow (dashboard/blueprint page loads averaging 4.5-9.5s,
+> worst case 26s). After parallelizing and reducing the query count on every
+> major data loader, a clean re-run at **80** concurrent participants (78/80
+> succeeded, both failures a transient network blip during account creation,
+> unrelated to the app) came back at dashboard 4.6s avg / blueprint 3.4s avg
+> / all RPCs under 500ms avg — a 45-65% improvement despite more concurrent
+> load. Full before/after numbers in `docs/TESTING.md`.
 
 This README covers what's implemented, how to run it, and what's explicitly
 deferred to later milestones. See also:
@@ -112,12 +113,55 @@ deferred to later milestones. See also:
   problem** — see the callout above and `docs/TESTING.md` for full numbers
   and next steps
 
+**Gap-fill pass (post-Milestone-4):**
+
+A scope review against the original brief turned up several items that were
+never explicitly assigned to a milestone, plus everything flagged as a gap
+in earlier delivery messages. All of it is now built:
+
+- Module 0 executive-context capture (`/dashboard/[id]/context`) — current
+  support roles, EOS/Bloom/Other, gating a banner on the dashboard until
+  completed. Registration itself still only captures name + email, per
+  Milestone 1's literal instruction; this is the fuller Module 0 content the
+  brief describes, as its own step.
+- Visionary / Integrator / Hybrid self-identification (Activity 1C),
+  captured alongside the Operating Altitude assessment.
+- White Whale and Success Vision reflections — private free-text, never
+  aggregated or shown in Presentation Mode, surfaced only to the owning
+  participant and admins.
+- "Discuss My Blueprint" CTA (brief §15/A12) plus an admin Follow-Up
+  Interest Queue (`/admin/sessions/[id]/follow-up`) with status tracking
+  (new / contacted / closed), and a live-updating "Discuss?" column on the
+  main roster (Supabase Realtime).
+- Presentation Mode (`/admin/sessions/[id]/present`) — a facilitator-
+  selectable, fully anonymized projector view (counts only, never a
+  participant's name or free-text reflections).
+- Cross-session analytics (`/admin/analytics`) — the same aggregate view as
+  the per-session screen, generalized across every session for Yutori's own
+  program-wide reporting.
+- Privacy consent capture at registration, versioned so historical consent
+  stays interpretable if the copy changes. The consent copy itself is the
+  brief's own draft language and is explicitly labeled
+  "pending Yutori approval" in the UI — see `docs/CLIENT_QUESTIONS.md`.
+- A secondary leverage signal on the Architecture Recommendation (the
+  minority level in a 2-1 split across the three Priority Delegation
+  Opportunities), surfaced next to the primary signal.
+- `multi_select` (checkbox) and `numeric` question types added to the
+  configurable activity engine, needed for the fuller Module 0 content.
+
 ## What's deliberately not built
 
-Per the brief's Content Dependency Register: final assessment/matrix/
-recommendation content, the Executive Support Audit, White Whale, Success
-Vision, Presentation Mode. The schema is built so these can be added
-without restructuring what's here — see `docs/ARCHITECTURE_DECISIONS.md`.
+- **Google Sheets sync** — explicitly nice-to-have per the brief. Needs a
+  Google Cloud OAuth client (client ID/secret) that hasn't been provided;
+  building against placeholder credentials would produce something that
+  can't actually be tested or turned on. Ready to build once credentials
+  are available.
+- **The Executive Support Audit and final assessment/matrix/recommendation
+  content** — the brief's Content Dependency Register marks these as
+  pending Yutori-side content, not an engineering task. The schema
+  (versioned assessments, scoring rules, recommendation rules) is built so
+  real content can be dropped in without restructuring anything — see
+  `docs/ARCHITECTURE_DECISIONS.md`.
 
 ## Local setup
 
@@ -227,4 +271,13 @@ callout near the top of this file and the full results in
 `docs/TESTING.md`. This is the one piece of testing across all four
 milestones that surfaced a genuine problem rather than confirming
 correctness: the app handles 75 concurrent participants without errors, but
-not yet fast enough for a good live-workshop experience at that scale.
+was not fast enough for a good live-workshop experience at that scale —
+since fixed and re-verified, see the callout above.
+
+The gap-fill pass (Module 0, self-identification, White Whale/Success
+Vision, follow-up queue, Presentation Mode, cross-session analytics, privacy
+consent) was verified the same way: every new RLS-guarded write was
+exercised end to end against the live database with a real, disposable test
+participant (not just typechecked), and every new/changed page was hit over
+real cookie-based HTTP requests against a production build to confirm it
+renders without a server error.

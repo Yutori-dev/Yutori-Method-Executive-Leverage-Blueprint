@@ -39,6 +39,7 @@ export default async function BlueprintPage({
           <BlueprintView
             data={data}
             participantName={`${dashboard.participant.firstName} ${dashboard.participant.lastName}`}
+            participantSessionId={dashboard.participantSessionId}
           />
         </div>
       </Container>

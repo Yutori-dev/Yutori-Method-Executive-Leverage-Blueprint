@@ -71,9 +71,15 @@ export function AssessmentForm({
     };
   }, []);
 
+  function isAnswered(value: Json) {
+    if (value === null || value === undefined || value === "") return false;
+    if (Array.isArray(value)) return value.length > 0;
+    return true;
+  }
+
   const requiredComplete = assessment.questions
     .filter((q) => q.required)
-    .every((q) => answers[q.id] !== null && answers[q.id] !== undefined && answers[q.id] !== "");
+    .every((q) => isAnswered(answers[q.id] ?? null));
 
   useEffect(() => {
     onRequiredAnsweredChange?.(requiredComplete);
@@ -122,6 +128,56 @@ export function AssessmentForm({
                   </label>
                 ))}
               </div>
+            )}
+
+            {question.type === "multi_select" && (
+              <div className="space-y-2">
+                {question.options.map((option) => {
+                  const selected = Array.isArray(answers[question.id])
+                    ? (answers[question.id] as unknown as string[])
+                    : [];
+                  const checked = selected.includes(option.value);
+                  return (
+                    <label
+                      key={option.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-2.5 text-sm transition-colors",
+                        checked
+                          ? "border-(--color-accent) bg-(--color-accent-soft)"
+                          : "border-(--color-hairline) hover:border-(--color-accent)",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const next = checked
+                            ? selected.filter((v) => v !== option.value)
+                            : [...selected, option.value];
+                          setAnswer(question.id, next as unknown as Json, 300);
+                        }}
+                        className="accent-(--color-accent)"
+                      />
+                      {option.label}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {question.type === "numeric" && (
+              <input
+                type="number"
+                min={typeof question.config.min === "number" ? question.config.min : undefined}
+                max={typeof question.config.max === "number" ? question.config.max : undefined}
+                step={typeof question.config.step === "number" ? question.config.step : undefined}
+                placeholder={
+                  typeof question.config.placeholder === "string" ? question.config.placeholder : undefined
+                }
+                value={typeof answers[question.id] === "number" ? (answers[question.id] as number) : ""}
+                onChange={(e) => setAnswer(question.id, e.target.value === "" ? null : Number(e.target.value), 300)}
+                className="w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+              />
             )}
 
             {question.type === "rating_scale" && (

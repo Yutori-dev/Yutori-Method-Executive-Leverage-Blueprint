@@ -27,3 +27,5 @@ export type LeverageLevel = "execution" | "orchestration" | "strategic" | "syste
 export type RatingLevel = "low" | "medium" | "high";
 export type MacroZone = "investment" | "ambiguity" | "vulnerability";
 export type ArchitectureReaction = "yes" | "mostly" | "not_yet";
+export type SelfIdentification = "visionary" | "integrator" | "hybrid";
+export type FollowUpStatus = "new" | "contacted" | "closed";

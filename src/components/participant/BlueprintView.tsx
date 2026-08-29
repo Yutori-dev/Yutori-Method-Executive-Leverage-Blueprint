@@ -1,5 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { ZoneMatrix } from "@/components/participant/ZoneMatrix";
+import { CharacterPreview } from "@/components/participant/CharacterPreview";
+import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
 import type { BlueprintData } from "@/lib/data/blueprint";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -9,21 +11,14 @@ const LEVEL_LABEL: Record<string, string> = {
   systems: "Systems",
 };
 
-const CHARACTER_DIMENSIONS = [
-  "Stress Tolerance",
-  "Dependability",
-  "Cooperation",
-  "Openness",
-  "Sociability",
-  "Cognition",
-];
-
 export function BlueprintView({
   data,
   participantName,
+  participantSessionId,
 }: {
   data: BlueprintData;
   participantName: string;
+  participantSessionId: string;
 }) {
   return (
     <div className="space-y-8">
@@ -43,15 +38,8 @@ export function BlueprintView({
         <p className="mt-1 text-sm text-(--color-ink-muted)">
           Unlocked in the live workshop.
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {CHARACTER_DIMENSIONS.map((dim) => (
-            <div
-              key={dim}
-              className="rounded-lg border border-(--color-hairline) px-3 py-2 text-center text-xs text-(--color-locked)"
-            >
-              {dim}
-            </div>
-          ))}
+        <div className="mt-3">
+          <CharacterPreview />
         </div>
       </section>
 
@@ -139,6 +127,30 @@ export function BlueprintView({
             </p>
           )}
         </Card>
+      </section>
+
+      {data.reflections.successVision || data.reflections.whiteWhale ? (
+        <section>
+          <h2 className="font-serif text-xl">What This Could Unlock</h2>
+          <p className="mt-1 text-xs text-(--color-ink-muted)">
+            Private to you and your facilitator.
+          </p>
+          <Card className="mt-3 space-y-3">
+            {data.reflections.successVision ? (
+              <p className="text-sm text-(--color-ink)">{data.reflections.successVision}</p>
+            ) : null}
+            {data.reflections.successVisionFollowup ? (
+              <p className="text-sm text-(--color-ink-muted)">{data.reflections.successVisionFollowup}</p>
+            ) : null}
+          </Card>
+        </section>
+      ) : null}
+
+      <section className="border-t border-(--color-hairline) pt-6">
+        <DiscussBlueprintButton
+          participantSessionId={participantSessionId}
+          alreadyRequested={data.followUpRequested}
+        />
       </section>
     </div>
   );

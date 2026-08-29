@@ -5,6 +5,8 @@ import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleCont
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData } from "@/lib/data/architecture";
+import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
+import { getSuccessVisionData } from "@/lib/data/successVision";
 import { Container } from "@/components/ui/Container";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { AssessmentForm } from "@/components/participant/AssessmentForm";
@@ -12,9 +14,12 @@ import { GenericPlaceholderModule } from "@/components/participant/GenericPlaceh
 import { ZoneOfInvestmentFlow } from "@/components/participant/ZoneOfInvestmentFlow";
 import { DelegationFlow } from "@/components/participant/DelegationFlow";
 import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
+import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitudeFlow";
+import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
 
 const DELEGATION_BELIEFS_ASSESSMENT_KEY = "dev_demo_delegation_beliefs";
+const OPERATING_ALTITUDE_ASSESSMENT_KEY = "dev_demo_operating_altitude";
 
 const WIDE_MODULES = new Set(["current_structure", "delegation"]);
 
@@ -40,7 +45,33 @@ export default async function ModulePage({
 
   let content: React.ReactNode;
 
-  if (moduleKey === "current_structure") {
+  if (moduleKey === "operating_altitude") {
+    const [assessment, operatingAltitudeData] = await Promise.all([
+      getDemoAssessmentByKey(OPERATING_ALTITUDE_ASSESSMENT_KEY, dashboard.participantSessionId),
+      getOperatingAltitudeData(dashboard.participantSessionId),
+    ]);
+    content = (
+      <OperatingAltitudeFlow
+        assessment={assessment}
+        data={operatingAltitudeData}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "success") {
+    const successData = await getSuccessVisionData(dashboard.participantSessionId);
+    content = (
+      <SuccessFlow
+        data={successData}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "current_structure") {
     const zoneData = await getZoneOfInvestmentData(dashboard.participantSessionId);
     content = (
       <ZoneOfInvestmentFlow

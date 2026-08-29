@@ -72,12 +72,17 @@ export async function calculateDelegationReadiness(params: {
   sessionPath: string;
 }) {
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.rpc("calculate_delegation_readiness", {
+  const { data, error } = await supabase.rpc("calculate_delegation_readiness", {
     p_participant_session_id: params.participantSessionId,
     p_assessment_key: params.assessmentKey,
   });
 
-  if (error) return { ok: false as const, message: error.message };
+  if (error || !data) return { ok: false as const, message: error?.message ?? "No result returned." };
   revalidatePath(params.sessionPath);
-  return { ok: true as const };
+  return {
+    ok: true as const,
+    overallResult: data.overall_result,
+    interpretation: data.interpretation,
+    dimensionScores: (data.dimension_scores as Record<string, number>) ?? {},
+  };
 }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type { SessionFormat, SessionStatus } from "@/types/database";
+import type { SessionFormat, SessionStatus, FollowUpStatus } from "@/types/database";
 
 function slugifyJoinCode(name: string) {
   const base = name
@@ -88,4 +88,18 @@ export async function revealArchitecture(sessionId: string) {
   const { error } = await supabase.rpc("admin_reveal_architecture", { p_session_id: sessionId });
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+export async function updateFollowUpStatus(params: {
+  followUpId: string;
+  status: FollowUpStatus;
+  sessionId: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
+    .from("follow_up_interests")
+    .update({ status: params.status })
+    .eq("id", params.followUpId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/sessions/${params.sessionId}/follow-up`);
 }

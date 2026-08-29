@@ -267,3 +267,118 @@ writing grouped/aggregate SQL. Sessions are expected to top out around
 enough that this is simpler and safer than hand-rolling several `GROUP BY`
 queries, at negligible cost. Revisit this if a much larger session size
 ever becomes real.
+
+## Gap-fill addendum: performance — fewer round-trips, not fewer features
+
+The 75-participant load test (see `docs/TESTING.md`) traced its latency to
+data loaders making several *sequential* Supabase round-trips per page load,
+where each concurrent request pays that full sequential cost independently.
+Fixed with three techniques, applied to the four loaders on the hottest
+pages (participant dashboard, Zone of Investment, module content, delegation
+candidates), with no change to what any of them return:
+
+1. **Parallelize what's already independent** (`Promise.all`) — e.g. Zone of
+   Investment's three queries don't depend on each other's results, so there
+   was no reason they were sequential.
+2. **Nested embeds instead of separate queries** — PostgREST can embed a
+   related table directly in one query
+   (`assessments.select("...,questions(...,answer_options(...))")`) instead
+   of fetching each level separately. The demo-assessment loader dropped
+   from 4 sequential-ish requests to 2 parallel ones this way; filtering/
+   sorting nested `active`/`sort_order` moved to JS rather than risking
+   PostgREST's nested-filter syntax for a query already proven correct.
+3. **Inner-join filters instead of a lookup-then-query pattern** —
+   `assessment_results.select("...,assessments!inner(key)").eq("assessments.key", ...)`
+   replaces "look up the assessment id, then query by it" with one request.
+
+The participant dashboard also had a genuinely removable query: the
+Blueprint page's post-reveal leverage snapshot was being fetched separately
+when it was already present in data the delegation loader fetches anyway.
+
+Re-run at 80 concurrent participants (higher than the original 75) showed
+a 45-65% improvement on every page/RPC that was slow before — see
+`docs/TESTING.md` for full numbers. None of this changed what any page
+computes or displays; it's purely a reduction in how many separate requests
+it takes to compute it.
+
+## Gap-fill addendum: self-identification is a column, reflections are a table
+
+Visionary/Integrator/Hybrid self-identification lives as a single
+`check`-constrained column on `participant_sessions` — it's one mutually
+exclusive value per participant per session, the same shape as
+`completion_state` already on that row, so a separate table would only add
+a join for no benefit.
+
+White Whale and Success Vision, by contrast, got their own
+`participant_reflections` table (one row per `participant_session_id`,
+`unique`) rather than more columns on `participant_sessions`. Two reasons:
+they're free-text (not enum-constrained like self-identification), and they
+carry a materially different privacy posture — the brief and the consent
+copy both call out that these specific responses are never aggregated or
+shown in Presentation Mode, so keeping them in their own table makes that
+boundary a schema fact (nothing that selects broadly from
+`participant_sessions` accidentally pulls a private reflection along with
+it) rather than a convention every future query has to remember.
+
+## Gap-fill addendum: the secondary leverage signal is read off the existing distribution, not recomputed
+
+`calculate_architecture_recommendation()` already computed `v_distinct_
+levels` and the vote counts to determine the primary signal and tie
+detection (Milestone 3). The secondary signal — brief-relevant context for
+a 2-1 split, i.e. "which level was the minority" — reuses that same
+distribution rather than a second pass over the three
+`leverage_level_snapshot` values: when there are exactly 2 distinct levels
+among the three opportunities (a genuine 2-1 split, not a 1/1/1 tie), the
+secondary signal is whichever of the two levels isn't the primary. This
+mirrors the primary signal's own logic (no invented mapping, no reveal-gate
+bypass — the column lives on the same RLS-gated `architecture_
+recommendations` row) rather than introducing a parallel calculation path.
+
+## Gap-fill addendum: follow-up interest is a request queue, not a boolean
+
+`follow_up_interests` is its own table (one row per `participant_session_
+id`, `unique`, defaulting `status = 'new'`) rather than a boolean flag on
+`participant_sessions`, because the brief's admin-facing requirement (§15/
+A12) is a *queue with state* — new/contacted/closed — not just "did they
+click the button." The button itself (`requestFollowUp`) only ever inserts;
+it can't be un-requested from the participant side, matching "Discuss My
+Blueprint" reading as a one-way request in the brief's own copy. The main
+roster's "Discuss?" column and the dedicated `/admin/sessions/[id]/follow-up`
+queue both read the same table — the roster is the at-a-glance view, the
+queue page is where status actually gets managed.
+
+## Gap-fill addendum: cross-session analytics generalizes the existing aggregator, not a parallel implementation
+
+`getSessionAggregates()` took an optional `sessionIds?: string[]` instead of
+a required single `sessionId`. Passing one id is the original per-session
+view; omitting it removes the session filter entirely for an org-wide
+rollup (`/admin/analytics`, brief §16). This was a signature change, not a
+new function, specifically so the two screens can never drift into showing
+different numbers for the same underlying data — a per-session bug fix or a
+new chart added to one is automatically correct on the other.
+
+## Gap-fill addendum: Presentation Mode's anonymity guarantee is structural, not a rendering choice
+
+`PresentationView` is handed a `SessionAggregates` object — the exact same
+shape the per-session and cross-session admin views already use — and
+nothing else. It has no access to `participants`, `participant_sessions`,
+or `participant_reflections`; there is no participant name, email, or
+free-text field anywhere in the props it receives. This means the
+"anonymized, opt-in" requirement (brief §19) doesn't depend on the
+component remembering not to render a field — the field is simply never in
+scope to render, the same guarantee `docs/CLIENT_QUESTIONS.md` item 10
+notes for reflections generally.
+
+## Gap-fill addendum: privacy consent is versioned, not a boolean
+
+`ensure_participant()` now accepts an optional `p_privacy_consent boolean`
+and, when true, stamps `privacy_consent_given_at` and `privacy_consent_
+version` (currently the literal string `'draft-2026-08-29'`, since the copy
+itself is still an unapproved draft — see `docs/CLIENT_QUESTIONS.md`). The
+`on conflict` upsert uses `coalesce(existing, new)` for both columns
+specifically so a participant who already gave consent under one version
+never has it silently cleared or overwritten by a later call — the same
+versioning discipline already used for `assessments`, `zone_matrix_cells`,
+and `recommendation_rules` so historical data stays interpretable after
+content changes, applied here to a legal/consent fact instead of workshop
+content.

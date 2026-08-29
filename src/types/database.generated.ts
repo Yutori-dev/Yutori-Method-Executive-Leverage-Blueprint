@@ -117,6 +117,7 @@ export type Database = {
           reaction_submitted_at: string | null
           rules_version: number
           secondary_result: string | null
+          secondary_signal_leverage_level: string | null
           supporting_signals: Json
           updated_at: string
         }
@@ -135,6 +136,7 @@ export type Database = {
           reaction_submitted_at?: string | null
           rules_version: number
           secondary_result?: string | null
+          secondary_signal_leverage_level?: string | null
           supporting_signals?: Json
           updated_at?: string
         }
@@ -153,6 +155,7 @@ export type Database = {
           reaction_submitted_at?: string | null
           rules_version?: number
           secondary_result?: string | null
+          secondary_signal_leverage_level?: string | null
           supporting_signals?: Json
           updated_at?: string
         }
@@ -300,6 +303,35 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_up_interests: {
+        Row: {
+          id: string
+          participant_session_id: string
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          participant_session_id: string
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          participant_session_id?: string
+          requested_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_interests_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           active: boolean
@@ -426,6 +458,44 @@ export type Database = {
           },
         ]
       }
+      participant_reflections: {
+        Row: {
+          created_at: string
+          id: string
+          participant_session_id: string
+          success_vision: string | null
+          success_vision_white_whale_followup: string | null
+          updated_at: string
+          white_whale: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_session_id: string
+          success_vision?: string | null
+          success_vision_white_whale_followup?: string | null
+          updated_at?: string
+          white_whale?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_session_id?: string
+          success_vision?: string | null
+          success_vision_white_whale_followup?: string | null
+          updated_at?: string
+          white_whale?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_reflections_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_sessions: {
         Row: {
           completed_at: string | null
@@ -435,6 +505,7 @@ export type Database = {
           id: string
           last_active_at: string
           participant_id: string
+          self_identification: string | null
           session_id: string
           started_at: string | null
         }
@@ -446,6 +517,7 @@ export type Database = {
           id?: string
           last_active_at?: string
           participant_id: string
+          self_identification?: string | null
           session_id: string
           started_at?: string | null
         }
@@ -457,6 +529,7 @@ export type Database = {
           id?: string
           last_active_at?: string
           participant_id?: string
+          self_identification?: string | null
           session_id?: string
           started_at?: string | null
         }
@@ -492,6 +565,8 @@ export type Database = {
           id: string
           last_login: string | null
           last_name: string
+          privacy_consent_given_at: string | null
+          privacy_consent_version: string | null
         }
         Insert: {
           created_at?: string
@@ -500,6 +575,8 @@ export type Database = {
           id: string
           last_login?: string | null
           last_name: string
+          privacy_consent_given_at?: string | null
+          privacy_consent_version?: string | null
         }
         Update: {
           created_at?: string
@@ -508,6 +585,8 @@ export type Database = {
           id?: string
           last_login?: string | null
           last_name?: string
+          privacy_consent_given_at?: string | null
+          privacy_consent_version?: string | null
         }
         Relationships: []
       }
@@ -893,6 +972,7 @@ export type Database = {
           reaction_submitted_at: string | null
           rules_version: number
           secondary_result: string | null
+          secondary_signal_leverage_level: string | null
           supporting_signals: Json
           updated_at: string
         }
@@ -925,7 +1005,11 @@ export type Database = {
         }
       }
       ensure_participant: {
-        Args: { p_first_name: string; p_last_name: string }
+        Args: {
+          p_first_name: string
+          p_last_name: string
+          p_privacy_consent?: boolean
+        }
         Returns: {
           created_at: string
           email: string
@@ -933,6 +1017,8 @@ export type Database = {
           id: string
           last_login: string | null
           last_name: string
+          privacy_consent_given_at: string | null
+          privacy_consent_version: string | null
         }
         SetofOptions: {
           from: "*"
@@ -1069,6 +1155,7 @@ export type Database = {
           reaction_submitted_at: string | null
           rules_version: number
           secondary_result: string | null
+          secondary_signal_leverage_level: string | null
           supporting_signals: Json
           updated_at: string
         }

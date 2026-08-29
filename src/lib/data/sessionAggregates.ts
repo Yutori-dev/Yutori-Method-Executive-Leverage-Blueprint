@@ -24,6 +24,7 @@ export interface SessionAggregates {
   priorityLeverageDistribution: CountRow[];
   primarySignalDistribution: CountRow[];
   reactionDistribution: CountRow[];
+  selfIdentificationDistribution: CountRow[];
 }
 
 const ZONE_LABEL: Record<string, string> = {
@@ -45,6 +46,12 @@ const REACTION_LABEL: Record<string, string> = {
   not_yet: "Not yet",
 };
 
+const SELF_IDENTIFICATION_LABEL: Record<string, string> = {
+  visionary: "Visionary",
+  integrator: "Integrator",
+  hybrid: "Hybrid",
+};
+
 function countBy<T>(rows: T[], keyFn: (row: T) => string | null | undefined, labelFor: (key: string) => string): CountRow[] {
   const counts = new Map<string, number>();
   for (const row of rows) {
@@ -63,12 +70,20 @@ function countBy<T>(rows: T[], keyFn: (row: T) => string | null | undefined, lab
  * results, current-support-role breakdowns, or EOS/Bloom usage -- none of
  * that content exists yet (see docs/CLIENT_QUESTIONS.md), and inventing
  * empty charts for it would be misleading rather than useful.
+ *
+ * Pass a single-element array to scope to one session (the original,
+ * per-session use case), a longer array to combine specific sessions, or
+ * omit `sessionIds` entirely for an org-wide rollup across every session
+ * (brief section 16, cross-session analytics).
  */
-export async function getSessionAggregates(sessionId: string): Promise<SessionAggregates> {
+export async function getSessionAggregates(sessionIds?: string[]): Promise<SessionAggregates> {
   const supabase = await createServerSupabaseClient();
 
+  let enrollmentQuery = supabase.from("participant_sessions").select("id, completion_state, self_identification");
+  if (sessionIds) enrollmentQuery = enrollmentQuery.in("session_id", sessionIds);
+
   const [{ data: enrollments }, { data: modules }] = await Promise.all([
-    supabase.from("participant_sessions").select("id, completion_state").eq("session_id", sessionId),
+    enrollmentQuery,
     supabase
       .from("modules")
       .select("id, key, name")
@@ -92,6 +107,7 @@ export async function getSessionAggregates(sessionId: string): Promise<SessionAg
       priorityLeverageDistribution: [],
       primarySignalDistribution: [],
       reactionDistribution: [],
+      selfIdentificationDistribution: [],
     };
   }
 
@@ -166,6 +182,11 @@ export async function getSessionAggregates(sessionId: string): Promise<SessionAg
       recommendationRows ?? [],
       (r) => r.reaction,
       (key) => REACTION_LABEL[key] ?? key,
+    ),
+    selfIdentificationDistribution: countBy(
+      enrollments ?? [],
+      (e) => e.self_identification,
+      (key) => SELF_IDENTIFICATION_LABEL[key] ?? key,
     ),
   };
 }

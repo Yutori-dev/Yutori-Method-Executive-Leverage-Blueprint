@@ -30,6 +30,8 @@ export interface BlueprintData {
     priorityOpportunities: BlueprintDelegationOpportunity[];
   };
   architecture: ArchitectureData;
+  followUpRequested: boolean;
+  reflections: { whiteWhale: string | null; successVision: string | null; successVisionFollowup: string | null };
 }
 
 /**
@@ -47,10 +49,17 @@ export async function getBlueprintData(
 ): Promise<BlueprintData | null> {
   const supabase = await createServerSupabaseClient();
 
-  const [{ data: session }, { data: modules }, { data: progress }] = await Promise.all([
+  const [{ data: session }, { data: modules }, { data: progress }, { data: followUp }, { data: reflectionRow }] =
+    await Promise.all([
     supabase.from("sessions").select("name, organization, architecture_revealed").eq("id", sessionId).maybeSingle(),
     supabase.from("modules").select("id, key, name, sort_order, requires_live_workshop").eq("active", true).order("sort_order", { ascending: true }),
     supabase.from("participant_module_progress").select("module_id, status").eq("participant_session_id", participantSessionId),
+    supabase.from("follow_up_interests").select("id").eq("participant_session_id", participantSessionId).maybeSingle(),
+    supabase
+      .from("participant_reflections")
+      .select("white_whale, success_vision, success_vision_white_whale_followup")
+      .eq("participant_session_id", participantSessionId)
+      .maybeSingle(),
   ]);
 
   if (!session || !modules) return null;
@@ -106,5 +115,11 @@ export async function getBlueprintData(
       priorityOpportunities,
     },
     architecture,
+    followUpRequested: !!followUp,
+    reflections: {
+      whiteWhale: reflectionRow?.white_whale ?? null,
+      successVision: reflectionRow?.success_vision ?? null,
+      successVisionFollowup: reflectionRow?.success_vision_white_whale_followup ?? null,
+    },
   };
 }

@@ -96,13 +96,14 @@ these belong.
    Yutori wants the audit's contextual signal folded into the recommendation,
    that's Milestone 4 territory as things stand — say so if not.
 
-10. **White Whale and Success Vision are not built yet.** Both still need
-    final prompt copy from Yutori (brief sections 1B and 11), and neither was
-    named in your two-line Milestone 3 description. The Blueprint page
-    assembles everything that *does* exist (Operating Altitude answers, Zone
-    of Investment, Delegation results, the Architecture recommendation) —
-    it has a Character section and will grow a Success section once that
-    content exists, but nothing was invented to fill the gap now.
+10. **[RESOLVED] White Whale and Success Vision are now built.** Captured as
+    private free-text reflections (own module page for Success Vision;
+    alongside Operating Altitude for White Whale), shown only to the owning
+    participant and admins, never aggregated or shown in Presentation Mode.
+    Final prompt copy from Yutori (brief sections 1B and 11) would still be
+    worth confirming against what's live — the current copy is the brief's
+    own verbatim language, not a placeholder, but hasn't been separately
+    approved.
 
 ## Milestone 3 content dependencies — not blocking, will block full recommendation copy
 
@@ -125,11 +126,14 @@ these belong.
 12. **Aggregate views only show data that actually exists.** The facilitator
     aggregate dashboard (module completion, Zone of Investment distribution,
     most common Priority Delegation Opportunities, recommendation/reaction
-    breakdown) deliberately does not attempt Visionary/Integrator
-    distribution, Executive Support Audit results, current-support-role
+    breakdown, and now Visionary/Integrator/Hybrid distribution) deliberately
+    does not attempt Executive Support Audit results, current-support-role
     breakdowns, or EOS/Bloom usage — none of that content has been built
     (see items 5 and 9), and an empty chart for it would be misleading
-    rather than useful. It'll extend naturally once those pieces exist.
+    rather than useful. It'll extend naturally once those pieces exist. As of
+    the gap-fill pass this same view is also available cross-session at
+    `/admin/analytics`, and as a facilitator-selectable projector view at
+    `/admin/sessions/[id]/present` (brief §19, Presentation Mode).
 
 13. **CSV export columns are a curated set, not a raw dump.** Brief section
     22 lists "raw responses" among the export columns; we exported a
@@ -146,7 +150,24 @@ these belong.
 ## Legal (brief section 26) — not blocking Milestone 1, must resolve before real participant data is collected
 
 Privacy policy, retention term, deletion policy, research consent, Terms of
-Use, and any YPO-specific requirements are all still open per the brief. No
-privacy/consent copy is shown to participants yet because none has been
-approved. This should be resolved before a real (non-dev) session goes live,
-likely alongside Milestone 2.
+Use, and any YPO-specific requirements are all still open per the brief.
+**Consent capture itself is now built** — registration shows a collapsible
+privacy notice and requires an explicit checkbox before continuing, and
+`participants.privacy_consent_given_at` / `privacy_consent_version` record
+when and against which copy version consent was given. The copy shown is
+still the brief's own **draft** language, explicitly labeled
+"pending Yutori approval" in the UI itself — it must not go in front of a
+real (non-dev) participant until Yutori's actual privacy policy, retention
+term, deletion policy, research consent, and Terms of Use are approved and
+swapped in. Because consent is versioned, swapping in the real copy and
+bumping the version string is a content change, not a code change, and
+won't invalidate or misrepresent consent already recorded under the draft.
+
+## Google Sheets sync (brief — explicitly nice-to-have)
+
+Not built. Needs a Google Cloud project with an OAuth 2.0 client (client ID
++ secret, and a decision on whether it's a service account with a shared
+sheet or per-admin OAuth) that hasn't been provided. Everything else flagged
+as a gap in earlier delivery messages has been built as of this pass (see
+`README.md`); this is the one remaining item, blocked purely on credentials
+rather than scope or effort.

@@ -339,3 +339,105 @@ list: Presentation Mode, Google Sheets sync, the Executive Support Audit,
 final recommendation content. This is the last of the four milestones —
 nothing further is scoped beyond what's listed here and in
 `docs/CLIENT_QUESTIONS.md`.
+
+---
+
+## Gap-fill pass (post-Milestone-4)
+
+Two pieces of follow-up work: (1) fix the Milestone 4 load test's latency
+problem, and (2) build every item flagged as a gap across earlier delivery
+messages plus everything in the brief that was never explicitly assigned to
+a milestone (Module 0 executive context, V/I/H self-identification, White
+Whale/Success Vision, Discuss My Blueprint + follow-up queue, Presentation
+Mode, cross-session analytics, privacy consent capture) — see `README.md`
+for the full list. Google Sheets sync is the one item still not built,
+blocked on Google Cloud OAuth credentials.
+
+### Performance fix and re-test
+
+Four data loaders were rewritten to cut Supabase round-trips: the
+participant dashboard, Zone of Investment, module content (nested embeds
+instead of sequential queries), and delegation candidates — parallelizing
+independent queries with `Promise.all` and replacing sequential lookups with
+PostgREST nested embeds / inner-join filters. Full detail in
+`docs/ARCHITECTURE_DECISIONS.md`.
+
+Re-ran the load test at **80** concurrent participants (up from 75) against
+a production build on the live project, 2026-08-29, this time with no other
+heavy process competing for CPU on the same machine during the measurement
+phase (the first attempt at a re-run was itself confounded by a `tsc` build
+running concurrently on the same machine — a methodology mistake, not a
+regression; re-run cleanly after realizing that). **Result: 78/80
+succeeded** (2 failures were a transient "fetch failed" during account
+provisioning, before any app code runs — unrelated to the app).
+
+| Step | avg (before → after) | p95 (before → after) |
+|---|---|---|
+| Dashboard load | 6.1s → **4.6s** | 7.4s → **5.9s** |
+| Module page load | 4.6s → **2.5s** | 5.9s → **3.9s** |
+| `select_responsibilities` | 1.7s → **0.4s** | 8.7s → — |
+| `rate_responsibility` | 4.5s → **0.4s** | 9.8s → — |
+| `select_priority_delegation_opportunities` | 4.6s → **0.4s** | 8.3s → — |
+| Blueprint page load | 9.5s → **3.4s** | 17.2s → **4.1s** |
+
+A 45-65% improvement across every page/RPC that was slow before, despite
+testing at higher concurrency (80 vs. 75) than the original run. This is now
+a comfortable margin for an in-person or virtual session at this scale.
+
+### Gap-fill features — what was actually verified live
+
+Same standard as every earlier milestone: real, disposable test accounts
+against the live project, not just typechecked.
+
+- [x] `ensure_participant` with consent persists `privacy_consent_given_at`
+      and the correct `privacy_consent_version`
+- [x] Self-identification (Visionary/Integrator/Hybrid) write persists under
+      RLS
+- [x] White Whale and Success Vision reflections persist under RLS (own
+      write, own read)
+- [x] Follow-up interest request persists under RLS, defaults to `new`
+      status
+- [x] Admin (service role) can read reflections and follow-up rows —
+      confirms RLS isn't over-restrictive on the admin side
+- [x] `architecture_recommendations.secondary_signal_leverage_level` column
+      exists and is populated by the updated
+      `calculate_architecture_recommendation` function
+- [x] **Full HTTP-level test through real cookie-based admin auth**: all six
+      admin-facing pages/routes (`/admin`, `/admin/analytics`,
+      `/admin/sessions/[id]`, `/admin/sessions/[id]/aggregate`,
+      `/admin/sessions/[id]/follow-up`, `/admin/sessions/[id]/present`)
+      returned 200 against a production build
+- [x] **Full HTTP-level test through real cookie-based participant auth**:
+      the dashboard, the new Module 0 context page, and both new module
+      pages (`operating_altitude`, `success`) all returned 200 for a real,
+      freshly-joined participant
+
+- [x] `npm run typecheck` — passes, no errors
+- [x] `npm run lint` — passes, no errors or warnings
+- [x] `npm run build` — production build succeeds, all new routes present
+
+### What still needs a manual browser click-through
+
+- [ ] Module 0 executive-context form: current support roles and EOS/Bloom/
+      Other render and save correctly (multi_select and numeric question
+      types are new — confirm checkbox groups and number inputs behave, not
+      just that the page loads)
+- [ ] Operating Altitude module: White Whale textarea and the Visionary/
+      Integrator/Hybrid selector both save independently of the assessment
+      questions and survive a refresh
+- [ ] Success module: Success Vision and the White Whale follow-up prompt
+      read as a coherent close to the Blueprint, not bolted on
+- [ ] "Discuss My Blueprint" button on the Blueprint page: click it, confirm
+      it becomes a confirmed/disabled state, and that it appears in the
+      admin follow-up queue immediately
+- [ ] Admin follow-up queue: changing a request's status (new → contacted →
+      closed) persists and survives a refresh
+- [ ] Admin roster's "Discuss?" column updates live (Realtime) without a
+      manual refresh when a participant clicks the CTA in another tab
+- [ ] Presentation Mode: switching between panels is instant and every
+      number matches the same session's aggregate page; confirm on an
+      actual projector/large display for legibility
+- [ ] Privacy consent checkbox at registration: cannot continue without
+      checking it; the collapsible notice actually expands
+- [ ] Mobile viewport for all of the above — Module 0, Presentation Mode,
+      and the follow-up queue table are all new and untested at phone width

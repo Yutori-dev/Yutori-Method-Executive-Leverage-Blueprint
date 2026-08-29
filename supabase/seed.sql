@@ -223,3 +223,80 @@ begin
     (v_q3, '[PENDING] I give detailed step-by-step instructions', 'step_by_step', 2, 2),
     (v_q3, '[PENDING] I usually just do it myself', 'do_it_myself', 1, 3);
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Module 0: Executive Context (brief section 7, Module 0). The current-
+-- support-role list and operating-system question are given in the brief;
+-- the consistency scale is explicitly "INSERT FINAL SCALE" pending, so a
+-- placeholder 1-5 scale is used until supplied.
+-- ---------------------------------------------------------------------------
+insert into public.assessments (key, name, version, active, is_placeholder)
+values (
+  'dev_demo_module_0_context',
+  '[YUTORI CONTENT PENDING] Executive Context (dev demo)',
+  1,
+  true,
+  true
+)
+on conflict (key, version) do update set name = excluded.name;
+
+do $$
+declare
+  v_assessment_id uuid;
+  v_q1 uuid;
+  v_q2 uuid;
+begin
+  select id into v_assessment_id
+  from public.assessments
+  where key = 'dev_demo_module_0_context' and version = 1;
+
+  insert into public.questions (assessment_id, prompt, type, config, required, sort_order)
+  values (
+    v_assessment_id,
+    '[YUTORI CONTENT PENDING] Which of the following describes your current executive support? Select all that apply.',
+    'multi_select',
+    '{}'::jsonb,
+    true,
+    1
+  )
+  returning id into v_q1;
+
+  insert into public.answer_options (question_id, label, value, sort_order)
+  values
+    (v_q1, 'No dedicated executive support', 'none', 1),
+    (v_q1, 'Personal Assistant', 'personal_assistant', 2),
+    (v_q1, 'Administrative Assistant', 'administrative_assistant', 3),
+    (v_q1, 'Executive Assistant', 'executive_assistant', 4),
+    (v_q1, 'Senior Executive Assistant', 'senior_executive_assistant', 5),
+    (v_q1, 'Chief of Staff', 'chief_of_staff', 6),
+    (v_q1, 'COO / Integrator', 'coo_integrator', 7),
+    (v_q1, 'Other', 'other', 8);
+
+  insert into public.questions (assessment_id, prompt, type, config, required, sort_order)
+  values (
+    v_assessment_id,
+    'Does your company run on a whole-business operating system?',
+    'multiple_choice',
+    '{}'::jsonb,
+    true,
+    2
+  )
+  returning id into v_q2;
+
+  insert into public.answer_options (question_id, label, value, sort_order)
+  values
+    (v_q2, 'No', 'no', 1),
+    (v_q2, 'EOS', 'eos', 2),
+    (v_q2, 'Bloom', 'bloom', 3),
+    (v_q2, 'Other', 'other', 4);
+
+  insert into public.questions (assessment_id, prompt, type, config, required, sort_order)
+  values (
+    v_assessment_id,
+    '[YUTORI CONTENT PENDING — INSERT FINAL SCALE] How consistently are the core disciplines followed?',
+    'rating_scale',
+    '{"min":1,"max":5,"min_label":"Rarely","max_label":"Consistently"}'::jsonb,
+    false,
+    3
+  );
+end $$;

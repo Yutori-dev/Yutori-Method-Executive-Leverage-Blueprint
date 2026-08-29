@@ -24,6 +24,7 @@ export function CompleteProfileForm({
   const router = useRouter();
   const [firstName, setFirstName] = useState(() => prefillFromPending(email).firstName);
   const [lastName, setLastName] = useState(() => prefillFromPending(email).lastName);
+  const [consentGiven, setConsentGiven] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export function CompleteProfileForm({
     const { error: profileError } = await supabase.rpc("ensure_participant", {
       p_first_name: firstName,
       p_last_name: lastName,
+      p_privacy_consent: consentGiven,
     });
 
     if (profileError) {
@@ -87,6 +89,32 @@ export function CompleteProfileForm({
           />
         </div>
       </div>
+
+      <details className="rounded-lg border border-(--color-hairline) px-3 py-2 text-xs text-(--color-ink-muted)">
+        <summary className="cursor-pointer select-none">
+          Privacy notice (draft — pending Yutori approval)
+        </summary>
+        <p className="mt-2">
+          Your responses are used to generate your personalized Yutori Method™ Executive
+          Leverage Blueprint and support the facilitated workshop experience. Individual
+          responses are accessible to authorized Yutori Method facilitators and will not be
+          shared with other participants. Selected responses may be combined and displayed in
+          anonymized aggregate form during the workshop or used in aggregate to improve Yutori
+          Method programs and research. Private free-text responses, including your White Whale
+          reflection, will not be displayed to the group.
+        </p>
+      </details>
+
+      <label className="flex items-start gap-2 text-xs text-(--color-ink-muted)">
+        <input
+          type="checkbox"
+          required
+          checked={consentGiven}
+          onChange={(e) => setConsentGiven(e.target.checked)}
+          className="mt-0.5 accent-(--color-accent)"
+        />
+        I have read and agree to the privacy notice above.
+      </label>
 
       {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
 

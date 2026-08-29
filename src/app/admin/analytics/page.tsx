@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getSessionAggregates } from "@/lib/data/sessionAggregates";
@@ -6,32 +5,32 @@ import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { CountBarList } from "@/components/admin/CountBarList";
 
-export default async function SessionAggregatePage({
-  params,
-}: {
-  params: Promise<{ sessionId: string }>;
-}) {
-  const { sessionId } = await params;
+/** Brief section 16: cross-session analytics. Generalizes the per-session
+ * aggregate view (getSessionAggregates) across every session instead of
+ * one, for Yutori's own program-wide reporting rather than a single
+ * facilitator's cohort. */
+export default async function CrossSessionAnalyticsPage() {
   const supabase = await createServerSupabaseClient();
 
-  const { data: session } = await supabase.from("sessions").select("name").eq("id", sessionId).maybeSingle();
-  if (!session) notFound();
-
-  const aggregates = await getSessionAggregates([sessionId]);
+  const [{ count: sessionCount }, aggregates] = await Promise.all([
+    supabase.from("sessions").select("id", { count: "exact", head: true }),
+    getSessionAggregates(),
+  ]);
 
   return (
     <main className="py-16">
       <Container>
         <Link
-          href={`/admin/sessions/${sessionId}`}
+          href="/admin"
           className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
         >
-          ← Back to session
+          ← Back to sessions
         </Link>
 
-        <h1 className="mt-4 font-serif text-3xl">{session.name} — Aggregate results</h1>
+        <h1 className="mt-4 font-serif text-3xl">Analytics — all sessions</h1>
         <p className="mt-1 text-sm text-(--color-ink-muted)">
-          {aggregates.registeredCount} registered · {aggregates.fullyCompletedCount} completed every module
+          {sessionCount ?? 0} session{sessionCount === 1 ? "" : "s"} · {aggregates.registeredCount} registered ·{" "}
+          {aggregates.fullyCompletedCount} completed every module
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -64,7 +63,7 @@ export default async function SessionAggregatePage({
           <Card>
             <h2 className="font-serif text-lg">Zone of Investment distribution</h2>
             <p className="mt-1 text-xs text-(--color-ink-muted)">
-              Across every responsibility every participant rated, not per-participant.
+              Across every responsibility every participant rated, every session.
             </p>
             <div className="mt-4">
               <CountBarList rows={aggregates.zoneDistribution} emptyLabel="No ratings yet." />

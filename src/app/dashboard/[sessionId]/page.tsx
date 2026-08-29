@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
+import { hasCompletedExecutiveContext } from "@/lib/data/moduleZeroStatus";
 import { Container } from "@/components/ui/Container";
+import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ModuleRow } from "@/components/participant/ModuleRow";
 
@@ -17,6 +19,7 @@ export default async function ParticipantDashboardPage({
 
   const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
   const completedCount = trackedModules.filter((m) => m.state === "COMPLETE").length;
+  const contextDone = await hasCompletedExecutiveContext(dashboard.participantSessionId);
 
   return (
     <main className="flex-1 py-16">
@@ -35,6 +38,21 @@ export default async function ParticipantDashboardPage({
         <div className="mt-8 max-w-sm">
           <ProgressBar completed={completedCount} total={trackedModules.length} />
         </div>
+
+        {!contextDone ? (
+          <Card className="mt-6 border-(--color-accent)">
+            <p className="text-sm text-(--color-ink)">Complete your executive context</p>
+            <p className="mt-1 text-sm text-(--color-ink-muted)">
+              A couple of quick questions to help your facilitator understand your starting point.
+            </p>
+            <Link
+              href={`/dashboard/${sessionId}/context`}
+              className="mt-3 inline-block text-sm text-(--color-accent) underline underline-offset-4"
+            >
+              Continue
+            </Link>
+          </Card>
+        ) : null}
 
         <Link
           href={`/dashboard/${sessionId}/blueprint`}

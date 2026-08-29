@@ -138,6 +138,12 @@ export function ArchitectureFlow({
         </p>
         <p className="mt-2 text-sm text-(--color-ink-muted)">{rec?.rationale}</p>
 
+        {rec?.secondarySignalLeverageLevel ? (
+          <p className="mt-3 text-sm text-(--color-ink-muted)">
+            Secondary signal: <span className="text-(--color-ink)">{LEVEL_LABEL[rec.secondarySignalLeverageLevel]}</span>
+          </p>
+        ) : null}
+
         {rec && rec.supportingSignals.length > 0 ? (
           <div className="mt-5">
             <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
