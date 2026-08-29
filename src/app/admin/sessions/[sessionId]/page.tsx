@@ -55,6 +55,10 @@ export default async function SessionControlPanelPage({
   const nextModule = modules
     .filter((m) => !m.requires_live_workshop)
     .find((m) => !activeModule || m.sort_order > activeModule.sort_order);
+  const architectureModule = modules.find((m) => m.key === "architecture");
+  const architectureUnlocked = Boolean(
+    architectureModule && activeModule && architectureModule.sort_order <= activeModule.sort_order,
+  );
 
   const joinUrl =
     typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
@@ -113,7 +117,7 @@ export default async function SessionControlPanelPage({
               <UnlockModuleControl sessionId={sessionId} nextModuleName={nextModule?.name ?? null} />
             </div>
 
-            {activeModule?.key === "architecture" || session.architecture_revealed ? (
+            {architectureUnlocked || session.architecture_revealed ? (
               <div className="mt-6 border-t border-(--color-hairline) pt-6">
                 <h3 className="text-sm font-medium">Architecture reveal</h3>
                 <p className="mt-1 text-xs text-(--color-ink-muted)">
