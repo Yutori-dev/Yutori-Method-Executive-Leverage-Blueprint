@@ -78,6 +78,18 @@ export default async function SessionControlPanelPage({
           </div>
           <div className="flex items-center gap-3">
             <Link
+              href={`/admin/sessions/${sessionId}/aggregate`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Aggregate results
+            </Link>
+            <a
+              href={`/admin/sessions/${sessionId}/export`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Export CSV
+            </a>
+            <Link
               href={`/admin/sessions/${sessionId}/edit`}
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
             >
@@ -154,9 +166,14 @@ export default async function SessionControlPanelPage({
                 <tbody>
                   {roster && roster.length > 0 ? (
                     roster.map((row) => (
-                      <tr key={row.id} className="border-b border-(--color-hairline)/60">
+                      <tr key={row.id} className="border-b border-(--color-hairline)/60 hover:bg-(--color-accent-soft)/40">
                         <td className="py-2 pr-4">
-                          {row.participant?.first_name} {row.participant?.last_name}
+                          <Link
+                            href={`/admin/sessions/${sessionId}/participants/${row.id}`}
+                            className="block text-(--color-accent) hover:underline"
+                          >
+                            {row.participant?.first_name} {row.participant?.last_name}
+                          </Link>
                         </td>
                         <td className="py-2 pr-4 text-(--color-ink-muted)">
                           {row.participant?.email}
