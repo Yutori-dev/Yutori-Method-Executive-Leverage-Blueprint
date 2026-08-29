@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { Button } from "@/components/ui/Button";
 
 export default function HomePage() {
   return (
@@ -10,21 +11,11 @@ export default function HomePage() {
           Executive Leverage Blueprint
         </h1>
         <p className="mx-auto mt-6 max-w-md text-(--color-ink-muted)">
-          A persistent companion to your Yutori Method workshop. You&apos;ll need the
-          session link your facilitator shared to begin.
+          A persistent companion to your Yutori Method workshop.
         </p>
-        <div className="mt-10 flex items-center justify-center gap-6">
-          <Link
-            href="/login"
-            className="text-xs tracking-wide text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-          >
-            Participant sign in / sign up
-          </Link>
-          <Link
-            href="/admin/login"
-            className="text-xs tracking-wide text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-          >
-            Facilitator sign in
+        <div className="mt-10">
+          <Link href="/login">
+            <Button>Sign in / Sign up</Button>
           </Link>
         </div>
       </Container>
