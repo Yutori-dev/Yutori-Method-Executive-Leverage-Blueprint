@@ -11,6 +11,7 @@
     "seed:admin": "dotenv -e .env.local -- tsx scripts/create-admin.ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
     "next": "16.3.3",

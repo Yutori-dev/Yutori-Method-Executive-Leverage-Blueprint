@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
+import { RevealArchitectureControl } from "@/components/admin/RevealArchitectureControl";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
 
@@ -111,6 +112,22 @@ export default async function SessionControlPanelPage({
             <div className="mt-6">
               <UnlockModuleControl sessionId={sessionId} nextModuleName={nextModule?.name ?? null} />
             </div>
+
+            {activeModule?.key === "architecture" || session.architecture_revealed ? (
+              <div className="mt-6 border-t border-(--color-hairline) pt-6">
+                <h3 className="text-sm font-medium">Architecture reveal</h3>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
+                  Separate from module unlocking -- reveals each participant&apos;s calculated
+                  recommendation.
+                </p>
+                <div className="mt-3">
+                  <RevealArchitectureControl
+                    sessionId={sessionId}
+                    alreadyRevealed={session.architecture_revealed}
+                  />
+                </div>
+              </div>
+            ) : null}
           </Card>
 
           <Card>

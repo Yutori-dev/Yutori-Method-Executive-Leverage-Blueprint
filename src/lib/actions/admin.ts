@@ -82,3 +82,10 @@ export async function unlockNextModule(sessionId: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
+
+export async function revealArchitecture(sessionId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("admin_reveal_architecture", { p_session_id: sessionId });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}

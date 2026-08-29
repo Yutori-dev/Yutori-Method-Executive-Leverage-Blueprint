@@ -101,6 +101,71 @@ export type Database = {
           },
         ]
       }
+      architecture_recommendations: {
+        Row: {
+          calculated_at: string
+          created_at: string
+          id: string
+          is_tied: boolean
+          participant_session_id: string
+          primary_result: string | null
+          primary_role: string | null
+          primary_signal_leverage_level: string | null
+          rationale: string
+          reaction: string | null
+          reaction_note: string | null
+          reaction_submitted_at: string | null
+          rules_version: number
+          secondary_result: string | null
+          supporting_signals: Json
+          updated_at: string
+        }
+        Insert: {
+          calculated_at?: string
+          created_at?: string
+          id?: string
+          is_tied?: boolean
+          participant_session_id: string
+          primary_result?: string | null
+          primary_role?: string | null
+          primary_signal_leverage_level?: string | null
+          rationale: string
+          reaction?: string | null
+          reaction_note?: string | null
+          reaction_submitted_at?: string | null
+          rules_version: number
+          secondary_result?: string | null
+          supporting_signals?: Json
+          updated_at?: string
+        }
+        Update: {
+          calculated_at?: string
+          created_at?: string
+          id?: string
+          is_tied?: boolean
+          participant_session_id?: string
+          primary_result?: string | null
+          primary_role?: string | null
+          primary_signal_leverage_level?: string | null
+          rationale?: string
+          reaction?: string | null
+          reaction_note?: string | null
+          reaction_submitted_at?: string | null
+          rules_version?: number
+          secondary_result?: string | null
+          supporting_signals?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "architecture_recommendations_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_results: {
         Row: {
           assessment_id: string
@@ -538,6 +603,45 @@ export type Database = {
           },
         ]
       }
+      recommendation_rules: {
+        Row: {
+          active: boolean
+          condition: Json
+          created_at: string
+          explanation_template: string | null
+          id: string
+          primary_result: string
+          primary_role: string | null
+          priority: number
+          secondary_result: string | null
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          condition: Json
+          created_at?: string
+          explanation_template?: string | null
+          id?: string
+          primary_result: string
+          primary_role?: string | null
+          priority?: number
+          secondary_result?: string | null
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          condition?: Json
+          created_at?: string
+          explanation_template?: string | null
+          id?: string
+          primary_result?: string
+          primary_role?: string | null
+          priority?: number
+          secondary_result?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       responses: {
         Row: {
           answer: Json
@@ -726,6 +830,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_reveal_architecture: {
+        Args: { p_session_id: string }
+        Returns: {
+          active_module_id: string | null
+          architecture_revealed: boolean
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          format: string
+          id: string
+          join_code: string
+          name: string
+          organization: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_unlock_next_module: {
         Args: { p_session_id: string }
         Returns: {
@@ -745,6 +872,33 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      calculate_architecture_recommendation: {
+        Args: { p_participant_session_id: string }
+        Returns: {
+          calculated_at: string
+          created_at: string
+          id: string
+          is_tied: boolean
+          participant_session_id: string
+          primary_result: string | null
+          primary_role: string | null
+          primary_signal_leverage_level: string | null
+          rationale: string
+          reaction: string | null
+          reaction_note: string | null
+          reaction_submitted_at: string | null
+          rules_version: number
+          secondary_result: string | null
+          supporting_signals: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "architecture_recommendations"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -796,6 +950,10 @@ export type Database = {
           organization: string
           status: string
         }[]
+      }
+      has_calculated_architecture: {
+        Args: { p_participant_session_id: string }
+        Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
       is_module_unlocked_for_session: {
@@ -888,6 +1046,37 @@ export type Database = {
           to: "participant_responsibilities"
           isOneToOne: false
           isSetofReturn: true
+        }
+      }
+      submit_architecture_reaction: {
+        Args: {
+          p_note: string
+          p_participant_session_id: string
+          p_reaction: string
+        }
+        Returns: {
+          calculated_at: string
+          created_at: string
+          id: string
+          is_tied: boolean
+          participant_session_id: string
+          primary_result: string | null
+          primary_role: string | null
+          primary_signal_leverage_level: string | null
+          rationale: string
+          reaction: string | null
+          reaction_note: string | null
+          reaction_submitted_at: string | null
+          rules_version: number
+          secondary_result: string | null
+          supporting_signals: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "architecture_recommendations"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
     }

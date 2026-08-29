@@ -26,3 +26,4 @@ export type QuestionType =
 export type LeverageLevel = "execution" | "orchestration" | "strategic" | "systems";
 export type RatingLevel = "low" | "medium" | "high";
 export type MacroZone = "investment" | "ambiguity" | "vulnerability";
+export type ArchitectureReaction = "yes" | "mostly" | "not_yet";

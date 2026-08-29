@@ -86,6 +86,40 @@ these belong.
    dimensions, and thresholds, they go into that table — no code change
    needed to light up real scoring.
 
+## Milestone 3 scope boundary (please confirm)
+
+9. **Executive Support Audit still not included.** Same reasoning as item 5
+   — your Milestone 3 description ("rules engine, PDF generation, and
+   progressive blueprint functionality") doesn't mention it, so the
+   recommendation engine currently only uses the primary signal (majority
+   leverage level across your three Priority Delegation Opportunities). If
+   Yutori wants the audit's contextual signal folded into the recommendation,
+   that's Milestone 4 territory as things stand — say so if not.
+
+10. **White Whale and Success Vision are not built yet.** Both still need
+    final prompt copy from Yutori (brief sections 1B and 11), and neither was
+    named in your two-line Milestone 3 description. The Blueprint page
+    assembles everything that *does* exist (Operating Altitude answers, Zone
+    of Investment, Delegation results, the Architecture recommendation) —
+    it has a Character section and will grow a Success section once that
+    content exists, but nothing was invented to fill the gap now.
+
+## Milestone 3 content dependencies — not blocking, will block full recommendation copy
+
+11. **Final recommendation decision table (content dependency F, brief
+    section 8.5).** The recommendation engine is real and fully live end to
+    end — it computes the actual majority leverage-level signal from a
+    participant's three Priority Delegation Opportunities, detects 1/1/1
+    ties, and stores the full signal breakdown so the rationale is always
+    explainable. But the `recommendation_rules` table it looks up against is
+    intentionally empty, so every participant currently sees the brief's own
+    specified fallback ("Your results indicate a mixed leverage profile that
+    requires additional interpretation") rather than a named recommendation
+    like "High-Leverage Executive Assistant." Once you supply the real
+    decision table (primary/secondary mapping, tie handling, exception
+    logic, approved copy), it's a data change to that table — no code
+    change needed.
+
 ## Legal (brief section 26) — not blocking Milestone 1, must resolve before real participant data is collected
 
 Privacy policy, retention term, deletion policy, research consent, Terms of

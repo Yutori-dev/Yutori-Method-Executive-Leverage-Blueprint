@@ -148,14 +148,71 @@ followed; and `join_session` is `SECURITY DEFINER` but always enrolls
 escalation it needs (reading a session by join code pre-enrollment) can't be
 turned into enrolling someone else.
 
-## Hand-written database types
+## Database types (superseded -- see Milestone 2 addendum below)
 
-`src/types/database.ts` mirrors the migrations by hand because no live
-Supabase project was available to run `supabase gen types` against during
-this milestone (see the note at the top of that file and in `README.md`).
-It deliberately includes the `Relationships: []` field on every table even
-though Milestone 1 doesn't do typed embedded joins, because
-`@supabase/postgrest-js`'s generic constraints require it — omitting it
-silently degrades every query's row type to `never` instead of failing loudly,
-which cost real debugging time while building this milestone and is worth
-recording so it isn't reintroduced by future hand-edits.
+`src/types/database.ts` originally mirrored the migrations by hand because
+no live Supabase project was available to run `supabase gen types` against
+during Milestone 1. That constraint no longer applies (the app has been
+connected to a live project since Milestone 1 delivery) -- Milestone 2
+switched to `src/types/database.generated.ts`, generated directly from the
+linked project, with `database.ts` re-exporting it plus a thin layer of
+narrower string-literal types for `text` + `check (...)` columns the
+generator can't infer a union from. Keeping the note about the earlier
+`Relationships: []` gotcha for the historical record: omitting it on a
+hand-written type silently degrades every query's row type to `never`
+instead of failing loudly, which cost real debugging time in Milestone 1 --
+worth remembering if this file is ever hand-edited again instead of
+regenerated.
+
+## Milestone 3 addendum: the recommendation engine is real, the decision table is not
+
+`calculate_architecture_recommendation()` does genuine, deterministic work:
+it reads the three `leverage_level_snapshot` values from a participant's
+Priority Delegation Opportunities, computes the majority (brief section 8.1
+-- "2+ matching = a strong primary signal"), and detects a 1/1/1 tie. It
+stores the full signal breakdown in `supporting_signals` every time, so the
+rationale can never quietly hide a contradictory signal (a constraint the
+brief states explicitly, section 8.4). What it does *not* do is invent the
+mapping from "primary signal = orchestration" to a named recommendation like
+"High-Leverage Executive Assistant" -- that mapping lives in
+`recommendation_rules`, which ships empty everywhere (same pattern as
+Milestone 2's `assessment_scoring_rules`), so every participant currently
+sees the brief's own specified fallback copy (section 24) instead. This was
+verified live: a clear-majority scenario and a 1/1/1 tie scenario were both
+driven through a real test participant, and the tie case correctly produced
+`is_tied: true` with no primary signal guessed.
+
+## Milestone 3 addendum: the architecture reveal gate lives in RLS, not just the UI
+
+The brief requires that the recommendation stay hidden until the facilitator
+explicitly reveals it (section 9), and that a facilitator can see it before
+revealing (to review before releasing to the room). Both are enforced in the
+`architecture_recommendations` RLS policy itself, not just by what the
+participant-facing page chooses to render: an admin can read the row
+unconditionally, but a participant can only read their own row once
+`sessions.architecture_revealed = true`. Before that, `has_calculated_
+architecture()` -- a narrow RPC that returns only a boolean, never the
+recommendation content -- is what lets the participant's own UI show the
+"Your Blueprint is ready" holding state without being able to read the
+content early via a direct API call. This was verified live: a participant's
+own `select` on their row returned zero rows pre-reveal, then one row
+immediately after an admin called `admin_reveal_architecture`.
+
+## Milestone 3 addendum: the PDF is generated on demand, not stored
+
+There is no `blueprints` table and no file goes into Supabase Storage. The
+Blueprint page and the PDF route (`/api/blueprint/[participantSessionId]/pdf`)
+both call the same `getBlueprintData()` loader and render current data live,
+via `@react-pdf/renderer`. This was a deliberate simplification against the
+brief's `Blueprint` entity (section 20, which has a `pdf_url` field) --
+nothing in Milestone 3's scope needs the PDF to be retrievable after the
+underlying data changes (a stored, stale PDF would arguably be worse), and
+avoiding Supabase Storage entirely means one less piece of infrastructure to
+configure, secure, and reason about (task instructions principle: avoid
+unnecessary infrastructure). `getBlueprintData()` takes no dependency on
+`auth.getUser()` itself -- authorization happens once, in each caller, via a
+`participant_sessions` lookup that RLS already scopes to "the owning
+participant or an admin" -- so the same loader correctly serves a
+participant viewing their own Blueprint and an admin downloading any
+participant's, verified live for both, plus confirming an unrelated
+participant is denied.

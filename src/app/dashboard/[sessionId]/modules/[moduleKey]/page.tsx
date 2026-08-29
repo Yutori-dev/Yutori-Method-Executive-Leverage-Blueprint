@@ -4,6 +4,7 @@ import { getParticipantDashboard } from "@/lib/data/participantDashboard";
 import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleContent";
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates } from "@/lib/data/delegation";
+import { getArchitectureData } from "@/lib/data/architecture";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
@@ -11,6 +12,7 @@ import { AssessmentForm } from "@/components/participant/AssessmentForm";
 import { GenericPlaceholderModule } from "@/components/participant/GenericPlaceholderModule";
 import { ZoneOfInvestmentFlow } from "@/components/participant/ZoneOfInvestmentFlow";
 import { DelegationFlow } from "@/components/participant/DelegationFlow";
+import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
 
 const DELEGATION_BELIEFS_ASSESSMENT_KEY = "dev_demo_delegation_beliefs";
 
@@ -78,6 +80,18 @@ export default async function ModulePage({
         assessment={assessment}
         assessmentKey={DELEGATION_BELIEFS_ASSESSMENT_KEY}
         candidates={candidates}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        sessionId={sessionId}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "architecture") {
+    const architectureData = await getArchitectureData(sessionId, dashboard.participantSessionId);
+    content = (
+      <ArchitectureFlow
+        data={architectureData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
         sessionId={sessionId}

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
 import { Container } from "@/components/ui/Container";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -34,6 +35,13 @@ export default async function ParticipantDashboardPage({
         <div className="mt-8 max-w-sm">
           <ProgressBar completed={completedCount} total={trackedModules.length} />
         </div>
+
+        <Link
+          href={`/dashboard/${sessionId}/blueprint`}
+          className="mt-4 inline-block text-xs text-(--color-accent) underline underline-offset-4"
+        >
+          View my Blueprint
+        </Link>
 
         <div className="mt-10 space-y-3">
           {dashboard.modules.map((module, index) => (

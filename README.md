@@ -1,8 +1,9 @@
 # Yutori Method™ Executive Leverage Blueprint
 
-Milestone 1 (Foundation + Configurable Activity Engine) and Milestone 2
-(Zone of Investment + Delegation/Leverage) are implemented and connected to
-a live Supabase project.
+Milestone 1 (Foundation + Configurable Activity Engine), Milestone 2 (Zone
+of Investment + Delegation/Leverage), and Milestone 3 (Recommendation
+Engine + Blueprint) are implemented and connected to a live Supabase
+project.
 
 This README covers what's implemented, how to run it, and what's explicitly
 deferred to later milestones. See also:
@@ -58,14 +59,38 @@ deferred to later milestones. See also:
   including confirming a direct API write attempting to fake a matrix cell
   is rejected by RLS. See `docs/ARCHITECTURE_DECISIONS.md`.
 
+**Milestone 3 — Recommendation Engine + Blueprint:**
+
+- A real recommendation engine: computes the majority leverage-level signal
+  across a participant's three Priority Delegation Opportunities, detects
+  1/1/1 ties, and stores the full signal breakdown for an always-explainable
+  rationale — looked up against a `recommendation_rules` table that ships
+  empty, so every participant currently sees the brief's own specified
+  fallback copy rather than an invented named recommendation
+- Architecture reveal: a high-visibility, confirmation-gated admin control
+  separate from module unlocking, plus the brief's "Your Blueprint is ready"
+  holding state for participants who've calculated but not yet been revealed
+  to — **the reveal gate lives in Row Level Security itself**, not just in
+  what the page renders, verified by confirming a participant's direct
+  database read of their own recommendation returns nothing before reveal
+- The Architecture Reaction prompt (Yes / Mostly / Not yet + optional note),
+  using the brief's exact specified copy
+- A progressive Blueprint page (`/dashboard/[sessionId]/blueprint`)
+  assembling everything captured so far — Character (locked), Operating
+  Altitude answers, the Zone of Investment matrix, Delegation results, and
+  the Architecture recommendation once revealed
+- PDF export of the same Blueprint, generated on demand (no file storage),
+  downloadable by the owning participant or an admin — verified end to end
+  through real cookie-based HTTP requests, not just server-side function
+  calls, including confirming an unrelated participant is denied
+
 ## What's deliberately not built yet
 
-Per the brief's Content Dependency Register and the Milestone 3-4 split:
-final assessment/matrix content, the Executive Support Audit, the
-recommendation engine, architecture reveal, Blueprint PDF, aggregate
-analytics, CSV export, Presentation Mode. The schema is built so these can
-be added without restructuring what's here — see
-`docs/ARCHITECTURE_DECISIONS.md`.
+Per the brief's Content Dependency Register and the remaining Milestone 4
+scope: final assessment/matrix/recommendation content, the Executive
+Support Audit, White Whale, Success Vision, aggregate analytics, CSV
+export, Presentation Mode. The schema is built so these can be added
+without restructuring what's here — see `docs/ARCHITECTURE_DECISIONS.md`.
 
 ## Local setup
 
@@ -140,11 +165,15 @@ reflect a CHECK constraint as a type the generator can see).
 ## A note on testing
 
 Milestone 1's UI flows were click-tested manually against the live project.
-Milestone 2's RPC/security layer was verified with a real, disposable test
-participant created via the Supabase Auth admin API (see
-`docs/TESTING.md`) — every validation rule and the RLS write-blocking
-behavior was actually exercised, not just read from the SQL. No browser
-automation tool was available in this environment, so Milestone 2's React
-UI itself (phase transitions, checkbox limits, matrix rendering) still needs
-a manual click-through — see the checklist in `docs/TESTING.md` before
-treating Milestone 2 as accepted.
+Milestones 2 and 3's RPC/security layers were verified with real, disposable
+test participants created via the Supabase Auth admin API (see
+`docs/TESTING.md`) — every validation rule and RLS write-blocking/read-gating
+behavior was actually exercised, not just read from the SQL. Milestone 3's
+Blueprint page and PDF export were additionally verified through real
+cookie-based HTTP requests against the running app (constructing an actual
+`@supabase/ssr` session cookie), not just server-side function calls, which
+is a stronger check than Milestone 2 got. No browser automation tool was
+available in this environment, so the React UI itself (phase transitions,
+checkbox limits, matrix rendering, the architecture reveal flow) still needs
+a manual click-through for both milestones — see the checklists in
+`docs/TESTING.md` before treating them as accepted.

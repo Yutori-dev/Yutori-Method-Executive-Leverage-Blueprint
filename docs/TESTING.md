@@ -175,3 +175,71 @@ Per the milestone split: recommendation engine, primary/secondary
 recommendation, architecture reveal, Blueprint generation, PDF, aggregate
 facilitator analytics, CSV export, Presentation Mode. The Executive Support
 Audit is also excluded — see `docs/CLIENT_QUESTIONS.md` item 5 for why.
+
+---
+
+## Milestone 3 — Recommendation Engine + Blueprint
+
+Mirrors the Milestone 3 acceptance goal (rules engine, PDF generation,
+progressive blueprint functionality).
+
+### What was actually verified live
+
+Same standard as Milestone 2 — run against the real Supabase project with
+real, disposable test participants, not just read from the SQL:
+
+- [x] A clear-majority scenario (2+ Priority Delegation Opportunities
+      sharing a leverage level) produced a non-tied recommendation with the
+      correct primary signal
+- [x] A 1/1/1 split (three distinct leverage levels) produced `is_tied: true`
+      with no primary signal guessed
+- [x] With no rows in `recommendation_rules`, the rationale returned is
+      exactly the brief's specified fallback copy, not an invented result
+- [x] A participant's direct `select` on their own `architecture_recommendations`
+      row returned zero rows before reveal, and the row immediately after an
+      admin called the reveal RPC — confirming the gate lives in RLS, not
+      just in what the page chooses to render
+- [x] A non-admin calling the reveal RPC directly was rejected
+- [x] Recalculating a recommendation after it's been revealed is rejected
+      (protects reveal integrity)
+- [x] An invalid reaction value was rejected; a valid one (`mostly` + a note)
+      was accepted and persisted
+- [x] **Full HTTP-level test through real cookie-based auth** (not just RPC
+      calls): the `/dashboard/[sessionId]/blueprint` page returned 200 with
+      the correct participant name and the fallback rationale visible; the
+      `/api/blueprint/[id]/pdf` route returned a real `application/pdf`
+      response starting with the `%PDF` magic bytes, at a non-trivial size;
+      the owning participant and an admin could both download it; an
+      unrelated participant was denied
+
+- [x] `npm run typecheck` — passes, no errors
+- [x] `npm run lint` — passes, no errors or warnings
+- [x] `npm run build` — production build succeeds against the live project
+
+### What still needs a manual browser click-through
+
+- [ ] Architecture module: "Complete Delegation first" message shows if
+      Priority Delegation Opportunities aren't done yet; "Calculate my
+      Blueprint" button appears once they are; "Your Blueprint is ready"
+      holding screen shows after calculating but before facilitator reveal
+- [ ] As admin, the "Reveal Architecture to Cohort" control only appears
+      once the Architecture module itself is unlocked, requires the inline
+      confirmation step, and after confirming, every participant's holding
+      screen updates to show their actual recommendation
+- [ ] The reaction prompt (Yes / Mostly / Not yet + optional note) appears
+      once revealed, and "Mark module complete" only enables after reacting
+- [ ] The Blueprint page (`/dashboard/[sessionId]/blueprint`) reads cleanly
+      as a single coherent document, not a raw data dump — Character
+      (locked), Operating Altitude answers, the Zone of Investment matrix,
+      Delegation results, and the Architecture section (locked or revealed
+      depending on state)
+- [ ] "Download PDF" produces a file that actually opens and looks
+      reasonably polished, not broken or garbled, in a real PDF viewer
+- [ ] Mobile viewport — the Blueprint page and PDF download link are usable
+
+### Not part of this gate
+
+Per the milestone split: final recommendation copy/decision table, the
+Executive Support Audit, White Whale, Success Vision, aggregate facilitator
+analytics, CSV export, Presentation Mode. See `docs/CLIENT_QUESTIONS.md`
+items 9–11.
