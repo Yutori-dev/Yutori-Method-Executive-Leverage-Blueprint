@@ -33,9 +33,9 @@ export default async function AdminSessionsPage() {
   return (
     <main className="py-16">
       <Container>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="font-serif text-3xl">Sessions</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link
               href="/admin/analytics"
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
@@ -72,15 +72,15 @@ export default async function AdminSessionsPage() {
               const participantCount = countBySessionId.get(session.id) ?? 0;
               return (
                 <Link key={session.id} href={`/admin/sessions/${session.id}`}>
-                  <Card className="flex items-center justify-between transition-colors hover:border-(--color-accent)">
-                    <div>
+                  <Card className="flex flex-col gap-2 transition-colors hover:border-(--color-accent) sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <div className="min-w-0">
                       <p className="font-medium">{session.name}</p>
                       <p className="mt-1 text-sm text-(--color-ink-muted)">
                         {session.organization ? `${session.organization} · ` : ""}
                         Join code: {session.join_code}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
                         {statusLabel[session.status] ?? session.status}
                       </p>

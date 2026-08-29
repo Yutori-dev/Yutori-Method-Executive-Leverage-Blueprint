@@ -91,15 +91,15 @@ export default async function SessionControlPanelPage({
     <main className="py-16">
       <Container>
         <LiveRosterRefresher sessionId={sessionId} />
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-col gap-4">
+          <div className="min-w-0">
             <h1 className="font-serif text-3xl">{session.name}</h1>
-            <p className="mt-1 text-sm text-(--color-ink-muted)">
+            <p className="mt-1 text-sm text-(--color-ink-muted) break-all">
               {session.organization ? `${session.organization} · ` : ""}Join link:{" "}
               <code className="rounded bg-(--color-accent-soft) px-1.5 py-0.5">{joinUrl}</code>
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <Link
               href={`/admin/sessions/${sessionId}/aggregate`}
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
