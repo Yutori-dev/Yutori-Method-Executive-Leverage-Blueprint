@@ -43,33 +43,34 @@ export async function getZoneOfInvestmentData(
 ): Promise<ZoneOfInvestmentData> {
   const supabase = await createServerSupabaseClient();
 
-  let query = supabase
+  let responsibilitiesQuery = supabase
     .from("responsibilities")
     .select("id, label, description, is_placeholder")
     .eq("active", true)
     .order("sort_order", { ascending: true });
-
   if (isProduction) {
-    query = query.eq("is_placeholder", false);
+    responsibilitiesQuery = responsibilitiesQuery.eq("is_placeholder", false);
   }
-
-  const { data: responsibilities } = await query;
-
-  const { data: participantResponsibilities } = await supabase
-    .from("participant_responsibilities")
-    .select("responsibility_id, competency, passion, matrix_cell, macro_zone")
-    .eq("participant_session_id", participantSessionId);
 
   let zoneCellsQuery = supabase
     .from("zone_matrix_cells")
     .select("competency_level, passion_level, cell_name, macro_zone, explanation, is_placeholder")
     .eq("active", true);
-
   if (isProduction) {
     zoneCellsQuery = zoneCellsQuery.eq("is_placeholder", false);
   }
 
-  const { data: zoneCells } = await zoneCellsQuery;
+  // None of these three depend on each other's results, so they run as one
+  // round trip instead of three sequential ones.
+  const [{ data: responsibilities }, { data: participantResponsibilities }, { data: zoneCells }] =
+    await Promise.all([
+      responsibilitiesQuery,
+      supabase
+        .from("participant_responsibilities")
+        .select("responsibility_id, competency, passion, matrix_cell, macro_zone")
+        .eq("participant_session_id", participantSessionId),
+      zoneCellsQuery,
+    ]);
 
   const responsibilityById = new Map((responsibilities ?? []).map((r) => [r.id, r]));
 

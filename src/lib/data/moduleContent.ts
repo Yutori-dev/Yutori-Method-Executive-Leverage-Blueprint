@@ -37,41 +37,34 @@ export async function getDemoAssessmentByKey(
 
   const supabase = await createServerSupabaseClient();
 
-  const { data: assessment } = await supabase
-    .from("assessments")
-    .select("id, name, is_placeholder, active")
-    .eq("key", assessmentKey)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (!assessment || !assessment.is_placeholder) return null;
-
-  const { data: questions } = await supabase
-    .from("questions")
-    .select("id, prompt, type, config, required, sort_order")
-    .eq("assessment_id", assessment.id)
-    .eq("active", true)
-    .order("sort_order", { ascending: true });
-
-  if (!questions) return null;
-
-  const questionIds = questions.map((q) => q.id);
-
-  const [{ data: options }, { data: responses }] = await Promise.all([
+  // Assessment, its questions, and their answer options all come back in a
+  // single request via nested embeds instead of three separate queries.
+  // Only the participant's own responses aren't part of that relationship
+  // tree, so they're a second request -- run in parallel rather than
+  // waiting on the first, since neither depends on the other's result
+  // (filtering to the right question ids happens in JS below instead).
+  const [{ data: assessment }, { data: responses }] = await Promise.all([
     supabase
-      .from("answer_options")
-      .select("id, question_id, label, value, sort_order")
-      .in("question_id", questionIds)
+      .from("assessments")
+      .select(
+        "id, name, is_placeholder, active, questions(id, prompt, type, config, required, sort_order, active, answer_options(id, label, value, sort_order, active))",
+      )
+      .eq("key", assessmentKey)
       .eq("active", true)
-      .order("sort_order", { ascending: true }),
+      .maybeSingle(),
     supabase
       .from("responses")
       .select("question_id, answer")
-      .eq("participant_session_id", participantSessionId)
-      .in("question_id", questionIds),
+      .eq("participant_session_id", participantSessionId),
   ]);
 
+  if (!assessment || !assessment.is_placeholder) return null;
+
   const answerByQuestion = new Map((responses ?? []).map((r) => [r.question_id, r.answer]));
+
+  const questions = (assessment.questions ?? [])
+    .filter((q) => q.active)
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   return {
     assessmentName: assessment.name,
@@ -81,8 +74,9 @@ export async function getDemoAssessmentByKey(
       type: q.type as QuestionType,
       config: (q.config as Record<string, unknown>) ?? {},
       required: q.required,
-      options: (options ?? [])
-        .filter((o) => o.question_id === q.id)
+      options: (q.answer_options ?? [])
+        .filter((o) => o.active)
+        .sort((a, b) => a.sort_order - b.sort_order)
         .map((o) => ({ id: o.id, label: o.label, value: o.value })),
       existingAnswer: answerByQuestion.get(q.id) ?? null,
     })),

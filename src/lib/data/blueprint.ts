@@ -76,24 +76,15 @@ export async function getBlueprintData(
       return { prompt: q.prompt, answer };
     });
 
-  let priorityOpportunities: BlueprintDelegationOpportunity[] = delegationCandidates.currentSelections.map((s) => ({
+  // leverage_level_snapshot is already in delegationCandidates.currentSelections
+  // (getDelegationCandidates fetches it unconditionally, it's cheap) -- no
+  // separate query needed, just decide here whether to expose it, same as
+  // everywhere else this classification appears.
+  const priorityOpportunities: BlueprintDelegationOpportunity[] = delegationCandidates.currentSelections.map((s) => ({
     label: s.label,
     selectionOrder: s.selectionOrder,
-    leverageLevel: null,
+    leverageLevel: session.architecture_revealed ? s.leverageLevelSnapshot : null,
   }));
-
-  if (session.architecture_revealed && priorityOpportunities.length > 0) {
-    const { data: withLevels } = await supabase
-      .from("priority_delegation_opportunities")
-      .select("responsibility_id, leverage_level_snapshot")
-      .eq("participant_session_id", participantSessionId);
-    const levelByResponsibilityId = new Map((withLevels ?? []).map((w) => [w.responsibility_id, w.leverage_level_snapshot]));
-    priorityOpportunities = delegationCandidates.currentSelections.map((s) => ({
-      label: s.label,
-      selectionOrder: s.selectionOrder,
-      leverageLevel: (levelByResponsibilityId.get(s.responsibilityId) as LeverageLevel | undefined) ?? null,
-    }));
-  }
 
   return {
     session: { name: session.name, organization: session.organization },

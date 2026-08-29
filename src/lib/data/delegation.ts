@@ -1,5 +1,6 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { LeverageLevel } from "@/types/database";
 
 export interface EligibleCandidate {
   responsibilityId: string;
@@ -11,6 +12,11 @@ export interface PrioritySelection {
   responsibilityId: string;
   label: string;
   selectionOrder: number;
+  /** Fetched unconditionally (it's cheap, already in this row) but only
+   * meant to be shown once architecture has been revealed for the
+   * session -- callers decide whether to expose it, same as everywhere
+   * else this classification appears. */
+  leverageLevelSnapshot: LeverageLevel;
 }
 
 export interface DelegationReadinessResult {
@@ -33,58 +39,44 @@ export async function getDelegationCandidates(
 ): Promise<DelegationCandidatesData> {
   const supabase = await createServerSupabaseClient();
 
-  const { data: delegationAssessment } = await supabase
-    .from("assessments")
-    .select("id")
-    .eq("key", "dev_demo_delegation_beliefs")
-    .eq("active", true)
-    .maybeSingle();
-
+  // All three queries run as one round trip. responsibilities(label) is
+  // embedded directly instead of resolved through a separate batch lookup,
+  // and the assessment_results query joins to assessments via an
+  // inner-join filter instead of needing a separate lookup first to find
+  // the Delegation Beliefs assessment's id.
   const [{ data: rated }, { data: priorities }, { data: result }] = await Promise.all([
     supabase
       .from("participant_responsibilities")
-      .select("responsibility_id, matrix_cell, macro_zone")
+      .select("responsibility_id, matrix_cell, macro_zone, responsibilities(label)")
       .eq("participant_session_id", participantSessionId)
       .in("macro_zone", ["ambiguity", "vulnerability"]),
     supabase
       .from("priority_delegation_opportunities")
-      .select("responsibility_id, selection_order")
+      .select("responsibility_id, selection_order, leverage_level_snapshot, responsibilities(label)")
       .eq("participant_session_id", participantSessionId)
       .order("selection_order", { ascending: true }),
-    delegationAssessment
-      ? supabase
-          .from("assessment_results")
-          .select("overall_result, interpretation, dimension_scores")
-          .eq("participant_session_id", participantSessionId)
-          .eq("assessment_id", delegationAssessment.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+    supabase
+      .from("assessment_results")
+      .select("overall_result, interpretation, dimension_scores, assessments!inner(key)")
+      .eq("participant_session_id", participantSessionId)
+      .eq("assessments.key", "dev_demo_delegation_beliefs")
+      .maybeSingle(),
   ]);
 
-  const responsibilityIds = [
-    ...new Set([
-      ...(rated ?? []).map((r) => r.responsibility_id),
-      ...(priorities ?? []).map((p) => p.responsibility_id),
-    ]),
-  ];
-
-  const { data: responsibilities } =
-    responsibilityIds.length > 0
-      ? await supabase.from("responsibilities").select("id, label").in("id", responsibilityIds)
-      : { data: [] };
-
-  const labelById = new Map((responsibilities ?? []).map((r) => [r.id, r.label]));
+  const labelOf = (row: { responsibilities: unknown }) =>
+    (row.responsibilities as { label: string } | null)?.label ?? "[Removed responsibility]";
 
   return {
     eligible: (rated ?? []).map((r) => ({
       responsibilityId: r.responsibility_id,
-      label: labelById.get(r.responsibility_id) ?? "[Removed responsibility]",
+      label: labelOf(r),
       matrixCell: r.matrix_cell,
     })),
     currentSelections: (priorities ?? []).map((p) => ({
       responsibilityId: p.responsibility_id,
-      label: labelById.get(p.responsibility_id) ?? "[Removed responsibility]",
+      label: labelOf(p),
       selectionOrder: p.selection_order,
+      leverageLevelSnapshot: p.leverage_level_snapshot as LeverageLevel,
     })),
     readinessResult: result
       ? {
