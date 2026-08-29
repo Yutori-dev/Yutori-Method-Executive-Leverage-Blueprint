@@ -147,7 +147,7 @@ export function ZoneOfInvestmentFlow({
   if (!data.revealed) {
     return (
       <div className="space-y-4">
-        <HoldingState />
+        <HoldingState sessionPath={sessionPath} />
         <button
           onClick={() => setPhase("mapping")}
           className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"

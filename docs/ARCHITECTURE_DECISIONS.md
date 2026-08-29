@@ -556,3 +556,70 @@ The logic itself (find-or-create the auth user by email, then upsert
 in sync rather than duplicated with drift — the script still exists for
 bootstrapping the very first admin on a brand-new project, where no admin
 exists yet to use the in-app screen.
+
+## Bug found live: magic-link emails pointed to localhost on the deployed site
+
+Root cause was entirely a Supabase project setting, not app code —
+confirmed by reading every `signInWithOtp` call (`JoinForm.tsx`,
+`AdminLoginForm.tsx`): both already compute `emailRedirectTo` from
+`window.location.origin` at request time, which correctly resolves to the
+live Vercel origin when a user submits the form there. The Supabase
+project's Auth `site_url` was still `http://localhost:3000` from local
+development, and its `additional_redirect_urls` allow-list didn't include
+the live domain — when a requested `emailRedirectTo` doesn't match the
+allow-list, Supabase silently falls back to `site_url` instead of erroring,
+which is exactly what made this look like the app was hardcoding
+localhost when it wasn't. Fixed via `supabase/config.toml`'s `[auth]`
+section (`site_url` now the production URL, the allow-list covers both
+production and local dev) and `supabase config push` — a project setting
+now tracked in version control instead of only living in the dashboard,
+so it can't silently drift out of sync with what's actually deployed
+again. Verified live by generating a real magic link and confirming its
+embedded `redirect_to` is the production URL.
+
+One thing worth remembering: `supabase config push` syncs the *entire*
+local `[auth]` block, not just the fields that changed. The first push
+also reset several unrelated settings (email confirmation requirement,
+per-email send frequency, OTP length, MFA) to `config.toml`'s local-dev
+defaults, because those happened to differ from what was already live.
+Caught immediately by re-reading the diff `config push` printed, and fixed
+with a second push restoring the previously-live values for anything not
+intentionally being changed. Worth a full diff review any time this
+command is used again, not just checking that the field you meant to
+change looks right.
+
+## Dual-role accounts and "no one should feel stuck": a persistent participant-side layout
+
+Two related gaps, fixed together with one addition. First: nothing in the
+schema stops one email from having both an `admin_users` row and a
+`participants` row (they're both keyed off `auth.users(id)` independently,
+no exclusion constraint) — a real admin testing the app as a participant
+is a real, expected scenario, not an edge case. Second: the participant
+side of the app had no shared layout at all (`src/app/dashboard/[sessionId]/layout.tsx`
+didn't exist), unlike the admin side's persistent header
+(`src/app/admin/layout.tsx`) — meaning a participant deep inside a module,
+or on a holding screen, had no way back except browser back.
+
+`src/app/dashboard/[sessionId]/layout.tsx` (new) solves both: a persistent
+header wrapping every session-scoped participant page (dashboard, Module 0,
+modules, Blueprint) with a wordmark link back to the dashboard and, when
+that account also has an `admin_users` row, a "Switch to admin view" link.
+The admin layout gained the reverse: "View as participant" when the
+signed-in admin also has a `participants` row. Neither check is expensive
+(a single `maybeSingle()` each) and neither implies any privilege change —
+it's purely a navigation convenience for an account that already legitimately
+holds both roles; RLS and the proxy's route gating are unaffected and still
+independently enforce what each route actually requires.
+
+`HoldingState` (shared across the dashboard's own CONTINUE card, White
+Whale, Leadership Wiring, and the Zone of Investment reveal) gained an
+explicit "← Back to dashboard" link, and `OperatingAltitudeFlow`'s three
+internal phases (Diagnostic → White Whale → Leadership Wiring), previously
+strictly forward-only, gained "review" links to step back. That surfaced a
+real bug while testing: the Diagnostic phase's own forward transition only
+ever fires automatically, the first time a result is calculated
+(`onResultChange`) — revisiting it via the new back-link left no way
+forward again, since the calculate button disappears once a result
+already exists. Fixed with an explicit CONTINUE button shown whenever the
+phase is revisited with a result already in hand, not just on first
+completion.

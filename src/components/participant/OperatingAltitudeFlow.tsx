@@ -94,26 +94,40 @@ export function OperatingAltitudeFlow({
 
   if (phase === "diagnostic") {
     return (
-      <ExecutiveLeverageDiagnosticFlow
-        assessment={diagnosticAssessment}
-        result={result}
-        participantSessionId={participantSessionId}
-        moduleId={moduleId}
-        sessionPath={sessionPath}
-        alreadyComplete={alreadyComplete}
-        onResultChange={(next) => {
-          setResult(next);
-          if (next) setPhase("white_whale");
-        }}
-      />
+      <div className="space-y-6">
+        <ExecutiveLeverageDiagnosticFlow
+          assessment={diagnosticAssessment}
+          result={result}
+          participantSessionId={participantSessionId}
+          moduleId={moduleId}
+          sessionPath={sessionPath}
+          alreadyComplete={alreadyComplete}
+          onResultChange={(next) => {
+            setResult(next);
+            if (next) setPhase("white_whale");
+          }}
+        />
+        {/* Revisiting via the White Whale phase's "review" link lands here
+         * with a result already set -- ExecutiveLeverageDiagnosticFlow only
+         * advances the phase automatically the first time a result is
+         * calculated, so a manual way forward is needed on every later visit. */}
+        {result ? <Button onClick={() => setPhase("white_whale")}>CONTINUE</Button> : null}
+      </div>
     );
   }
 
   if (phase === "white_whale") {
-    if (!data.whiteWhaleUnlocked) return <HoldingState />;
+    if (!data.whiteWhaleUnlocked) return <HoldingState sessionPath={sessionPath} />;
 
     return (
       <div className="space-y-6">
+        <button
+          type="button"
+          onClick={() => setPhase("diagnostic")}
+          className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+        >
+          ← Review my Executive Leverage Profile
+        </button>
         <Card>
           <h2 className="font-serif text-xl">{data.whiteWhaleConfig.header}</h2>
           <p className="mt-3 text-sm text-(--color-ink-muted)">{data.whiteWhaleConfig.setupCopy}</p>
@@ -143,12 +157,19 @@ export function OperatingAltitudeFlow({
     );
   }
 
-  if (!data.leadershipWiringUnlocked) return <HoldingState />;
+  if (!data.leadershipWiringUnlocked) return <HoldingState sessionPath={sessionPath} />;
 
   const canComplete = selfId !== null;
 
   return (
     <div className="space-y-6">
+      <button
+        type="button"
+        onClick={() => setPhase("white_whale")}
+        className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+      >
+        ← Review my White Whale
+      </button>
       <Card>
         <h2 className="font-serif text-xl">{data.leadershipWiringConfig.header}</h2>
         <p className="mt-3 text-sm text-(--color-ink)">{data.leadershipWiringConfig.prompt}</p>
