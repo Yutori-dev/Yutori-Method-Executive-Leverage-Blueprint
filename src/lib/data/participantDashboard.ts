@@ -60,7 +60,7 @@ export async function getParticipantDashboard(
   const cohortActiveModuleSortOrder = activeModule ? activeModule.sort_order : null;
 
   const progressByModuleId = new Map<string, ModuleStatus>(
-    (progressRows ?? []).map((row) => [row.module_id, row.status]),
+    (progressRows ?? []).map((row) => [row.module_id, row.status as ModuleStatus]),
   );
 
   const dashboardModules: DashboardModule[] = modules.map((module) => ({

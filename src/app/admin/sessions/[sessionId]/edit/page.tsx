@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { SessionForm } from "@/components/admin/SessionForm";
+import type { SessionFormat } from "@/types/database";
 
 export default async function EditSessionPage({
   params,
@@ -33,7 +34,7 @@ export default async function EditSessionPage({
                 name: session.name,
                 organization: session.organization ?? "",
                 eventDate: session.event_date ?? "",
-                format: session.format,
+                format: session.format as SessionFormat,
               }}
             />
           </Card>

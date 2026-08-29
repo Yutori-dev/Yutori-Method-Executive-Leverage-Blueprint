@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/database";
 
 /**
  * All of these run as the signed-in participant (server client uses their
@@ -91,7 +92,7 @@ export async function markModuleComplete(params: {
 export async function saveResponse(params: {
   participantSessionId: string;
   questionId: string;
-  answer: unknown;
+  answer: Json;
 }) {
   const supabase = await createServerSupabaseClient();
 

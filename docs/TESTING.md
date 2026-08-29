@@ -1,14 +1,11 @@
-# Milestone 1 acceptance gate
+# Acceptance gates
 
-Mirrors task instructions section 16. **Status: not yet run against a live
-environment** — this workspace had no Docker available, so the Supabase
-local dev stack (`supabase start`) couldn't run, and there was no existing
-Supabase project to point at instead. `tsc --noEmit`, `eslint`, and
-`next build` all pass (see below), which confirms the code compiles and is
-internally consistent — it does not confirm these flows behave correctly
-against a real database. Please run through this checklist against a real
-Supabase project (the free tier is enough) before treating Milestone 1 as
-accepted; each row is written so it can be checked off directly.
+## Milestone 1 — accepted
+
+Mirrors task instructions section 16. The app is now connected to a live
+Supabase project (`Yutori-dev's Project`) with all migrations and dev seed
+data applied; `docs/CLIENT_QUESTIONS.md` and the delivery message cover
+what shipped. Checklist below kept for reference.
 
 ## Static checks (done)
 
@@ -84,11 +81,97 @@ accepted; each row is written so it can be checked off directly.
 - [ ] Confirm no service-role key or other secret appears in browser
       devtools → Network/Sources for any page
 
-## Not part of this gate
+## Not part of the Milestone 1 gate
 
-Per the milestone split, these are intentionally out of scope and should
-*not* block Milestone 1 sign-off: real diagnostic content/scoring, Zone of
-Investment logic, Delegation Beliefs scoring, Executive Support Audit,
-recommendation engine, architecture reveal, Blueprint PDF, aggregate
-analytics, CSV export, Presentation Mode, 75-concurrent-user load testing
-(brief section 25/29 — that's explicitly a Milestone 4 deliverable).
+Per the milestone split, these were intentionally out of scope for
+Milestone 1 and should not have blocked its sign-off: real diagnostic
+content/scoring, Zone of Investment logic, Delegation Beliefs scoring,
+Executive Support Audit, recommendation engine, architecture reveal,
+Blueprint PDF, aggregate analytics, CSV export, Presentation Mode,
+75-concurrent-user load testing (brief section 25/29 — that's explicitly a
+Milestone 4 deliverable).
+
+---
+
+## Milestone 2 — Zone of Investment + Delegation/Leverage
+
+Mirrors the Milestone 2 acceptance goal and section 23 test list.
+
+### What was actually verified live (not just read from the SQL)
+
+Unlike a purely-static check, this was run against the real Supabase
+project with a real test participant (created via the Auth admin API,
+authenticated with a real access token, cleaned up afterward) exercising
+every RPC directly — the same way a participant's browser would, and the
+same way someone could if they bypassed the UI and called the API
+directly. All of the following passed:
+
+- [x] 9 responsibilities rejected, 13 rejected, 10 accepted
+- [x] All 10 competency/passion ratings computed the correct matrix cell and
+      macro zone for every cell exercised, matching the seeded configuration
+- [x] Resulting zone distribution correctly split across all three macro
+      zones (not just Zone of Investment)
+- [x] 2 priority opportunities rejected
+- [x] Selecting a Zone-of-Investment (ineligible) responsibility as a
+      priority opportunity rejected
+- [x] Exactly 3 eligible opportunities accepted, `selection_order` correctly
+      1/2/3, `leverage_level_snapshot` populated on every row
+- [x] A direct table `UPDATE` of `matrix_cell` using the participant's own
+      access token — bypassing the Next.js app entirely — was blocked (0
+      rows affected), confirming RLS has no write policy for that column
+- [x] `calculate_delegation_readiness` aggregated real answers into
+      per-dimension scores, and — with no scoring rules configured —
+      correctly returned `overall_result: null` with the labeled fallback
+      interpretation rather than an invented result
+- [x] Calling `select_responsibilities` against a session where the Current
+      Structure module was not cohort-unlocked was rejected
+
+- [x] `npm run typecheck` — passes, no errors
+- [x] `npm run lint` — passes, no errors or warnings
+- [x] `npm run build` — production build succeeds against the live project
+
+### What still needs a manual browser click-through
+
+The above proves the RPC/security layer is correct. It does not exercise
+the React UI itself (phase transitions, checkbox limits, matrix rendering).
+No browser-automation tool was available in this environment, so please
+run through this in an actual browser before treating Milestone 2 as
+accepted:
+
+- [ ] Current Structure: select fewer than 10 — Continue stays disabled;
+      select 12 — the 13th checkbox becomes unselectable; select 10–12 —
+      Continue enables and shows "X of 10–12 selected"
+- [ ] Rate every selected responsibility for competency and passion —
+      "View my Zone of Investment" only enables once all are rated
+- [ ] Change a rating after seeing the matrix (use "Revise ratings") —
+      placement updates correctly
+- [ ] The completed matrix shows every selected responsibility in a
+      plausible cell with a visible macro-zone legend
+- [ ] Mark Current Structure complete — dashboard reflects it
+- [ ] Delegation: answer the placeholder Delegation Beliefs questions —
+      required-question gating matches Milestone 1's Operating Altitude
+      behavior
+- [ ] "See my Delegation Readiness" reveals the `[YUTORI CONTENT PENDING]`
+      fallback result, not a blank or broken state
+- [ ] Priority Delegation Opportunities only lists responsibilities rated
+      outside Zone of Investment; selecting a 4th is prevented; fewer than
+      3 eligible candidates shows the "revisit Current Structure" message
+      instead of a broken picker
+- [ ] Mark Delegation complete only becomes available once beliefs
+      required questions are answered, a readiness result exists, and
+      exactly 3 priorities are saved
+- [ ] Refresh mid-flow at each stage (mid-selection, mid-rating, after the
+      matrix, mid-assessment, after priority selection) — state restores
+      correctly every time
+- [ ] Log out and back in after finishing both modules — everything is
+      still there
+- [ ] Mobile viewport — the matrix scrolls horizontally inside its own
+      container rather than breaking the page layout; responsibility
+      checkboxes and rating pickers are comfortably tappable
+
+### Not part of this gate
+
+Per the milestone split: recommendation engine, primary/secondary
+recommendation, architecture reveal, Blueprint generation, PDF, aggregate
+facilitator analytics, CSV export, Presentation Mode. The Executive Support
+Audit is also excluded — see `docs/CLIENT_QUESTIONS.md` item 5 for why.

@@ -1,8 +1,74 @@
-# Architecture decisions — Milestone 1
+# Architecture decisions
 
 Choices made where the brief left room for engineering judgment, and the
 reasoning, so later milestones (and reviewers) don't have to reverse-engineer
 intent from the code.
+
+## Milestone 2 addendum: derived values are never trusted from the client
+
+Milestone 2 introduced a stricter security posture than Milestone 1's plain
+RLS-scoped table writes, because the Milestone 2 brief was explicit that
+matrix cell, macro zone, leverage level, and scoring results must never be
+trusted from the client (task instructions section 21) -- and Supabase's
+PostgREST API is directly reachable by anyone holding a participant's access
+token, regardless of what the Next.js app renders. A determined participant
+could otherwise `PATCH` their own `participant_responsibilities` row directly
+and set `matrix_cell`/`macro_zone` to whatever they wanted, bypassing the
+Next.js server actions entirely.
+
+So `participant_responsibilities`, `priority_delegation_opportunities`, and
+`assessment_results` have **no participant insert/update/delete RLS policy
+at all** -- only `select`. Every write happens through a `SECURITY DEFINER`
+Postgres function (`select_responsibilities`, `rate_responsibility`,
+`select_priority_delegation_opportunities`, `calculate_delegation_readiness`
+in `supabase/migrations/20260830000002_zone_and_delegation_functions.sql`)
+that:
+
+1. re-derives ownership from `auth.uid()`, never trusting a caller-supplied
+   participant id;
+2. re-checks the relevant module is actually cohort-unlocked
+   (`is_module_unlocked_for_session`), so the RPC can't be called ahead of
+   what the UI would allow;
+3. computes `matrix_cell`/`macro_zone` from the `zone_matrix_cells`
+   configuration table and `leverage_level_snapshot` from the live
+   `responsibilities` row -- both server-side, both ignoring anything the
+   client sent for those fields (because the client never sends them at all;
+   the RPC signatures don't accept them as parameters).
+
+This was verified against the live database with a real test participant
+(not just read from the SQL): 9/13/etc. invalid selection counts rejected,
+an ineligible (Zone of Investment) responsibility rejected from Priority
+Delegation selection, a direct `UPDATE` of `matrix_cell` via the
+participant's own token blocked by RLS, and calling a write RPC before the
+relevant module was cohort-unlocked rejected. See the acceptance gate in
+`docs/TESTING.md`.
+
+## Milestone 2 addendum: scoring is a controlled fallback, not an invented result
+
+`assessment_scoring_rules` exists as a real, versioned table (threshold →
+result label → interpretation) but ships **empty** in every environment,
+including dev seed data. `calculate_delegation_readiness()` still does real
+work -- it aggregates raw responses into per-dimension sums using each
+question's `config->>'dimension'` tag -- but when no matching row exists in
+`assessment_scoring_rules` (guaranteed true today), `overall_result` is
+written as `null` and `interpretation` is a labeled fallback string, never
+an invented score. This is a deliberate reading of task instructions
+section 22 ("do not invent a result... provide a controlled fallback
+state"): the storage shape and the aggregation mechanism are real and
+already exercised end-to-end; only the actual Yutori-approved thresholds are
+missing, and dropping rows into `assessment_scoring_rules` is all a later
+milestone needs to do to light up real results -- no code change.
+
+## Milestone 2 addendum: the placeholder Zone of Investment mapping is explicitly not real
+
+The 9-cell competency × passion → macro-zone assignment seeded for
+development (`docs/CLIENT_QUESTIONS.md` item 7) was invented purely to make
+the selection → rating → matrix → eligibility pipeline testable end to end.
+It is a plausible-looking skill/will-style mapping (high+high = "Sweet
+Spot" → Zone of Investment, low+low = "Clear Delegate" → Zone of
+Vulnerability, etc.) chosen only so automated and manual testing would
+exercise a realistic distribution across all three macro zones. It carries
+no methodological authority and must be replaced wholesale, not adjusted.
 
 ## Module state = cohort gate × per-participant progress
 

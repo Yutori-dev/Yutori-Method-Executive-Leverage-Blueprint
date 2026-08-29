@@ -7,6 +7,7 @@ import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import type { ModuleDisplayState } from "@/lib/moduleState";
+import type { SessionStatus } from "@/types/database";
 
 export default async function SessionControlPanelPage({
   params,
@@ -77,7 +78,7 @@ export default async function SessionControlPanelPage({
             >
               Edit
             </Link>
-            <SessionStatusSelect sessionId={sessionId} status={session.status} />
+            <SessionStatusSelect sessionId={sessionId} status={session.status as SessionStatus} />
           </div>
         </div>
 

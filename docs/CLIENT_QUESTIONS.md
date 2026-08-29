@@ -46,6 +46,46 @@ CEO/EA Case (I), Observational Homework (J), Brand Assets (K). Milestone 1
 ships clearly labeled `[YUTORI CONTENT PENDING]` placeholders everywhere
 these belong.
 
+## Milestone 2 scope boundary (please confirm)
+
+5. **Executive Support Audit and the leverage-mapping reveal are not in
+   Milestone 2.** The Milestone 2 brief you sent lists "responsibility
+   selection, matrix, beliefs assessment, and priority opportunities" —
+   it doesn't mention the Executive Support Audit or Activity 4B's mapping
+   reveal. Those live in the brief's Module 4 and feed directly into the
+   recommendation engine, which the pricing breakdown puts under Milestone 3
+   ("Recommendation Engine + Blueprint"). We built Milestone 2 as: responsibility
+   selection → competency/passion rating → the nine-box matrix → Delegation
+   Beliefs assessment → Priority Delegation Opportunity selection, with the
+   leverage classification captured and stored (hidden) but never shown to
+   the participant. If you actually want the Executive Support Audit pulled
+   forward into this milestone, say so before Milestone 3 starts.
+
+## Milestone 2 content dependencies — not blocking, will block Milestone 3
+
+6. **Final Responsibility Library (content dependency B).** We seeded 20
+   development-placeholder responsibilities (clearly labeled `[PENDING]`)
+   spread across all four leverage classifications so the selection/rating
+   mechanism is testable. These are not real Yutori content and must be
+   replaced wholesale — the `responsibilities` table is versioned so
+   swapping them in is a data change, not a code change.
+
+7. **Final 9-cell Zone of Investment mapping and terminology (content
+   dependency C).** We invented a placeholder cell-to-macro-zone assignment
+   (documented in `docs/ARCHITECTURE_DECISIONS.md`) purely to make the
+   matrix/eligibility mechanism demonstrable end to end. This is explicitly
+   **not** Yutori's approved methodology — every cell name and the mapping
+   itself needs your final version before this module can go live for a
+   real participant.
+
+8. **Final Delegation Beliefs questions and scoring (content dependency
+   D).** We built a placeholder 2-dimension assessment (Trust, Control) and
+   a scoring-rules table that's intentionally left empty, so the "Delegation
+   Readiness" result currently always shows a labeled fallback message
+   rather than an interpreted score. Once you supply real questions,
+   dimensions, and thresholds, they go into that table — no code change
+   needed to light up real scoring.
+
 ## Legal (brief section 26) — not blocking Milestone 1, must resolve before real participant data is collected
 
 Privacy policy, retention term, deletion policy, research consent, Terms of

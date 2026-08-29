@@ -19,29 +19,28 @@ export interface DemoAssessment {
 }
 
 /**
- * The only module wired to the configurable activity engine in Milestone 1
- * -- it exists to demonstrate the engine and the autosave/persistence
- * pattern end to end (task instructions sections 11/14), not as real Yutori
- * content. Every other module renders GenericPlaceholderModule instead.
+ * Loads a placeholder assessment by key for autosave-driven rendering.
+ * Hard-guarded against production regardless of caller: a placeholder
+ * assessment must never reach a real participant even if seed data somehow
+ * ended up there (task instructions section 14).
  *
- * Hard-guarded against production: a placeholder assessment must never
- * reach a real participant even if seed data somehow ended up there.
+ * Used by both the Operating Altitude demo (Milestone 1) and the
+ * Delegation Beliefs demo (Milestone 2) -- the assessment key, not the
+ * module, decides what renders, matching the decoupled activity-engine
+ * design from Milestone 1 (docs/ARCHITECTURE_DECISIONS.md).
  */
-const DEMO_MODULE_KEY = "operating_altitude";
-const DEMO_ASSESSMENT_KEY = "dev_demo_operating_altitude";
-
-export async function getDemoAssessment(
-  moduleKey: string,
+export async function getDemoAssessmentByKey(
+  assessmentKey: string,
   participantSessionId: string,
 ): Promise<DemoAssessment | null> {
-  if (isProduction || moduleKey !== DEMO_MODULE_KEY) return null;
+  if (isProduction) return null;
 
   const supabase = await createServerSupabaseClient();
 
   const { data: assessment } = await supabase
     .from("assessments")
     .select("id, name, is_placeholder, active")
-    .eq("key", DEMO_ASSESSMENT_KEY)
+    .eq("key", assessmentKey)
     .eq("active", true)
     .maybeSingle();
 
@@ -79,7 +78,7 @@ export async function getDemoAssessment(
     questions: questions.map((q) => ({
       id: q.id,
       prompt: q.prompt,
-      type: q.type,
+      type: q.type as QuestionType,
       config: (q.config as Record<string, unknown>) ?? {},
       required: q.required,
       options: (options ?? [])
@@ -88,4 +87,24 @@ export async function getDemoAssessment(
       existingAnswer: answerByQuestion.get(q.id) ?? null,
     })),
   };
+}
+
+const MODULE_ASSESSMENT_KEYS: Record<string, string> = {
+  operating_altitude: "dev_demo_operating_altitude",
+};
+
+/**
+ * Convenience wrapper for the simple case of "this module has exactly one
+ * demo assessment" (Operating Altitude). The Delegation module (Milestone 2)
+ * calls getDemoAssessmentByKey("dev_demo_delegation_beliefs", ...) directly
+ * alongside the Zone of Investment data instead of going through this
+ * module-key lookup, since it's composed with other sections on the page.
+ */
+export async function getDemoAssessment(
+  moduleKey: string,
+  participantSessionId: string,
+): Promise<DemoAssessment | null> {
+  const assessmentKey = MODULE_ASSESSMENT_KEYS[moduleKey];
+  if (!assessmentKey) return null;
+  return getDemoAssessmentByKey(assessmentKey, participantSessionId);
 }

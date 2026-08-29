@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveResponse, markModuleComplete } from "@/lib/actions/participant";
 import type { DemoAssessment } from "@/lib/data/moduleContent";
+import type { Json } from "@/types/database";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -17,6 +18,8 @@ export function AssessmentForm({
   moduleKey,
   sessionPath,
   alreadyComplete,
+  hideCompleteButton = false,
+  onRequiredAnsweredChange,
 }: {
   assessment: DemoAssessment;
   participantSessionId: string;
@@ -24,9 +27,14 @@ export function AssessmentForm({
   moduleKey: string;
   sessionPath: string;
   alreadyComplete: boolean;
+  /** When embedded inside a larger multi-part module flow (e.g. Delegation
+   * in Milestone 2), the parent owns the "mark module complete" action and
+   * just wants to know when required questions are answered. */
+  hideCompleteButton?: boolean;
+  onRequiredAnsweredChange?: (allAnswered: boolean) => void;
 }) {
-  const [answers, setAnswers] = useState<Record<string, unknown>>(() =>
-    Object.fromEntries(assessment.questions.map((q) => [q.id, q.existingAnswer])),
+  const [answers, setAnswers] = useState<Record<string, Json>>(() =>
+    Object.fromEntries(assessment.questions.map((q) => [q.id, q.existingAnswer as Json])),
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [isCompleting, startCompleting] = useTransition();
@@ -34,7 +42,7 @@ export function AssessmentForm({
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const persist = useCallback(
-    async (questionId: string, answer: unknown) => {
+    async (questionId: string, answer: Json) => {
       setSaveState("saving");
       const result = await saveResponse({ participantSessionId, questionId, answer });
       setSaveState(result.ok ? "saved" : "error");
@@ -43,7 +51,7 @@ export function AssessmentForm({
   );
 
   const setAnswer = useCallback(
-    (questionId: string, answer: unknown, debounceMs: number) => {
+    (questionId: string, answer: Json, debounceMs: number) => {
       setAnswers((prev) => ({ ...prev, [questionId]: answer }));
 
       if (debounceTimers.current[questionId]) {
@@ -66,6 +74,11 @@ export function AssessmentForm({
   const requiredComplete = assessment.questions
     .filter((q) => q.required)
     .every((q) => answers[q.id] !== null && answers[q.id] !== undefined && answers[q.id] !== "");
+
+  useEffect(() => {
+    onRequiredAnsweredChange?.(requiredComplete);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requiredComplete]);
 
   function handleComplete() {
     startCompleting(async () => {
@@ -138,9 +151,11 @@ export function AssessmentForm({
       ))}
 
       <div className="flex items-center gap-4">
-        <Button onClick={handleComplete} disabled={!requiredComplete || isCompleting || alreadyComplete}>
-          {alreadyComplete ? "Module complete" : isCompleting ? "Saving..." : "Mark module complete"}
-        </Button>
+        {!hideCompleteButton ? (
+          <Button onClick={handleComplete} disabled={!requiredComplete || isCompleting || alreadyComplete}>
+            {alreadyComplete ? "Module complete" : isCompleting ? "Saving..." : "Mark module complete"}
+          </Button>
+        ) : null}
         <SaveIndicator state={saveState} />
       </div>
     </div>

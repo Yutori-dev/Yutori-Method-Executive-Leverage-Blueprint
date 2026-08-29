@@ -1,6 +1,8 @@
 # Yutori Method™ Executive Leverage Blueprint
 
-Milestone 1: Foundation + Configurable Activity Engine.
+Milestone 1 (Foundation + Configurable Activity Engine) and Milestone 2
+(Zone of Investment + Delegation/Leverage) are implemented and connected to
+a live Supabase project.
 
 This README covers what's implemented, how to run it, and what's explicitly
 deferred to later milestones. See also:
@@ -9,8 +11,8 @@ deferred to later milestones. See also:
   Yutori Method, consolidated for the shared Google Doc.
 - [`docs/ARCHITECTURE_DECISIONS.md`](docs/ARCHITECTURE_DECISIONS.md) — choices
   made where the brief left room for engineering judgment, and why.
-- [`docs/TESTING.md`](docs/TESTING.md) — the Milestone 1 acceptance gate and
-  what has/hasn't been run against a live environment yet.
+- [`docs/TESTING.md`](docs/TESTING.md) — acceptance gates for both milestones
+  and what has/hasn't been run against a live environment.
 
 ## Stack
 
@@ -18,7 +20,9 @@ deferred to later milestones. See also:
 - **Supabase** — Postgres, Auth (passwordless magic link), Row Level Security
 - Deploys to Vercel; no separate servers, queues, or Redis
 
-## What's built (Milestone 1)
+## What's built
+
+**Milestone 1 — Foundation:**
 
 - Database foundation: `participants`, `sessions`, `participant_sessions`,
   `modules`, `participant_module_progress`, plus the configurable activity
@@ -29,21 +33,37 @@ deferred to later milestones. See also:
 - Participant dashboard showing the 7-module journey with
   LOCKED / OPEN / IN PROGRESS / COMPLETE state (Character stays locked until
   the live workshop, per the brief)
-- One module (Operating Altitude) wired to the configurable activity engine
-  with a placeholder assessment, demonstrating autosave end to end
 - Admin: magic-link sign-in gated by an allowlist, session create/edit,
   cohort-wide "unlock next module" with confirmation, participant roster
   with progress
 - Row Level Security on every table; no service-role key in client code
-- Dev-only seed data, clearly labeled and excluded from production by design
+
+**Milestone 2 — Zone of Investment + Delegation/Leverage:**
+
+- Responsibility Library (20 dev-placeholder responsibilities, versioned,
+  hidden leverage classification never exposed to participant queries)
+- Responsibility selection (10–12, enforced server-side), competency +
+  passion rating, and the 3×3 matrix → macro zone calculation — all driven
+  by a configurable `zone_matrix_cells` table, not hardcoded
+- Delegation Beliefs assessment reusing the Milestone 1 activity engine,
+  plus a `assessment_results` scoring layer that computes real per-dimension
+  aggregates but returns a controlled fallback (not an invented score) since
+  no real scoring thresholds are configured yet
+- Priority Delegation Opportunity selection (exactly 3, from responsibilities
+  outside Zone of Investment only), with a leverage-level snapshot captured
+  for future recommendation-engine use
+- **Every derived value (matrix cell, macro zone, leverage snapshot, scoring
+  result) is computed by `SECURITY DEFINER` Postgres functions, never
+  trusted from the client** — verified live against the real database,
+  including confirming a direct API write attempting to fake a matrix cell
+  is rejected by RLS. See `docs/ARCHITECTURE_DECISIONS.md`.
 
 ## What's deliberately not built yet
 
-Per the brief's Content Dependency Register and the Milestone 2-4 split:
-final assessment content and scoring, Zone of Investment logic, Delegation
-Beliefs scoring, Executive Support Audit, the recommendation engine,
-architecture reveal, Blueprint PDF, aggregate analytics, CSV export,
-Presentation Mode. The schema and module-state model are built so these can
+Per the brief's Content Dependency Register and the Milestone 3-4 split:
+final assessment/matrix content, the Executive Support Audit, the
+recommendation engine, architecture reveal, Blueprint PDF, aggregate
+analytics, CSV export, Presentation Mode. The schema is built so these can
 be added without restructuring what's here — see
 `docs/ARCHITECTURE_DECISIONS.md`.
 
@@ -55,8 +75,9 @@ be added without restructuring what's here — see
    npm install
    ```
 
-2. **Create a Supabase project** (free tier is fine for development) at
-   [supabase.com](https://supabase.com).
+2. **Get the Supabase project credentials** (ask for `.env.local` values, or
+   create your own project at [supabase.com](https://supabase.com) for a
+   separate dev copy).
 
 3. **Apply the database schema.** Either:
 
@@ -68,9 +89,10 @@ be added without restructuring what's here — see
    - Or run each file in `supabase/migrations/` in order through the
      Supabase SQL editor.
 
-   Do **not** run `supabase/seed.sql` against a production project — it
-   inserts a demo session and a placeholder assessment for local development
-   only.
+   Dev-only placeholder content (`supabase/seed.sql`) is **not** applied
+   automatically by `db push` — see the comment at the top of that file for
+   why, and use a service-role script to insert it if you need it in a fresh
+   project. Never run it against a project real participants will use.
 
 4. **Configure environment variables.** Copy `.env.local.example` to
    `.env.local` and fill in your project's URL, anon key, and (for the admin
@@ -103,22 +125,26 @@ be added without restructuring what's here — see
 
 ## Database types
 
-`src/types/database.ts` is hand-written to mirror the migrations, since no
-live Supabase project was available to generate types against during this
-milestone. Once a project is linked, regenerate it and remove the note at
-the top of that file:
+`src/types/database.generated.ts` is generated directly from the linked
+Supabase project and should not be hand-edited. Regenerate after any
+migration:
 
 ```
-npx supabase gen types typescript --project-id <id> > src/types/database.ts
+npx supabase gen types typescript --linked > src/types/database.generated.ts
 ```
 
-## A note on testing this milestone
+`src/types/database.ts` re-exports it plus a thin layer of narrower
+string-literal types for `text` + `check (...)` columns (Postgres doesn't
+reflect a CHECK constraint as a type the generator can see).
 
-Docker was not available in the environment this was built in, so the
-Supabase local dev stack (`supabase start`) could not be run, and the
-acceptance gate below could not be clicked through end-to-end here.
-Everything has been verified with `tsc --noEmit`, ESLint, and a production
-build — those confirm the code compiles and is internally consistent, not
-that every flow behaves correctly against a real database. Please run
-through `docs/TESTING.md` against a real Supabase project before treating
-Milestone 1 as accepted.
+## A note on testing
+
+Milestone 1's UI flows were click-tested manually against the live project.
+Milestone 2's RPC/security layer was verified with a real, disposable test
+participant created via the Supabase Auth admin API (see
+`docs/TESTING.md`) — every validation rule and the RLS write-blocking
+behavior was actually exercised, not just read from the SQL. No browser
+automation tool was available in this environment, so Milestone 2's React
+UI itself (phase transitions, checkbox limits, matrix rendering) still needs
+a manual click-through — see the checklist in `docs/TESTING.md` before
+treating Milestone 2 as accepted.

@@ -1,12 +1,20 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
-import { getDemoAssessment } from "@/lib/data/moduleContent";
+import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleContent";
+import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
+import { getDelegationCandidates } from "@/lib/data/delegation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { AssessmentForm } from "@/components/participant/AssessmentForm";
 import { GenericPlaceholderModule } from "@/components/participant/GenericPlaceholderModule";
+import { ZoneOfInvestmentFlow } from "@/components/participant/ZoneOfInvestmentFlow";
+import { DelegationFlow } from "@/components/participant/DelegationFlow";
+
+const DELEGATION_BELIEFS_ASSESSMENT_KEY = "dev_demo_delegation_beliefs";
+
+const WIDE_MODULES = new Set(["current_structure", "delegation"]);
 
 export default async function ModulePage({
   params,
@@ -44,12 +52,65 @@ export default async function ModulePage({
       .eq("id", dashboard.participantSessionId);
   }
 
-  const demoAssessment = await getDemoAssessment(moduleKey, dashboard.participantSessionId);
   const sessionPath = `/dashboard/${sessionId}`;
+  const alreadyComplete = currentModule.state === "COMPLETE";
+
+  let content: React.ReactNode;
+
+  if (moduleKey === "current_structure") {
+    const zoneData = await getZoneOfInvestmentData(dashboard.participantSessionId);
+    content = (
+      <ZoneOfInvestmentFlow
+        data={zoneData}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "delegation") {
+    const [assessment, candidates] = await Promise.all([
+      getDemoAssessmentByKey(DELEGATION_BELIEFS_ASSESSMENT_KEY, dashboard.participantSessionId),
+      getDelegationCandidates(dashboard.participantSessionId),
+    ]);
+    content = (
+      <DelegationFlow
+        assessment={assessment}
+        assessmentKey={DELEGATION_BELIEFS_ASSESSMENT_KEY}
+        candidates={candidates}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        sessionId={sessionId}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else {
+    const demoAssessment = await getDemoAssessment(moduleKey, dashboard.participantSessionId);
+    content = demoAssessment ? (
+      <AssessmentForm
+        assessment={demoAssessment}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  }
 
   return (
     <main className="flex-1 py-16">
-      <Container narrow>
+      <Container narrow={!WIDE_MODULES.has(moduleKey)}>
         <Link
           href={sessionPath}
           className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
@@ -62,27 +123,7 @@ export default async function ModulePage({
           <ModuleStateBadge state={currentModule.state} />
         </div>
 
-        <div className="mt-8">
-          {demoAssessment ? (
-            <AssessmentForm
-              assessment={demoAssessment}
-              participantSessionId={dashboard.participantSessionId}
-              moduleId={currentModule.id}
-              moduleKey={currentModule.key}
-              sessionPath={sessionPath}
-              alreadyComplete={currentModule.state === "COMPLETE"}
-            />
-          ) : (
-            <GenericPlaceholderModule
-              moduleName={currentModule.name}
-              participantSessionId={dashboard.participantSessionId}
-              moduleId={currentModule.id}
-              moduleKey={currentModule.key}
-              sessionPath={sessionPath}
-              alreadyComplete={currentModule.state === "COMPLETE"}
-            />
-          )}
-        </div>
+        <div className="mt-8">{content}</div>
       </Container>
     </main>
   );
