@@ -50,7 +50,7 @@ deferred to later milestones. See also:
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript, Tailwind CSS v4)
-- **Supabase** — Postgres, Auth (admins: passwordless magic link; participants: email+password,
+- **Supabase** — Postgres, Auth (email+password for both admins and participants,
   *temporarily* — see `docs/ARCHITECTURE_DECISIONS.md`), Row Level Security
 - Deploys to Vercel; no separate servers, queues, or Redis
 

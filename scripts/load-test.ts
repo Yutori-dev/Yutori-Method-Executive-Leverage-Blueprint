@@ -93,22 +93,17 @@ interface Provisioned {
 
 async function provisionParticipant(index: number): Promise<Provisioned> {
   const email = `load-test-${Date.now()}-${index}@example.com`;
-  const { data: created, error: createErr } = await admin.auth.admin.createUser({ email, email_confirm: true });
+  const password = crypto.randomUUID();
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (createErr || !created.user) return { index, ok: false, stage: "createUser", error: createErr?.message };
   const userId = created.user.id;
 
   await admin.from("participants").insert({ id: userId, first_name: `Load${index}`, last_name: "Test", email });
 
-  const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({ type: "magiclink", email });
-  if (linkErr || !linkData.properties) return { index, ok: false, stage: "generateLink", error: linkErr?.message, userId };
-
   const anon = createClient(url, anonKey);
-  const { data: sessionData, error: sessionErr } = await anon.auth.verifyOtp({
-    token_hash: linkData.properties.hashed_token,
-    type: "magiclink",
-  });
+  const { data: sessionData, error: sessionErr } = await anon.auth.signInWithPassword({ email, password });
   if (sessionErr || !sessionData.session) {
-    return { index, ok: false, stage: "verifyOtp", error: sessionErr?.message, userId };
+    return { index, ok: false, stage: "signInWithPassword", error: sessionErr?.message, userId };
   }
 
   const client = createClient(url, anonKey, {

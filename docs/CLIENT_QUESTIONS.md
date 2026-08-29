@@ -15,10 +15,11 @@ throughout) versus what they'll gate starting in Milestone 2.
    a shorter/friendlier code format than the current auto-generated one.
 
 2. **[RESOLVED] Admin authentication mechanism + self-service provisioning.**
-   Same passwordless magic-link pattern as participants, gated by an
-   allowlist table. Any existing admin can now add another one directly in
-   the app (`/admin/admins`, or "Manage admins" in the header on any admin
-   page) — enter an email and name, they can sign in immediately. Fulfills
+   Email+password (temporarily — see `docs/ARCHITECTURE_DECISIONS.md`),
+   gated by an allowlist table. Any existing admin can now add another one
+   directly in the app (`/admin/admins`, or "Manage admins" in the header
+   on any admin page) — enter an email and name, a password is generated
+   and shown once to share with them. Fulfills
    brief section 3.1's "future architecture should not make additional
    admin accounts difficult to add." The local script
    (`npm run seed:admin`) still exists for provisioning the very first

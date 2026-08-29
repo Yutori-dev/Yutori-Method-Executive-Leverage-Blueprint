@@ -658,3 +658,33 @@ Explicitly temporary: revert `JoinForm.tsx` to `signInWithOtp` and flip
 plan upgrade) resolves the send-rate problem — both changes are isolated
 to participant-facing code/config and don't touch admin auth, so reverting
 should be a clean, self-contained change.
+
+### Addendum: admin sign-in moved to email+password too
+
+Follow-up request: remove magic link entirely, not just for participants.
+`AdminLoginForm.tsx` now uses `signInWithPassword` instead of
+`signInWithOtp`. Since any account with valid password credentials can
+sign in at the Supabase Auth layer regardless of role, an explicit
+`is_admin()` RPC check after sign-in replaces the authorization check the
+old `/admin/auth/callback` route used to do — a non-admin's correct
+password now gets them signed back out client-side instead of a redirect
+with an error, same net effect.
+
+Admins never self-register, so there's no signUp step to make
+confirmation-free — instead, `addAdmin` (`src/lib/actions/admins.ts`) and
+`scripts/create-admin.ts` now generate a random password server-side via
+the service-role `createUser`/`updateUserById` APIs and return/print it
+once for the admin who ran it to share out of band. Calling `addAdmin`
+again for an email that's already an admin resets that admin's password
+rather than erroring — deliberately doubles as the "handle a lost
+password manually" mechanism instead of building self-service reset,
+consistent with the same call on the participant side.
+
+Deleted as dead code once nothing produced a magic link anymore:
+`src/app/auth/callback/route.ts`, `src/app/admin/auth/callback/route.ts`,
+`src/app/auth/dev-callback/page.tsx`,
+`src/app/admin/auth/dev-callback/page.tsx`, `scripts/dev-magic-link.ts`
+(and its `npm run dev:magic-link` entry in `package.json`).
+`scripts/load-test.ts`'s participant provisioning was also switched from
+`generateLink`+`verifyOtp` to `createUser`+`signInWithPassword` so it
+doesn't depend on magic link either.

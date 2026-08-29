@@ -10,20 +10,23 @@ export function AddAdminForm() {
   const [displayName, setDisplayName] = useState("");
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [password, setPassword] = useState<string | null>(null);
   const router = useRouter();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
+    setPassword(null);
     startTransition(async () => {
       const result = await addAdmin({ email, displayName });
       if (!result.ok) {
         setMessage(result.message);
         return;
       }
+      setMessage(`${email} can sign in at /admin/login with the password below.`);
+      setPassword(result.password);
       setEmail("");
       setDisplayName("");
-      setMessage(`Added ${email} as an admin. They can sign in at /admin/login.`);
       router.refresh();
     });
   }
@@ -56,12 +59,26 @@ export function AddAdminForm() {
           />
         </div>
       </div>
+      <p className="text-xs text-(--color-ink-muted)">
+        Entering an email that&apos;s already an admin resets their password instead of creating a
+        duplicate account.
+      </p>
+
       <div className="flex items-center gap-4">
         <Button type="submit" disabled={isPending}>
           {isPending ? "Adding..." : "Add admin"}
         </Button>
         {message ? <p className="text-sm text-(--color-ink-muted)">{message}</p> : null}
       </div>
+
+      {password ? (
+        <div className="rounded-lg border border-(--color-hairline) px-3 py-2">
+          <p className="text-xs text-(--color-ink-muted)">
+            Password (shown once -- copy and share it now, it can&apos;t be shown again):
+          </p>
+          <code className="mt-1 block select-all font-mono text-sm text-(--color-ink)">{password}</code>
+        </div>
+      ) : null}
     </form>
   );
 }

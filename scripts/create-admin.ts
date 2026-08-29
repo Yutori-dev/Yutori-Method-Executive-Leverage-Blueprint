@@ -34,10 +34,12 @@ async function main() {
 
   const { data: existing } = await supabase.auth.admin.listUsers();
   let userId = existing.users.find((u) => u.email === email)?.id;
+  const password = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
   if (!userId) {
     const { data, error } = await supabase.auth.admin.createUser({
       email,
+      password,
       email_confirm: true,
     });
     if (error || !data.user) {
@@ -45,6 +47,12 @@ async function main() {
       process.exit(1);
     }
     userId = data.user.id;
+  } else {
+    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, { password });
+    if (updateError) {
+      console.error("Failed to set password:", updateError.message);
+      process.exit(1);
+    }
   }
 
   const { error: upsertError } = await supabase
@@ -56,7 +64,8 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`${email} is now an admin. They can sign in at /admin/login.`);
+  console.log(`${email} is now an admin. Password (shown once): ${password}`);
+  console.log("They can sign in at /admin/login.");
 }
 
 main();

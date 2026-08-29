@@ -9,7 +9,6 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "seed:admin": "dotenv -e .env.local -- tsx scripts/create-admin.ts",
-    "dev:magic-link": "dotenv -e .env.local -- tsx scripts/dev-magic-link.ts",
     "load-test": "dotenv -e .env.local -- tsx scripts/load-test.ts"
   },
   "dependencies": {
