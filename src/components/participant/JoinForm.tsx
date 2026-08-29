@@ -14,8 +14,7 @@ type Mode = "create" | "signin";
  * link (supabase.auth.signInWithOtp) so signup needs zero email delivery,
  * routing around Resend/Supabase's free-tier rate limit. Revert to magic
  * link once that's resolved (see supabase/config.toml's enable_confirmations
- * comment and docs/ARCHITECTURE_DECISIONS.md). Admin sign-in is untouched
- * and still uses magic link (AdminLoginForm.tsx).
+ * comment and docs/ARCHITECTURE_DECISIONS.md).
  */
 export function JoinForm({ joinCode }: { joinCode: string }) {
   const supabase = createClient();
@@ -128,7 +127,33 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
   }
 
   return (
-    <form onSubmit={mode === "create" ? handleCreate : handleSignIn} className="space-y-4">
+    <div>
+      <div className="mb-6 grid grid-cols-2 gap-2 rounded-lg border border-(--color-hairline) p-1">
+        <button
+          type="button"
+          onClick={() => switchMode("create")}
+          className={`rounded-md py-2 text-sm font-medium transition-colors ${
+            mode === "create"
+              ? "bg-(--color-accent) text-(--color-paper)"
+              : "text-(--color-ink-muted) hover:text-(--color-ink)"
+          }`}
+        >
+          Sign up
+        </button>
+        <button
+          type="button"
+          onClick={() => switchMode("signin")}
+          className={`rounded-md py-2 text-sm font-medium transition-colors ${
+            mode === "signin"
+              ? "bg-(--color-accent) text-(--color-paper)"
+              : "text-(--color-ink-muted) hover:text-(--color-ink)"
+          }`}
+        >
+          Sign in
+        </button>
+      </div>
+
+      <form onSubmit={mode === "create" ? handleCreate : handleSignIn} className="space-y-4">
       {mode === "create" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -192,14 +217,7 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
       <Button type="submit" disabled={status === "submitting"} className="w-full">
         {status === "submitting" ? "One moment..." : mode === "create" ? "Create account" : "Sign in"}
       </Button>
-
-      <button
-        type="button"
-        onClick={() => switchMode(mode === "create" ? "signin" : "create")}
-        className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-      >
-        {mode === "create" ? "Already have an account? Sign in" : "New here? Create an account"}
-      </button>
-    </form>
+      </form>
+    </div>
   );
 }
