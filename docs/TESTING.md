@@ -15,9 +15,10 @@ what shipped. Checklist below kept for reference.
 
 ## Participant flow
 
-- [ ] Register with first/last name + email via a session's `/join/<code>`
-      link
-- [ ] Receive and open the magic-link email, land on the dashboard
+- [ ] Register with first/last name + email + password via a session's
+      `/join/<code>` link (temporarily password-based, not magic link —
+      see `docs/ARCHITECTURE_DECISIONS.md`), land on the dashboard
+      immediately with no email round-trip
 - [ ] Dashboard shows participant name, session name, module list with
       correct LOCKED/OPEN state (only the module(s) up to the session's
       active module should be open)
@@ -39,9 +40,9 @@ what shipped. Checklist below kept for reference.
       resumes the existing participant_session rather than creating a
       second one (should be impossible to create a duplicate — enforced by
       a unique constraint, not just UI)
-- [ ] Requesting a new magic link after letting one sit unused works (old
-      link behavior doesn't need to be tested — Supabase invalidates on
-      issuing a new one)
+- [ ] Returning to a `/join/<code>` link already signed in resumes/joins
+      without re-prompting; signed out, "Sign in" with the same
+      email+password works and joins the session
 - [ ] A participant cannot see another participant's dashboard/session data
       (try navigating to a `participant_session` id that isn't theirs, or
       inspect network responses)

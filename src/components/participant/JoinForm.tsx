@@ -6,15 +6,26 @@ import { createClient } from "@/lib/supabase/client";
 import { savePendingProfile } from "@/lib/pendingProfile";
 import { Button } from "@/components/ui/Button";
 
-type Status = "checking" | "form" | "sending" | "sent" | "already-signed-in" | "error";
+type Status = "checking" | "form" | "submitting" | "already-signed-in" | "error";
+type Mode = "create" | "signin";
 
+/**
+ * Temporary email+password auth for participants -- replaces the magic
+ * link (supabase.auth.signInWithOtp) so signup needs zero email delivery,
+ * routing around Resend/Supabase's free-tier rate limit. Revert to magic
+ * link once that's resolved (see supabase/config.toml's enable_confirmations
+ * comment and docs/ARCHITECTURE_DECISIONS.md). Admin sign-in is untouched
+ * and still uses magic link (AdminLoginForm.tsx).
+ */
 export function JoinForm({ joinCode }: { joinCode: string }) {
   const supabase = createClient();
   const router = useRouter();
   const [status, setStatus] = useState<Status>("checking");
+  const [mode, setMode] = useState<Mode>("create");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,73 +59,105 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joinCode]);
 
-  async function handleSubmit(formEvent: React.FormEvent) {
+  function switchMode(next: Mode) {
+    setMode(next);
+    setErrorMessage(null);
+  }
+
+  async function handleCreate(formEvent: React.FormEvent) {
     formEvent.preventDefault();
     setErrorMessage(null);
-    setStatus("sending");
+    setStatus("submitting");
 
     savePendingProfile({ email, firstName, lastName, joinCode });
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?join=${encodeURIComponent(joinCode)}`,
-      },
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(
+        /already registered|already exists/i.test(error.message)
+          ? 'An account with this email already exists. Use "Sign in" below instead.'
+          : error.message,
+      );
       setStatus("form");
       return;
     }
 
-    setStatus("sent");
+    if (!data.session) {
+      // No confirmation email is sent in this temporary setup, so a
+      // missing session here means this email is already registered
+      // (Supabase's anti-enumeration response to a duplicate signUp).
+      setErrorMessage('An account with this email already exists. Use "Sign in" below instead.');
+      setStatus("form");
+      return;
+    }
+
+    router.push(`/complete-profile?join=${encodeURIComponent(joinCode)}`);
+  }
+
+  async function handleSignIn(formEvent: React.FormEvent) {
+    formEvent.preventDefault();
+    setErrorMessage(null);
+    setStatus("submitting");
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (signInError) {
+      setErrorMessage("Incorrect email or password.");
+      setStatus("form");
+      return;
+    }
+
+    const { error: joinError } = await supabase.rpc("join_session", { p_join_code: joinCode });
+
+    if (joinError) {
+      setErrorMessage(joinError.message);
+      setStatus("form");
+      return;
+    }
+
+    router.push("/dashboard");
   }
 
   if (status === "checking" || status === "already-signed-in") {
     return <p className="text-sm text-(--color-ink-muted)">One moment...</p>;
   }
 
-  if (status === "sent") {
-    return (
-      <div>
-        <p className="text-(--color-ink)">Check your email.</p>
-        <p className="mt-2 text-sm text-(--color-ink-muted)">
-          We sent a secure sign-in link to <strong>{email}</strong>. Open it on any device to
-          continue.
-        </p>
-      </div>
-    );
+  if (status === "error") {
+    return <p className="text-sm text-[#8a3324]">{errorMessage}</p>;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="firstName" className="block text-xs font-medium text-(--color-ink-muted)">
-            First name
-          </label>
-          <input
-            id="firstName"
-            required
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
-          />
+    <form onSubmit={mode === "create" ? handleCreate : handleSignIn} className="space-y-4">
+      {mode === "create" ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="firstName" className="block text-xs font-medium text-(--color-ink-muted)">
+              First name
+            </label>
+            <input
+              id="firstName"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+            />
+          </div>
+          <div>
+            <label htmlFor="lastName" className="block text-xs font-medium text-(--color-ink-muted)">
+              Last name
+            </label>
+            <input
+              id="lastName"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="lastName" className="block text-xs font-medium text-(--color-ink-muted)">
-            Last name
-          </label>
-          <input
-            id="lastName"
-            required
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
-          />
-        </div>
-      </div>
+      ) : null}
+
       <div>
         <label htmlFor="email" className="block text-xs font-medium text-(--color-ink-muted)">
           Email
@@ -129,14 +172,34 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
         />
       </div>
 
+      <div>
+        <label htmlFor="password" className="block text-xs font-medium text-(--color-ink-muted)">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          required
+          minLength={6}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+        />
+      </div>
+
       {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
 
-      <Button type="submit" disabled={status === "sending"} className="w-full">
-        {status === "sending" ? "Sending link..." : "Continue"}
+      <Button type="submit" disabled={status === "submitting"} className="w-full">
+        {status === "submitting" ? "One moment..." : mode === "create" ? "Create account" : "Sign in"}
       </Button>
-      <p className="text-xs text-(--color-ink-muted)">
-        No password needed. We&apos;ll email you a secure link to continue.
-      </p>
+
+      <button
+        type="button"
+        onClick={() => switchMode(mode === "create" ? "signin" : "create")}
+        className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+      >
+        {mode === "create" ? "Already have an account? Sign in" : "New here? Create an account"}
+      </button>
     </form>
   );
 }

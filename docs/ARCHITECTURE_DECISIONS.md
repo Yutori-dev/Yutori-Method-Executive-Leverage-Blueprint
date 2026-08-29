@@ -623,3 +623,38 @@ forward again, since the calculate button disappears once a result
 already exists. Fixed with an explicit CONTINUE button shown whenever the
 phase is revisited with a result already in hand, not just on first
 completion.
+
+## Temporary: participant sign-up switched from magic link to email+password
+
+Supabase's free-tier email sender is capped at 2 emails/hour, and a custom
+domain for Resend hasn't been set up yet (client explicitly deferred it —
+see `docs/CLIENT_QUESTIONS.md`). With magic link, every participant signup
+*and* every return visit consumes that quota, which made multi-participant
+testing (and eventually the real workshop, at any real cohort size)
+impractical. Rather than wait on Resend, `JoinForm.tsx` now uses
+`supabase.auth.signUp`/`signInWithPassword` (email + password, no
+password-reset flow — a lost test password is reset manually via the
+Supabase dashboard, confirmed acceptable for now) so a participant account
+needs zero email delivery, at either signup or every later sign-in.
+
+This only works because `supabase/config.toml`'s `[auth.email]
+enable_confirmations` was flipped from `true` to `false` — without that,
+`signUp()` would still require a confirmation-link click before the
+session it returns is usable, defeating the point. Scope of that flag is
+narrower than it looks: it only gates the password-signup confirmation
+step. It does **not** touch `signInWithOtp` (magic link) or
+`admin.auth.admin.createUser` (used by `addAdmin` in
+`src/lib/actions/admins.ts`, which explicitly passes `email_confirm: true`
+independent of this global setting) — so admin sign-in
+(`AdminLoginForm.tsx`) and the self-service admin-provisioning screen
+(`/admin/admins`) are both unaffected and keep working exactly as before,
+including for an account that holds both an admin and a participant role
+(the dual-role switcher added above is auth-method-agnostic — it looks up
+`admin_users`/`participants` rows by `auth.uid()`, never at how that
+session was established).
+
+Explicitly temporary: revert `JoinForm.tsx` to `signInWithOtp` and flip
+`enable_confirmations` back to `true` once Resend (custom domain or a
+plan upgrade) resolves the send-rate problem — both changes are isolated
+to participant-facing code/config and don't touch admin auth, so reverting
+should be a clean, self-contained change.

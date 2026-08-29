@@ -231,10 +231,14 @@ enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
-# If enabled, users need to confirm their email address before signing in. Restored to the value
-# already live on the hosted project before this file's other auth settings were touched -- only
-# site_url/additional_redirect_urls were meant to change here (see comment above).
-enable_confirmations = true
+# If enabled, users need to confirm their email address before signing in. TEMPORARILY set to
+# false (previously true, matching the hosted project's original value) so participant signup
+# (JoinForm.tsx, supabase.auth.signUp) can issue a session immediately with zero email delivery --
+# Supabase's free-tier email sender is capped at 2/hour and we haven't set up a custom domain for
+# Resend yet. Only affects password-based signup confirmation; magic-link sign-in (admins, via
+# AdminLoginForm.tsx) is a separate flow and is unaffected. Revert to true once Resend/plan is
+# sorted and magic link is restored for participants.
+enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
