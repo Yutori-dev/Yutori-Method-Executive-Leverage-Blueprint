@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/*
+ * Temporary design system (task instructions section 15).
+ * Yutori's brand guide has not arrived yet -- these are placeholder tokens
+ * chosen to read as calm/executive rather than "quiz app", kept in one
+ * place so they are cheap to swap once real brand assets land.
+ */
+:root {
+  --color-paper: #faf9f6;
+  --color-paper-raised: #ffffff;
+  --color-ink: #1c1f26;
+  --color-ink-muted: #5b6270;
+  --color-hairline: #e4e1da;
+  --color-accent: #6b5a3e;
+  --color-accent-soft: #efe9dd;
+  --color-locked: #c9c5bc;
+  --color-success: #3f6650;
+}
+
+@theme inline {
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
