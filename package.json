@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "seed:admin": "dotenv -e .env.local -- tsx scripts/create-admin.ts"
+    "seed:admin": "dotenv -e .env.local -- tsx scripts/create-admin.ts",
+    "dev:magic-link": "dotenv -e .env.local -- tsx scripts/dev-magic-link.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",

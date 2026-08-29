@@ -216,3 +216,31 @@ participant or an admin" -- so the same loader correctly serves a
 participant viewing their own Blueprint and an admin downloading any
 participant's, verified live for both, plus confirming an unrelated
 participant is denied.
+
+## Tooling addendum: dev:magic-link needs its own callback pages
+
+Supabase's built-in email sender caps at 2/hour on the free tier without
+custom SMTP configured, which made manual click-testing painful during
+development. Configuring a custom SMTP provider (Resend) was attempted but
+blocked -- Resend now refuses to send from *any* address, including its own
+default `onboarding@resend.com`, until a domain is verified via DNS, and no
+domain was available. `scripts/dev-magic-link.ts` sidesteps the rate limit
+entirely instead, using `supabase.auth.admin.generateLink()` to produce a
+working sign-in link with no email sent at all.
+
+That API has a real quirk worth recording: admin-generated links always use
+the *implicit* auth flow (tokens in a URL hash fragment, which never reaches
+the server), while a real participant's browser-initiated `signInWithOtp()`
+uses PKCE (a `?code=` query param) via `@supabase/ssr`'s default
+configuration -- these are not interchangeable, and `/auth/callback` only
+understands the PKCE shape. So the dev tool points at two new pages instead
+of the real callback routes: `/auth/dev-callback` and
+`/admin/auth/dev-callback`, both client components that read the hash
+fragment, call `supabase.auth.setSession()` directly, and then hand off to
+the same `/complete-profile` / `/admin` redirect logic the real callbacks
+use. Both are hard-guarded to render nothing in production regardless of
+whether anything ever links to them. The token-exchange step was verified
+live (extracting real tokens from a generated link and confirming
+`setSession()` accepts them); the client-side redirect behavior needs a
+real browser to fully exercise, same testing-tool limitation noted
+throughout this file.

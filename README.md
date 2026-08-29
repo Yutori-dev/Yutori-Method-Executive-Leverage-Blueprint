@@ -147,6 +147,12 @@ without restructuring what's here — see `docs/ARCHITECTURE_DECISIONS.md`.
 - `npm run lint` — ESLint
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run seed:admin -- <email> "<name>"` — provision a facilitator account
+- `npm run dev:magic-link -- <email> [--join CODE] [--admin]` — prints a
+  working sign-in link for an email without sending an email at all.
+  Supabase's built-in email sender is capped at 2/hour on the free tier with
+  no custom SMTP configured, which makes manual click-testing painful — this
+  sidesteps it entirely for local development. Not usable in production
+  (the bridge page it relies on is hard-guarded out via `isProduction`).
 
 ## Database types
 
