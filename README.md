@@ -25,6 +25,15 @@ project.
 > rule, threshold boundary, and the tie-break priority order were verified
 > live against the real database — see `docs/TESTING.md`.
 
+> **Zone of Investment rebuild + White Whale / Leadership Wiring:** the
+> client's own implementation specs for these three are now live —
+> resolving content dependencies B (Responsibility Library) and C (the
+> 9-cell Zone Matrix) with real content, a facilitator-gated reveal for the
+> personalized matrix, and White Whale/Leadership Wiring becoming
+> individually facilitator-unlocked activities within Operating Altitude
+> rather than always-visible sections. See `docs/TESTING.md` for what was
+> verified live.
+
 This README covers what's implemented, how to run it, and what's explicitly
 deferred to later milestones. See also:
 
@@ -190,6 +199,28 @@ in earlier delivery messages. All of it is now built:
   incomplete activity even if the facilitator has already cohort-unlocked
   several modules — enforced server-side (a direct URL to a
   not-yet-reached module redirects away), not just by hiding links.
+
+**Zone of Investment rebuild + White Whale / Leadership Wiring:**
+
+- The Zone of Investment module rebuilt to the client's own implementation
+  spec: participants rate all 21 real responsibilities directly (no more a
+  separate "select then rate" step), the real 9-cell zone mapping resolves
+  content dependency C, and the personalized matrix is held behind a
+  facilitator-gated reveal (`/admin/sessions/[id]/zone-of-investment` for
+  the dashboard, an admin control mirroring the Architecture reveal). The
+  hidden Executive Leverage Level classification for the new real
+  responsibilities is explicitly deferred by the client's own spec text —
+  left null with a controlled-pending fallback rather than guessed, see
+  `docs/ARCHITECTURE_DECISIONS.md`.
+- A versioned admin config screen (`/admin/zone-of-investment-config`) for
+  the responsibility library, zone names, and competency/passion copy.
+- White Whale and Leadership Wiring became individually facilitator-
+  unlocked activities within Operating Altitude (previously always-visible
+  sections) — each has its own admin unlock control, holding state between
+  activities, and versioned copy (`/admin/operating-altitude-config`).
+  Leadership Wiring now shows as the first populated field in the
+  Character section (Blueprint and in-app), and White Whale is resurfaced
+  verbatim in the Success module and the final Blueprint.
 
 ## What's deliberately not built
 

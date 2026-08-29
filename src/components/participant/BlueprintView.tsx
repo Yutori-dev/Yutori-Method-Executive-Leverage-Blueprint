@@ -39,7 +39,7 @@ export function BlueprintView({
           Unlocked in the live workshop.
         </p>
         <div className="mt-3">
-          <CharacterPreview />
+          <CharacterPreview leadershipWiring={data.selfIdentification} />
         </div>
       </section>
 
@@ -146,7 +146,13 @@ export function BlueprintView({
           <p className="mt-1 text-xs text-(--color-ink-muted)">
             Private to you and your facilitator.
           </p>
-          <Card className="mt-3 space-y-3">
+          <Card className="mt-3 space-y-4">
+            {data.reflections.whiteWhale ? (
+              <div>
+                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Your White Whale</p>
+                <p className="mt-1 text-sm text-(--color-ink)">{data.reflections.whiteWhale}</p>
+              </div>
+            ) : null}
             {data.reflections.successVision ? (
               <p className="text-sm text-(--color-ink)">{data.reflections.successVision}</p>
             ) : null}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExecutiveLeverageDiagnosticFlow } from "./ExecutiveLeverageDiagnosticFlow";
 import { CharacterPreview } from "./CharacterPreview";
+import { HoldingState } from "./HoldingState";
 import { setSelfIdentification, saveReflection } from "@/lib/actions/reflections";
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
@@ -14,11 +15,9 @@ import type { OperatingAltitudeData } from "@/lib/data/operatingAltitude";
 import type { ExecutiveLeverageProfileResult } from "@/lib/data/executiveLeverageDiagnostic";
 import type { SelfIdentification } from "@/types/database";
 
-const OPTIONS: { value: SelfIdentification; label: string }[] = [
-  { value: "visionary", label: "Visionary" },
-  { value: "integrator", label: "Integrator" },
-  { value: "hybrid", label: "Hybrid" },
-];
+const OPTIONS: SelfIdentification[] = ["visionary", "integrator", "hybrid"];
+
+type Phase = "diagnostic" | "white_whale" | "leadership_wiring";
 
 export function OperatingAltitudeFlow({
   diagnosticAssessment,
@@ -41,15 +40,21 @@ export function OperatingAltitudeFlow({
   const [result, setResult] = useState<ExecutiveLeverageProfileResult | null>(diagnosticResult);
   const [selfId, setSelfId] = useState<SelfIdentification | null>(data.selfIdentification);
   const [whiteWhale, setWhiteWhale] = useState(data.whiteWhale);
-  const [whiteWhaleSaveState, setWhiteWhaleSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [whiteWhaleSaveState, setWhiteWhaleSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [phase, setPhase] = useState<Phase>(() => {
+    if (!diagnosticResult) return "diagnostic";
+    if (!data.whiteWhale.trim()) return "white_whale";
+    return "leadership_wiring";
+  });
 
   const persistWhiteWhale = useCallback(
     (value: string) => {
       setWhiteWhaleSaveState("saving");
-      saveReflection({ participantSessionId, field: "white_whale", value }).then(() => {
-        setWhiteWhaleSaveState("saved");
+      saveReflection({ participantSessionId, field: "white_whale", value }).then((outcome) => {
+        setWhiteWhaleSaveState(outcome.ok ? "saved" : "error");
       });
     },
     [participantSessionId],
@@ -87,10 +92,8 @@ export function OperatingAltitudeFlow({
     });
   }
 
-  const canComplete = result !== null && selfId !== null;
-
-  return (
-    <div className="space-y-8">
+  if (phase === "diagnostic") {
+    return (
       <ExecutiveLeverageDiagnosticFlow
         assessment={diagnosticAssessment}
         result={result}
@@ -98,47 +101,74 @@ export function OperatingAltitudeFlow({
         moduleId={moduleId}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
-        onResultChange={setResult}
+        onResultChange={(next) => {
+          setResult(next);
+          if (next) setPhase("white_whale");
+        }}
       />
+    );
+  }
 
-      <section>
-        <h2 className="font-serif text-xl">An important project left unrealized</h2>
-        <Card className="mt-4">
-          <p className="text-sm text-(--color-ink-muted)">
-            Identify an important project, initiative, opportunity or ambition that has remained
-            unrealized because competing demands continually take priority. This stays private to
-            you and your facilitator.
-          </p>
+  if (phase === "white_whale") {
+    if (!data.whiteWhaleUnlocked) return <HoldingState />;
+
+    return (
+      <div className="space-y-6">
+        <Card>
+          <h2 className="font-serif text-xl">{data.whiteWhaleConfig.header}</h2>
+          <p className="mt-3 text-sm text-(--color-ink-muted)">{data.whiteWhaleConfig.setupCopy}</p>
+          <p className="mt-4 text-sm text-(--color-ink)">{data.whiteWhaleConfig.prompt}</p>
           <textarea
-            rows={3}
+            rows={4}
             value={whiteWhale}
+            placeholder={data.whiteWhaleConfig.placeholderText}
             onChange={(e) => handleWhiteWhaleChange(e.target.value)}
             className="mt-3 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
           />
           {whiteWhaleSaveState !== "idle" ? (
             <p className="mt-1 text-xs text-(--color-ink-muted)">
-              {whiteWhaleSaveState === "saving" ? "Saving..." : "Saved"}
+              {whiteWhaleSaveState === "saving"
+                ? "Saving..."
+                : whiteWhaleSaveState === "error"
+                  ? "Couldn't save -- check your connection"
+                  : "Saved"}
             </p>
           ) : null}
+          <p className="mt-3 text-xs text-(--color-ink-muted)">{data.whiteWhaleConfig.privacyNote}</p>
         </Card>
-      </section>
+        <Button onClick={() => setPhase("leadership_wiring")} disabled={whiteWhale.trim().length === 0}>
+          CONTINUE
+        </Button>
+      </div>
+    );
+  }
 
-      <section>
-        <h2 className="font-serif text-xl">How would you describe yourself?</h2>
-        <div className="mt-4 flex gap-2">
-          {OPTIONS.map((o) => (
+  if (!data.leadershipWiringUnlocked) return <HoldingState />;
+
+  const canComplete = selfId !== null;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <h2 className="font-serif text-xl">{data.leadershipWiringConfig.header}</h2>
+        <p className="mt-3 text-sm text-(--color-ink)">{data.leadershipWiringConfig.prompt}</p>
+        <div className="mt-4 space-y-2">
+          {OPTIONS.map((value) => (
             <button
-              key={o.value}
+              key={value}
               type="button"
-              onClick={() => handleSelfId(o.value)}
+              onClick={() => handleSelfId(value)}
               className={cn(
-                "flex-1 rounded-lg border px-4 py-3 text-sm transition-colors",
-                selfId === o.value
+                "w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors",
+                selfId === value
                   ? "border-(--color-accent) bg-(--color-accent-soft)"
                   : "border-(--color-hairline) hover:border-(--color-accent)",
               )}
             >
-              {o.label}
+              <span className="font-medium capitalize text-(--color-ink)">{value}</span>
+              <span className="mt-1 block text-(--color-ink-muted)">
+                {data.leadershipWiringConfig.descriptions[value]}
+              </span>
             </button>
           ))}
         </div>
@@ -149,11 +179,11 @@ export function OperatingAltitudeFlow({
               Character — unlocked in the live workshop
             </p>
             <div className="mt-3">
-              <CharacterPreview />
+              <CharacterPreview leadershipWiring={selfId} />
             </div>
           </div>
         ) : null}
-      </section>
+      </Card>
 
       <Button onClick={handleMarkComplete} disabled={!canComplete || isPending || alreadyComplete}>
         {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}

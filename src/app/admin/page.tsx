@@ -54,6 +54,12 @@ export default async function AdminSessionsPage() {
             >
               Zone of Investment config
             </Link>
+            <Link
+              href="/admin/operating-altitude-config"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              White Whale / Leadership Wiring config
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>

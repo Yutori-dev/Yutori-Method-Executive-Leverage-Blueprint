@@ -71,20 +71,26 @@ Altitude module's placeholder assessment; see `README.md` and
 
 ## Milestone 2 content dependencies — not blocking, will block Milestone 3
 
-6. **Final Responsibility Library (content dependency B).** We seeded 20
-   development-placeholder responsibilities (clearly labeled `[PENDING]`)
-   spread across all four leverage classifications so the selection/rating
-   mechanism is testable. These are not real Yutori content and must be
-   replaced wholesale — the `responsibilities` table is versioned so
-   swapping them in is a data change, not a code change.
+6. **[RESOLVED] Final Responsibility Library (content dependency B).** You
+   sent a full Zone of Investment implementation spec with the real 21-item
+   library, exact order, and wording. Built exactly to that spec, replacing
+   the 20 development placeholders. One thing still open: each
+   responsibility's hidden Executive Leverage Level (used by the Priority
+   Delegation Opportunity → Architecture recommendation pipeline) wasn't
+   part of this spec — your own spec text defers it ("will be specified
+   when the leverage-level mapping is built"). Until that's supplied, a
+   participant whose 3 priorities include one of these new responsibilities
+   gets a controlled "pending" Architecture result rather than a guessed
+   one — see `docs/ARCHITECTURE_DECISIONS.md`.
 
-7. **Final 9-cell Zone of Investment mapping and terminology (content
-   dependency C).** We invented a placeholder cell-to-macro-zone assignment
-   (documented in `docs/ARCHITECTURE_DECISIONS.md`) purely to make the
-   matrix/eligibility mechanism demonstrable end to end. This is explicitly
-   **not** Yutori's approved methodology — every cell name and the mapping
-   itself needs your final version before this module can go live for a
-   real participant.
+7. **[RESOLVED] Final 9-cell Zone of Investment mapping and terminology
+   (content dependency C).** Same spec supplied the exact 9 zone names
+   (Zone of Genius, Zone of Incompetence, etc.) and macro-zone grouping.
+   Built exactly to that spec, including the correct axis orientation
+   (competency as rows, passion as columns) and a facilitator-gated reveal
+   that didn't exist before (the personalized matrix is now held until the
+   facilitator reveals it, mirroring how the Architecture recommendation
+   already works).
 
 8. **Final Delegation Beliefs questions and scoring (content dependency
    D).** We built a placeholder 2-dimension assessment (Trust, Control) and

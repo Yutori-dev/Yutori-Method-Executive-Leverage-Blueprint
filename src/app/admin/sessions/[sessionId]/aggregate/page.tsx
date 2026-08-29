@@ -112,9 +112,21 @@ export default async function SessionAggregatePage({
 
           <Card>
             <h2 className="font-serif text-lg">Visionary / Integrator / Hybrid</h2>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">
+              Leadership Wiring completion: {aggregates.leadershipWiringCompletionCount} of{" "}
+              {aggregates.registeredCount} / {aggregates.leadershipWiringCompletionRate}%
+            </p>
             <div className="mt-4">
               <CountBarList rows={aggregates.selfIdentificationDistribution} emptyLabel="No self-identifications yet." />
             </div>
+          </Card>
+
+          <Card>
+            <h2 className="font-serif text-lg">White Whale completion</h2>
+            <p className="mt-4 text-2xl text-(--color-ink)">
+              {aggregates.whiteWhaleCompletionCount} of {aggregates.registeredCount} /{" "}
+              {aggregates.whiteWhaleCompletionRate}%
+            </p>
           </Card>
         </div>
       </Container>

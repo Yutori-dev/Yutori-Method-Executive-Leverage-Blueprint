@@ -10,7 +10,34 @@ import type { SelfIdentification } from "@/types/database";
  * how `responses` already works -- these are plain RLS-scoped writes, not
  * routed through a SECURITY DEFINER RPC (see the migration comment in
  * 20260901000001_gap_fill_schema.sql).
+ *
+ * White Whale and Leadership Wiring are now individually facilitator-
+ * unlocked activities (client Implementation Specifications). Since these
+ * are plain RLS writes rather than RPCs, the unlock check has to live
+ * here explicitly -- server-side enforcement, not just the UI declining to
+ * render the step, mirroring how every other RPC in this app re-checks
+ * module-unlock state itself rather than trusting the caller.
  */
+
+async function isSessionUnlockedFor(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  participantSessionId: string,
+  column: "white_whale_unlocked" | "leadership_wiring_unlocked",
+): Promise<boolean> {
+  const { data: ps } = await supabase
+    .from("participant_sessions")
+    .select("session_id")
+    .eq("id", participantSessionId)
+    .maybeSingle();
+  if (!ps) return false;
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("white_whale_unlocked, leadership_wiring_unlocked")
+    .eq("id", ps.session_id)
+    .maybeSingle();
+  return Boolean(session?.[column]);
+}
 
 export async function setSelfIdentification(params: {
   participantSessionId: string;
@@ -18,6 +45,10 @@ export async function setSelfIdentification(params: {
   sessionPath: string;
 }) {
   const supabase = await createServerSupabaseClient();
+
+  const unlocked = await isSessionUnlockedFor(supabase, params.participantSessionId, "leadership_wiring_unlocked");
+  if (!unlocked) return { ok: false as const, message: "Leadership Wiring is not yet unlocked." };
+
   const { error } = await supabase
     .from("participant_sessions")
     .update({ self_identification: params.value })
@@ -34,6 +65,12 @@ export async function saveReflection(params: {
   value: string;
 }) {
   const supabase = await createServerSupabaseClient();
+
+  if (params.field === "white_whale") {
+    const unlocked = await isSessionUnlockedFor(supabase, params.participantSessionId, "white_whale_unlocked");
+    if (!unlocked) return { ok: false as const, message: "White Whale is not yet unlocked." };
+  }
+
   const payload: {
     participant_session_id: string;
     white_whale?: string;

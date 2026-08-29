@@ -64,6 +64,11 @@ export function BlueprintPdfDocument({
         </Text>
 
         <Text style={styles.sectionTitle}>Character</Text>
+        {data.selfIdentification ? (
+          <Text style={{ ...styles.value, marginBottom: 4 }}>
+            Leadership Wiring: {data.selfIdentification.charAt(0).toUpperCase() + data.selfIdentification.slice(1)}
+          </Text>
+        ) : null}
         <Text style={{ ...styles.label, marginBottom: 6 }}>Unlocked in the live workshop</Text>
         <View style={styles.characterGrid}>
           {CHARACTER_DIMENSIONS.map((dim) => (
@@ -149,6 +154,24 @@ export function BlueprintPdfDocument({
             <Text style={styles.label}>Awaiting facilitator reveal.</Text>
           )}
         </View>
+
+        {data.reflections.whiteWhale || data.reflections.successVision ? (
+          <>
+            <Text style={styles.sectionTitle}>What This Could Unlock</Text>
+            <View style={styles.card}>
+              {data.reflections.whiteWhale ? (
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={styles.label}>Your White Whale</Text>
+                  <Text style={styles.value}>{data.reflections.whiteWhale}</Text>
+                </View>
+              ) : null}
+              {data.reflections.successVision ? <Text style={styles.value}>{data.reflections.successVision}</Text> : null}
+              {data.reflections.successVisionFollowup ? (
+                <Text style={styles.label}>{data.reflections.successVisionFollowup}</Text>
+              ) : null}
+            </View>
+          </>
+        ) : null}
 
         <Text style={styles.footer}>
           This Blueprint reflects Yutori Method development placeholder content where noted, and

@@ -8,6 +8,8 @@ import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import { RevealArchitectureControl } from "@/components/admin/RevealArchitectureControl";
 import { RevealZoneOfInvestmentControl } from "@/components/admin/RevealZoneOfInvestmentControl";
+import { UnlockWhiteWhaleControl } from "@/components/admin/UnlockWhiteWhaleControl";
+import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadershipWiringControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
@@ -74,6 +76,10 @@ export default async function SessionControlPanelPage({
   const currentStructureModule = modules.find((m) => m.key === "current_structure");
   const currentStructureUnlocked = Boolean(
     currentStructureModule && activeModule && currentStructureModule.sort_order <= activeModule.sort_order,
+  );
+  const operatingAltitudeModule = modules.find((m) => m.key === "operating_altitude");
+  const operatingAltitudeUnlocked = Boolean(
+    operatingAltitudeModule && activeModule && operatingAltitudeModule.sort_order <= activeModule.sort_order,
   );
 
   const joinUrl =
@@ -169,6 +175,35 @@ export default async function SessionControlPanelPage({
             <div className="mt-6">
               <UnlockModuleControl sessionId={sessionId} nextModuleName={nextModule?.name ?? null} />
             </div>
+
+            {operatingAltitudeUnlocked || session.white_whale_unlocked ? (
+              <div className="mt-6 border-t border-(--color-hairline) pt-6">
+                <h3 className="text-sm font-medium">White Whale unlock</h3>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
+                  Separate from module unlocking -- comes after the Executive Leverage Diagnostic
+                  within Operating Altitude.
+                </p>
+                <div className="mt-3">
+                  <UnlockWhiteWhaleControl sessionId={sessionId} alreadyUnlocked={session.white_whale_unlocked} />
+                </div>
+              </div>
+            ) : null}
+
+            {operatingAltitudeUnlocked || session.leadership_wiring_unlocked ? (
+              <div className="mt-6 border-t border-(--color-hairline) pt-6">
+                <h3 className="text-sm font-medium">Leadership Wiring unlock</h3>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
+                  The last of the three Operating Altitude activities -- completing it marks the
+                  module complete.
+                </p>
+                <div className="mt-3">
+                  <UnlockLeadershipWiringControl
+                    sessionId={sessionId}
+                    alreadyUnlocked={session.leadership_wiring_unlocked}
+                  />
+                </div>
+              </div>
+            ) : null}
 
             {currentStructureUnlocked || session.zone_of_investment_revealed ? (
               <div className="mt-6 border-t border-(--color-hairline) pt-6">

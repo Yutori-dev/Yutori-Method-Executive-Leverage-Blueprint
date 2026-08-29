@@ -522,3 +522,75 @@ Items B-K of the brief's Content Dependency Register (Responsibility
 Library through Brand Assets) remain open — only item A (Leadership
 Leverage Diagnostic) was resolved. Google Sheets sync remains blocked on
 Google Cloud OAuth credentials.
+
+---
+
+## Zone of Investment rebuild + White Whale / Leadership Wiring
+
+Client sent detailed implementation specs for all three — resolving
+content dependencies B and C (Responsibility Library, Zone Matrix) and
+turning White Whale/Leadership Wiring into individually facilitator-
+unlocked activities. Same standard as every prior pass: verified live
+against the real database and a production build, not just typechecked.
+
+### What was actually verified live
+
+- [x] `rate_responsibility` upserts directly with no prior "selection"
+      step, computes the correct real zone name/macro-zone
+- [x] A partial rating (only one of Competency/Passion set) saves without
+      computing a zone, and doesn't count as mapped
+- [x] Clearing a rating (setting a dimension back to null) correctly
+      un-maps a previously-mapped responsibility
+- [x] Mapping is capped at exactly 12 — the 13th attempt is rejected
+      server-side, while editing an already-mapped item at the cap still
+      succeeds
+- [x] The personalized matrix and every zone/macro-zone name are absent
+      from the mapping-phase page's data entirely (not just unrendered) —
+      caught and fixed a real gap here: the first pass still embedded real
+      zone names in the client component's hydration payload even though
+      nothing on screen showed them
+- [x] The matrix stays hidden (holding state) until
+      `admin_reveal_zone_of_investment` is called, then appears
+      immediately after, with the correct axis orientation and macro-zone
+      distribution math
+- [x] A priority built from one of the new responsibilities (null
+      `leverage_level`) produces a controlled-pending Architecture result
+      instead of crashing `calculate_architecture_recommendation`
+- [x] The Zone of Investment admin dashboard and config screen both
+      return 200 and show real data/content
+- [x] White Whale and Leadership Wiring both stay inaccessible (holding
+      state) until their own admin unlock fires, independently of each
+      other and of the Diagnostic
+- [x] After each unlock, the real admin-configured copy renders (header,
+      setup copy, prompt, per-option descriptions)
+- [x] Leadership Wiring selection persists and correctly renders as the
+      first populated Character field, alongside the six still-locked
+      dimensions
+- [x] White Whale's original text resurfaces verbatim in both the Success
+      module and the final Blueprint (previously nowhere — only a
+      presence-gated follow-up question existed)
+- [x] A non-admin cannot call any of the three new unlock/reveal RPCs
+
+- [x] `npm run typecheck` — passes, no errors
+- [x] `npm run lint` — passes, no errors or warnings
+- [x] `npm run build` — production build succeeds against the live project
+
+### What still needs a manual browser click-through
+
+- [ ] Rating all 21 responsibilities as an actual participant clicking
+      through Low/Medium/High selectors, not just via direct API calls —
+      confirm the live "X of 10–12 mapped" counter and the sticky
+      CONTINUE bar feel right
+- [ ] The personalized matrix's readability with a realistic number of
+      responsibilities per cell (up to 12 stacked in a few cells)
+- [ ] The White Whale → Leadership Wiring → holding-state sequence feels
+      like a coherent guided flow, not a jarring series of screens
+- [ ] Mobile viewport for the Zone of Investment rating list (21 rows) and
+      the personalized matrix
+
+### Not part of this pass
+
+Items D-K of the Content Dependency Register remain open. The hidden
+Executive Leverage Level classification for the 21 real responsibilities
+is explicitly deferred by the client's own spec text ("will be specified
+when the leverage-level mapping is built") — not attempted here.

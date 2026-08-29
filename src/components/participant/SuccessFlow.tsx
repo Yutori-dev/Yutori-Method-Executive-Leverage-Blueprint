@@ -82,7 +82,11 @@ export function SuccessFlow({
 
       {data.whiteWhale ? (
         <Card>
-          <p className="text-(--color-ink)">
+          <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
+            Your White Whale
+          </p>
+          <p className="mt-1 text-sm text-(--color-ink)">{data.whiteWhale}</p>
+          <p className="mt-4 text-(--color-ink)">
             What becomes possible for the White Whale you identified at the beginning?
           </p>
           <textarea

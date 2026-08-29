@@ -344,6 +344,45 @@ export type Database = {
           },
         ]
       }
+      leadership_wiring_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          dashboard_note: string
+          header: string
+          hybrid_description: string
+          id: string
+          integrator_description: string
+          prompt: string
+          version: number
+          visionary_description: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dashboard_note: string
+          header: string
+          hybrid_description: string
+          id?: string
+          integrator_description: string
+          prompt: string
+          version?: number
+          visionary_description: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dashboard_note?: string
+          header?: string
+          hybrid_description?: string
+          id?: string
+          integrator_description?: string
+          prompt?: string
+          version?: number
+          visionary_description?: string
+        }
+        Relationships: []
+      }
       modules: {
         Row: {
           active: boolean
@@ -848,10 +887,12 @@ export type Database = {
           format: string
           id: string
           join_code: string
+          leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
           status: string
           updated_at: string
+          white_whale_unlocked: boolean
           zone_of_investment_revealed: boolean
         }
         Insert: {
@@ -863,10 +904,12 @@ export type Database = {
           format?: string
           id?: string
           join_code: string
+          leadership_wiring_unlocked?: boolean
           name: string
           organization?: string | null
           status?: string
           updated_at?: string
+          white_whale_unlocked?: boolean
           zone_of_investment_revealed?: boolean
         }
         Update: {
@@ -878,10 +921,12 @@ export type Database = {
           format?: string
           id?: string
           join_code?: string
+          leadership_wiring_unlocked?: boolean
           name?: string
           organization?: string | null
           status?: string
           updated_at?: string
+          white_whale_unlocked?: boolean
           zone_of_investment_revealed?: boolean
         }
         Relationships: [
@@ -900,6 +945,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      white_whale_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          header: string
+          id: string
+          placeholder_text: string
+          privacy_note: string
+          prompt: string
+          setup_copy: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          header: string
+          id?: string
+          placeholder_text: string
+          privacy_note: string
+          prompt: string
+          setup_copy: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          header?: string
+          id?: string
+          placeholder_text?: string
+          privacy_note?: string
+          prompt?: string
+          setup_copy?: string
+          version?: number
+        }
+        Relationships: []
       }
       zone_matrix_cells: {
         Row: {
@@ -1001,10 +1082,12 @@ export type Database = {
           format: string
           id: string
           join_code: string
+          leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
           status: string
           updated_at: string
+          white_whale_unlocked: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1025,10 +1108,38 @@ export type Database = {
           format: string
           id: string
           join_code: string
+          leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
           status: string
           updated_at: string
+          white_whale_unlocked: boolean
+          zone_of_investment_revealed: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_unlock_leadership_wiring: {
+        Args: { p_session_id: string }
+        Returns: {
+          active_module_id: string | null
+          architecture_revealed: boolean
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          format: string
+          id: string
+          join_code: string
+          leadership_wiring_unlocked: boolean
+          name: string
+          organization: string | null
+          status: string
+          updated_at: string
+          white_whale_unlocked: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1049,10 +1160,38 @@ export type Database = {
           format: string
           id: string
           join_code: string
+          leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
           status: string
           updated_at: string
+          white_whale_unlocked: boolean
+          zone_of_investment_revealed: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_unlock_white_whale: {
+        Args: { p_session_id: string }
+        Returns: {
+          active_module_id: string | null
+          architecture_revealed: boolean
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          format: string
+          id: string
+          join_code: string
+          leadership_wiring_unlocked: boolean
+          name: string
+          organization: string | null
+          status: string
+          updated_at: string
+          white_whale_unlocked: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {

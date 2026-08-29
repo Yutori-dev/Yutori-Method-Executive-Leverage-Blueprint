@@ -472,3 +472,59 @@ stale two-argument overload — worth remembering for any future
 `create or replace function` that changes a signature's arity rather than
 just a body: it needs an explicit `drop function` for the old shape, since
 `create or replace` alone won't remove it.
+
+## Zone of Investment: an intentionally weaker reveal guarantee than Architecture's, and why
+
+Architecture's reveal is enforced at the RLS level — a participant has zero
+legitimate reason to read that row before the facilitator reveals it, so
+`architecture_recommendations` simply has no pre-reveal participant SELECT
+policy at all. Zone of Investment can't use the same guarantee: `getDelegationCandidates`
+already reads a participant's own `macro_zone` values, as that participant,
+to compute Priority Delegation Opportunity eligibility in module 3 — and
+module 3 can be cohort-unlocked before the facilitator reveals module 2's
+map, since those are two independent facilitator actions the client's spec
+never sequences against each other. Locking `participant_responsibilities`
+down at the RLS level would break Delegation whenever reveal happens out of
+order.
+
+So `matrix_cell`/`macro_zone` are computed eagerly per-rating and stay
+always-readable by the owning participant (unchanged RLS) — "held until
+reveal" is enforced by the Zone of Investment module's own loader instead:
+`getZoneOfInvestmentData()` only includes `zoneCells`/`personalizedPlacements`
+in its return value once `sessions.zone_of_investment_revealed` is true,
+returning `[]` otherwise. This was a real, non-obvious gap the first pass
+missed: even though the mapping-phase UI never *renders* zone names, the
+full data was still being passed as a prop into the client component
+(`ZoneOfInvestmentFlow`), which lands in the page's hydration payload and
+is inspectable via view-source regardless of what's on screen — caught
+during live HTTP-level verification, not by TypeScript or a visual check.
+Fixed by gating the loader's return value itself, not just the rendering.
+
+A determined participant could still read their own `macro_zone` early via
+a direct API call, the same way they always could — flagging this as a
+deliberate, weaker-than-Architecture guarantee for the client, rather than
+either quietly shipping it or chasing a cross-module ordering dependency
+the spec never asked for.
+
+## Per-activity facilitator unlock: the same three-piece pattern, three times
+
+White Whale, Leadership Wiring, and the Zone of Investment reveal all use
+the identical shape: one dedicated `sessions` boolean column + one narrow
+`admin_*` RPC (`is_admin()` check, one-way boolean flip) + a client control
+component with the same idle → confirming → pending states as
+`UnlockModuleControl`. This mirrors `architecture_revealed`/
+`admin_reveal_architecture` exactly, three more times, rather than
+introducing a generic "activity unlock" table/mechanism for an open-ended
+number of future gated activities. With exactly three known cases and no
+signal that more are coming, the repeated concrete pattern is easier to
+read, verify, and reason about than a new abstraction built to anticipate
+cases that don't exist yet — consistent with how the Diagnostic's admin
+config was deliberately scoped to one assessment rather than a generic
+content editor.
+
+Completion for both new activities is derived from existing data rather
+than a new "complete" column, matching the Module 0 precedent
+(`hasCompletedExecutiveContext`): White Whale is complete when
+`participant_reflections.white_whale` is non-empty; Leadership Wiring is
+complete when `participant_sessions.self_identification` is non-null.
+Nothing new needed to be written to track it.

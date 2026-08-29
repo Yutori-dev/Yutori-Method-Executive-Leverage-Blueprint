@@ -64,7 +64,7 @@ export default async function ModulePage({
   if (moduleKey === "operating_altitude") {
     const [diagnostic, operatingAltitudeData] = await Promise.all([
       getExecutiveLeverageDiagnosticData(dashboard.participantSessionId),
-      getOperatingAltitudeData(dashboard.participantSessionId),
+      getOperatingAltitudeData(sessionId, dashboard.participantSessionId),
     ]);
     content = (
       <OperatingAltitudeFlow

@@ -97,6 +97,20 @@ export async function revealZoneOfInvestment(sessionId: string) {
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
 
+export async function unlockWhiteWhale(sessionId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("admin_unlock_white_whale", { p_session_id: sessionId });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+export async function unlockLeadershipWiring(sessionId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("admin_unlock_leadership_wiring", { p_session_id: sessionId });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
 export async function updateFollowUpStatus(params: {
   followUpId: string;
   status: FollowUpStatus;

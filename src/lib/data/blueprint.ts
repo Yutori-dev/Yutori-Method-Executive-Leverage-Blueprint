@@ -4,7 +4,7 @@ import { getZoneOfInvestmentData, type ZoneOfInvestmentData } from "@/lib/data/z
 import { getExecutiveLeverageDiagnosticData, type ExecutiveLeverageProfileResult } from "@/lib/data/executiveLeverageDiagnostic";
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData, type ArchitectureData } from "@/lib/data/architecture";
-import type { LeverageLevel } from "@/types/database";
+import type { LeverageLevel, SelfIdentification } from "@/types/database";
 
 export interface BlueprintDelegationOpportunity {
   label: string;
@@ -19,6 +19,7 @@ export interface BlueprintData {
   session: { name: string; organization: string | null };
   modules: { key: string; name: string; state: string; requiresLiveWorkshop: boolean }[];
   executiveLeverageProfile: ExecutiveLeverageProfileResult | null;
+  selfIdentification: SelfIdentification | null;
   zone: ZoneOfInvestmentData;
   delegation: {
     readinessResult: { overallResult: string | null; interpretation: string | null } | null;
@@ -44,7 +45,7 @@ export async function getBlueprintData(
 ): Promise<BlueprintData | null> {
   const supabase = await createServerSupabaseClient();
 
-  const [{ data: session }, { data: modules }, { data: progress }, { data: followUp }, { data: reflectionRow }] =
+  const [{ data: session }, { data: modules }, { data: progress }, { data: followUp }, { data: reflectionRow }, { data: participantSession }] =
     await Promise.all([
     supabase.from("sessions").select("name, organization, architecture_revealed").eq("id", sessionId).maybeSingle(),
     supabase.from("modules").select("id, key, name, sort_order, requires_live_workshop").eq("active", true).order("sort_order", { ascending: true }),
@@ -55,6 +56,7 @@ export async function getBlueprintData(
       .select("white_whale, success_vision, success_vision_white_whale_followup")
       .eq("participant_session_id", participantSessionId)
       .maybeSingle(),
+    supabase.from("participant_sessions").select("self_identification").eq("id", participantSessionId).maybeSingle(),
   ]);
 
   if (!session || !modules) return null;
@@ -87,6 +89,7 @@ export async function getBlueprintData(
       requiresLiveWorkshop: m.requires_live_workshop,
     })),
     executiveLeverageProfile: diagnostic.result,
+    selfIdentification: (participantSession?.self_identification as SelfIdentification | null) ?? null,
     zone,
     delegation: {
       readinessResult: delegationCandidates.readinessResult
