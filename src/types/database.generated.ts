@@ -520,6 +520,7 @@ export type Database = {
           self_identification: string | null
           session_id: string
           started_at: string | null
+          zone_of_investment_viewed_at: string | null
         }
         Insert: {
           completed_at?: string | null
@@ -532,6 +533,7 @@ export type Database = {
           self_identification?: string | null
           session_id: string
           started_at?: string | null
+          zone_of_investment_viewed_at?: string | null
         }
         Update: {
           completed_at?: string | null
@@ -544,6 +546,7 @@ export type Database = {
           self_identification?: string | null
           session_id?: string
           started_at?: string | null
+          zone_of_investment_viewed_at?: string | null
         }
         Relationships: [
           {
@@ -606,7 +609,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          leverage_level_snapshot: string
+          leverage_level_snapshot: string | null
           participant_session_id: string
           responsibility_id: string
           selection_order: number
@@ -614,7 +617,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          leverage_level_snapshot: string
+          leverage_level_snapshot?: string | null
           participant_session_id: string
           responsibility_id: string
           selection_order: number
@@ -622,7 +625,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          leverage_level_snapshot?: string
+          leverage_level_snapshot?: string | null
           participant_session_id?: string
           responsibility_id?: string
           selection_order?: number
@@ -802,7 +805,7 @@ export type Database = {
           is_placeholder: boolean
           key: string
           label: string
-          leverage_level: string
+          leverage_level: string | null
           sort_order: number
           updated_at: string
           version: number
@@ -815,7 +818,7 @@ export type Database = {
           is_placeholder?: boolean
           key: string
           label: string
-          leverage_level: string
+          leverage_level?: string | null
           sort_order?: number
           updated_at?: string
           version?: number
@@ -828,7 +831,7 @@ export type Database = {
           is_placeholder?: boolean
           key?: string
           label?: string
-          leverage_level?: string
+          leverage_level?: string | null
           sort_order?: number
           updated_at?: string
           version?: number
@@ -849,6 +852,7 @@ export type Database = {
           organization: string | null
           status: string
           updated_at: string
+          zone_of_investment_revealed: boolean
         }
         Insert: {
           active_module_id?: string | null
@@ -863,6 +867,7 @@ export type Database = {
           organization?: string | null
           status?: string
           updated_at?: string
+          zone_of_investment_revealed?: boolean
         }
         Update: {
           active_module_id?: string | null
@@ -877,6 +882,7 @@ export type Database = {
           organization?: string | null
           status?: string
           updated_at?: string
+          zone_of_investment_revealed?: boolean
         }
         Relationships: [
           {
@@ -931,6 +937,54 @@ export type Database = {
         }
         Relationships: []
       }
+      zone_of_investment_config: {
+        Row: {
+          active: boolean
+          competency_high_def: string
+          competency_low_def: string
+          competency_medium_def: string
+          created_at: string
+          id: string
+          passion_high_def: string
+          passion_low_def: string
+          passion_medium_def: string
+          reflection_prompt_1: string
+          reflection_prompt_2: string
+          reflection_prompt_3: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          competency_high_def: string
+          competency_low_def: string
+          competency_medium_def: string
+          created_at?: string
+          id?: string
+          passion_high_def: string
+          passion_low_def: string
+          passion_medium_def: string
+          reflection_prompt_1: string
+          reflection_prompt_2: string
+          reflection_prompt_3: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          competency_high_def?: string
+          competency_low_def?: string
+          competency_medium_def?: string
+          created_at?: string
+          id?: string
+          passion_high_def?: string
+          passion_low_def?: string
+          passion_medium_def?: string
+          reflection_prompt_1?: string
+          reflection_prompt_2?: string
+          reflection_prompt_3?: string
+          version?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -951,6 +1005,31 @@ export type Database = {
           organization: string | null
           status: string
           updated_at: string
+          zone_of_investment_revealed: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_reveal_zone_of_investment: {
+        Args: { p_session_id: string }
+        Returns: {
+          active_module_id: string | null
+          architecture_revealed: boolean
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          format: string
+          id: string
+          join_code: string
+          name: string
+          organization: string | null
+          status: string
+          updated_at: string
+          zone_of_investment_revealed: boolean
         }
         SetofOptions: {
           from: "*"
@@ -974,6 +1053,7 @@ export type Database = {
           organization: string | null
           status: string
           updated_at: string
+          zone_of_investment_revealed: boolean
         }
         SetofOptions: {
           from: "*"
@@ -1060,49 +1140,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      ensure_participant:
-        | {
-            Args: { p_first_name: string; p_last_name: string }
-            Returns: {
-              created_at: string
-              email: string
-              first_name: string
-              id: string
-              last_login: string | null
-              last_name: string
-              privacy_consent_given_at: string | null
-              privacy_consent_version: string | null
-            }
-            SetofOptions: {
-              from: "*"
-              to: "participants"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_first_name: string
-              p_last_name: string
-              p_privacy_consent?: boolean
-            }
-            Returns: {
-              created_at: string
-              email: string
-              first_name: string
-              id: string
-              last_login: string | null
-              last_name: string
-              privacy_consent_given_at: string | null
-              privacy_consent_version: string | null
-            }
-            SetofOptions: {
-              from: "*"
-              to: "participants"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      ensure_participant: {
+        Args: {
+          p_first_name: string
+          p_last_name: string
+          p_privacy_consent?: boolean
+        }
+        Returns: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_login: string | null
+          last_name: string
+          privacy_consent_given_at: string | null
+          privacy_consent_version: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_session_by_join_code: {
         Args: { p_join_code: string }
         Returns: {
@@ -1135,6 +1195,7 @@ export type Database = {
           self_identification: string | null
           session_id: string
           started_at: string | null
+          zone_of_investment_viewed_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -1176,7 +1237,7 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
-          leverage_level_snapshot: string
+          leverage_level_snapshot: string | null
           participant_session_id: string
           responsibility_id: string
           selection_order: number
@@ -1184,29 +1245,6 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "priority_delegation_opportunities"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      select_responsibilities: {
-        Args: {
-          p_participant_session_id: string
-          p_responsibility_ids: string[]
-        }
-        Returns: {
-          competency: string | null
-          created_at: string
-          id: string
-          macro_zone: string | null
-          matrix_cell: string | null
-          participant_session_id: string
-          passion: string | null
-          responsibility_id: string
-          updated_at: string
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "participant_responsibilities"
           isOneToOne: false
           isSetofReturn: true
         }

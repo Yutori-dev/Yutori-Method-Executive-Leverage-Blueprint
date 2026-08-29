@@ -68,7 +68,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         p.selection_order,
         {
           label: (p.responsibilities as unknown as { label: string } | null)?.label ?? "",
-          level: p.leverage_level_snapshot as LeverageLevel,
+          level: p.leverage_level_snapshot as LeverageLevel | null,
         },
       ]),
     );
@@ -86,11 +86,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       zoneCounts.ambiguity,
       zoneCounts.vulnerability,
       priorityByOrder.get(1)?.label ?? "",
-      priorityByOrder.get(1) ? (LEVEL_LABEL[priorityByOrder.get(1)!.level] ?? priorityByOrder.get(1)!.level) : "",
+      priorityByOrder.get(1) ? (LEVEL_LABEL[priorityByOrder.get(1)!.level ?? ""] ?? "") : "",
       priorityByOrder.get(2)?.label ?? "",
-      priorityByOrder.get(2) ? (LEVEL_LABEL[priorityByOrder.get(2)!.level] ?? priorityByOrder.get(2)!.level) : "",
+      priorityByOrder.get(2) ? (LEVEL_LABEL[priorityByOrder.get(2)!.level ?? ""] ?? "") : "",
       priorityByOrder.get(3)?.label ?? "",
-      priorityByOrder.get(3) ? (LEVEL_LABEL[priorityByOrder.get(3)!.level] ?? priorityByOrder.get(3)!.level) : "",
+      priorityByOrder.get(3) ? (LEVEL_LABEL[priorityByOrder.get(3)!.level ?? ""] ?? "") : "",
       recommendation ? (recommendation.is_tied ? "Mixed" : (LEVEL_LABEL[recommendation.primary_signal_leverage_level ?? ""] ?? "")) : "",
       recommendation?.reaction ?? "",
       recommendation?.reaction_note ?? "",

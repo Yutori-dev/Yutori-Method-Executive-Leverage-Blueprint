@@ -1,15 +1,10 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getDemoAssessmentByKey } from "@/lib/data/moduleContent";
 import { getZoneOfInvestmentData, type ZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
+import { getExecutiveLeverageDiagnosticData, type ExecutiveLeverageProfileResult } from "@/lib/data/executiveLeverageDiagnostic";
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData, type ArchitectureData } from "@/lib/data/architecture";
 import type { LeverageLevel } from "@/types/database";
-
-export interface BlueprintAnswer {
-  prompt: string;
-  answer: string;
-}
 
 export interface BlueprintDelegationOpportunity {
   label: string;
@@ -23,7 +18,7 @@ export interface BlueprintDelegationOpportunity {
 export interface BlueprintData {
   session: { name: string; organization: string | null };
   modules: { key: string; name: string; state: string; requiresLiveWorkshop: boolean }[];
-  operatingAltitude: BlueprintAnswer[];
+  executiveLeverageProfile: ExecutiveLeverageProfileResult | null;
   zone: ZoneOfInvestmentData;
   delegation: {
     readinessResult: { overallResult: string | null; interpretation: string | null } | null;
@@ -66,24 +61,12 @@ export async function getBlueprintData(
 
   const statusByModule = new Map((progress ?? []).map((p) => [p.module_id, p.status]));
 
-  const [operatingAltitudeAssessment, zone, delegationCandidates, architecture] = await Promise.all([
-    getDemoAssessmentByKey("dev_demo_operating_altitude", participantSessionId),
-    getZoneOfInvestmentData(participantSessionId),
+  const [diagnostic, zone, delegationCandidates, architecture] = await Promise.all([
+    getExecutiveLeverageDiagnosticData(participantSessionId),
+    getZoneOfInvestmentData(sessionId, participantSessionId),
     getDelegationCandidates(participantSessionId),
     getArchitectureData(sessionId, participantSessionId),
   ]);
-
-  const operatingAltitude: BlueprintAnswer[] = (operatingAltitudeAssessment?.questions ?? [])
-    .filter((q) => q.existingAnswer !== null && q.existingAnswer !== undefined && q.existingAnswer !== "")
-    .map((q) => {
-      let answer: string;
-      if (q.type === "multiple_choice") {
-        answer = q.options.find((o) => o.value === q.existingAnswer)?.label ?? String(q.existingAnswer);
-      } else {
-        answer = String(q.existingAnswer);
-      }
-      return { prompt: q.prompt, answer };
-    });
 
   // leverage_level_snapshot is already in delegationCandidates.currentSelections
   // (getDelegationCandidates fetches it unconditionally, it's cheap) -- no
@@ -103,7 +86,7 @@ export async function getBlueprintData(
       state: (statusByModule.get(m.id) as string | undefined) ?? "not_started",
       requiresLiveWorkshop: m.requires_live_workshop,
     })),
-    operatingAltitude,
+    executiveLeverageProfile: diagnostic.result,
     zone,
     delegation: {
       readinessResult: delegationCandidates.readinessResult

@@ -1,25 +1,24 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { selectResponsibilities, rateResponsibility } from "@/lib/actions/zone";
+import { rateResponsibility } from "@/lib/actions/zone";
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HoldingState } from "./HoldingState";
 import { ZoneMatrix } from "./ZoneMatrix";
-import type { ZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
+import { ZoneOfInvestmentViewedTracker } from "./ZoneOfInvestmentViewedTracker";
+import type { ZoneOfInvestmentData, ZoneOfInvestmentConfig } from "@/lib/data/zoneOfInvestment";
+import { ZONE_OF_INVESTMENT_MIN_MAPPED, ZONE_OF_INVESTMENT_MAX_MAPPED } from "@/lib/zoneOfInvestmentConstants";
 import type { RatingLevel } from "@/types/database";
 import { cn } from "@/lib/cn";
 
-type Phase = "select" | "rate" | "result";
-
-const MIN_SELECTION = 10;
-const MAX_SELECTION = 12;
+type Phase = "mapping" | "result";
 
 interface Rating {
   competency: RatingLevel | null;
   passion: RatingLevel | null;
-  matrixCell: string | null;
 }
 
 export function ZoneOfInvestmentFlow({
@@ -37,89 +36,50 @@ export function ZoneOfInvestmentFlow({
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>(() =>
-    data.selected.length === 0 || alreadyComplete
-      ? data.selected.length === 0
-        ? "select"
-        : "result"
-      : "rate",
-  );
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set(data.selected.map((s) => s.responsibilityId)),
+    data.mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED ? "result" : "mapping",
   );
   const [ratings, setRatings] = useState<Record<string, Rating>>(() =>
-    Object.fromEntries(
-      data.selected.map((s) => [
-        s.responsibilityId,
-        { competency: s.competency, passion: s.passion, matrixCell: s.matrixCell },
-      ]),
-    ),
+    Object.fromEntries(data.ratings.map((r) => [r.responsibilityId, { competency: r.competency, passion: r.passion }])),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const labelById = useMemo(
-    () => new Map(data.availableResponsibilities.map((r) => [r.id, r.label])),
-    [data.availableResponsibilities],
-  );
+  const mappedIds = Object.entries(ratings)
+    .filter(([, r]) => r.competency !== null && r.passion !== null)
+    .map(([id]) => id);
+  const mappedCount = mappedIds.length;
+  const canContinue = mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED;
 
-  function toggleResponsibility(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        if (next.size >= MAX_SELECTION) return prev;
-        next.add(id);
-      }
-      return next;
-    });
-  }
+  function handleRate(id: string, field: "competency" | "passion", value: RatingLevel) {
+    const current = ratings[id] ?? { competency: null, passion: null };
+    // Clicking the already-selected level clears that dimension.
+    const nextValue = current[field] === value ? null : value;
+    const next = { ...current, [field]: nextValue };
 
-  function handleConfirmSelection() {
+    const wasMapped = current.competency !== null && current.passion !== null;
+    const willBeMapped = next.competency !== null && next.passion !== null;
+    if (willBeMapped && !wasMapped && mappedCount >= ZONE_OF_INVESTMENT_MAX_MAPPED) {
+      setErrorMessage(`You can map at most ${ZONE_OF_INVESTMENT_MAX_MAPPED} responsibilities.`);
+      return;
+    }
+
     setErrorMessage(null);
+    setRatings((prev) => ({ ...prev, [id]: next }));
+
     startTransition(async () => {
-      const result = await selectResponsibilities({
+      const result = await rateResponsibility({
         participantSessionId,
-        responsibilityIds: [...selectedIds],
+        responsibilityId: id,
+        competency: next.competency,
+        passion: next.passion,
         sessionPath,
       });
       if (!result.ok) {
         setErrorMessage(result.message);
-        return;
+        setRatings((prev) => ({ ...prev, [id]: current }));
       }
-      setRatings((prev) => {
-        const next: Record<string, Rating> = {};
-        for (const id of selectedIds) {
-          next[id] = prev[id] ?? { competency: null, passion: null, matrixCell: null };
-        }
-        return next;
-      });
-      setPhase("rate");
     });
   }
-
-  function handleRate(id: string, field: "competency" | "passion", value: RatingLevel) {
-    const current = ratings[id] ?? { competency: null, passion: null, matrixCell: null };
-    const next = { ...current, [field]: value };
-    setRatings((prev) => ({ ...prev, [id]: next }));
-
-    if (next.competency && next.passion) {
-      startTransition(async () => {
-        const result = await rateResponsibility({
-          participantSessionId,
-          responsibilityId: id,
-          competency: next.competency!,
-          passion: next.passion!,
-          sessionPath,
-        });
-        if (!result.ok) {
-          setErrorMessage(result.message);
-        }
-      });
-    }
-  }
-
-  const allRated = [...selectedIds].every((id) => ratings[id]?.competency && ratings[id]?.passion);
 
   function handleViewResult() {
     setPhase("result");
@@ -137,91 +97,33 @@ export function ZoneOfInvestmentFlow({
     });
   }
 
-  if (phase === "select") {
-    const count = selectedIds.size;
-    const valid = count >= MIN_SELECTION && count <= MAX_SELECTION;
-
-    return (
-      <Card>
-        <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
-          Development placeholder — Responsibility Library
-        </p>
-        <p className="mt-4 text-sm text-(--color-ink-muted)">
-          Select between 10 and 12 responsibilities that represent your typical week.
-        </p>
-
-        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {data.availableResponsibilities.map((r) => {
-            const checked = selectedIds.has(r.id);
-            const disabled = !checked && count >= MAX_SELECTION;
-            return (
-              <label
-                key={r.id}
-                className={cn(
-                  "flex items-start gap-3 rounded-lg border px-4 py-2.5 text-sm transition-colors",
-                  checked
-                    ? "border-(--color-accent) bg-(--color-accent-soft)"
-                    : disabled
-                      ? "border-(--color-hairline) opacity-50"
-                      : "cursor-pointer border-(--color-hairline) hover:border-(--color-accent)",
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  disabled={disabled}
-                  onChange={() => toggleResponsibility(r.id)}
-                  className="mt-0.5 accent-(--color-accent)"
-                />
-                <span>{r.label}</span>
-              </label>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 flex items-center gap-4">
-          <Button onClick={handleConfirmSelection} disabled={!valid || isPending}>
-            {isPending ? "Saving..." : "Continue"}
-          </Button>
-          <p className={cn("text-sm", valid ? "text-(--color-ink-muted)" : "text-(--color-accent)")}>
-            {count} of 10–12 selected
-          </p>
-        </div>
-        {errorMessage ? <p className="mt-3 text-sm text-[#8a3324]">{errorMessage}</p> : null}
-      </Card>
-    );
-  }
-
-  if (phase === "rate") {
+  if (phase === "mapping") {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
-            Competency + Passion
+        <Card>
+          <p className="text-sm text-(--color-ink)">
+            Identify 10 to 12 responsibilities that represent a significant investment of your
+            time and energy in a representative week. For each one, rate your Competency and
+            Passion as Low, Medium or High. Leave the remaining responsibilities blank.
           </p>
-          <button
-            onClick={() => setPhase("select")}
-            className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-          >
-            Revise selection
-          </button>
-        </div>
+          <RatingReference config={data.config} />
+        </Card>
 
-        {[...selectedIds].map((id) => {
-          const rating = ratings[id] ?? { competency: null, passion: null, matrixCell: null };
+        {data.library.map((r) => {
+          const rating = ratings[r.id] ?? { competency: null, passion: null };
           return (
-            <Card key={id}>
-              <p className="text-(--color-ink)">{labelById.get(id) ?? "[Removed responsibility]"}</p>
+            <Card key={r.id}>
+              <p className="text-(--color-ink)">{r.label}</p>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <RatingPicker
                   label="Competency"
                   value={rating.competency}
-                  onChange={(v) => handleRate(id, "competency", v)}
+                  onChange={(v) => handleRate(r.id, "competency", v)}
                 />
                 <RatingPicker
                   label="Passion"
                   value={rating.passion}
-                  onChange={(v) => handleRate(id, "passion", v)}
+                  onChange={(v) => handleRate(r.id, "passion", v)}
                 />
               </div>
             </Card>
@@ -230,33 +132,73 @@ export function ZoneOfInvestmentFlow({
 
         {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
 
-        <Button onClick={handleViewResult} disabled={!allRated || isPending}>
-          View my Zone of Investment
-        </Button>
+        <div className="sticky bottom-4 flex items-center gap-4 rounded-xl border border-(--color-hairline) bg-(--color-paper) px-4 py-3 shadow-sm">
+          <Button onClick={handleViewResult} disabled={!canContinue || isPending}>
+            CONTINUE
+          </Button>
+          <p className={cn("text-sm", canContinue ? "text-(--color-ink-muted)" : "text-(--color-accent)")}>
+            {mappedCount} of 10–12 mapped
+          </p>
+        </div>
       </div>
     );
   }
 
+  if (!data.revealed) {
+    return (
+      <div className="space-y-4">
+        <HoldingState />
+        <button
+          onClick={() => setPhase("mapping")}
+          className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+        >
+          Revise ratings
+        </button>
+      </div>
+    );
+  }
+
+  const total = data.personalizedPlacements.length;
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
   return (
     <div className="space-y-6">
+      <ZoneOfInvestmentViewedTracker shouldTrack={!data.alreadyViewed} participantSessionId={participantSessionId} />
       <Card>
-        <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
-          Zone of Investment
-        </p>
-        <p className="mt-4 text-sm text-(--color-ink-muted)">
-          Being outside your Zone of Investment does not mean something must be delegated -- it
-          identifies a potential candidate worth examining further.
+        <p className="text-sm text-(--color-ink)">
+          Here is where your current responsibilities fall based on your Competency and Passion
+          ratings.
         </p>
         <div className="mt-6">
-          <ZoneMatrix cells={data.zoneCells} responsibilities={Object.entries(ratings).map(([id, r]) => ({
-            responsibilityId: id,
-            label: labelById.get(id) ?? "[Removed responsibility]",
-            competency: r.competency,
-            passion: r.passion,
-            matrixCell: r.matrixCell,
-            macroZone: null,
-          }))} />
+          <ZoneMatrix cells={data.zoneCells} placements={data.personalizedPlacements} />
         </div>
+      </Card>
+
+      <Card>
+        <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Your current distribution</p>
+        <div className="mt-3 space-y-1 text-sm text-(--color-ink)">
+          <p>
+            Zone of Investment — {data.macroZoneDistribution.investment} of {total} /{" "}
+            {pct(data.macroZoneDistribution.investment)}%
+          </p>
+          <p>
+            Zone of Ambiguity — {data.macroZoneDistribution.ambiguity} of {total} /{" "}
+            {pct(data.macroZoneDistribution.ambiguity)}%
+          </p>
+          <p>
+            Zone of Vulnerability — {data.macroZoneDistribution.vulnerability} of {total} /{" "}
+            {pct(data.macroZoneDistribution.vulnerability)}%
+          </p>
+        </div>
+      </Card>
+
+      <Card>
+        <p className="text-sm text-(--color-ink)">Take a look at the pattern.</p>
+        <ul className="mt-2 space-y-1 text-sm text-(--color-ink-muted)">
+          {data.config.reflectionPrompts.map((prompt) => (
+            <li key={prompt}>{prompt}</li>
+          ))}
+        </ul>
       </Card>
 
       <div className="flex items-center gap-4">
@@ -264,11 +206,56 @@ export function ZoneOfInvestmentFlow({
           {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
         </Button>
         <button
-          onClick={() => setPhase("rate")}
+          onClick={() => setPhase("mapping")}
           className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
         >
           Revise ratings
         </button>
+      </div>
+    </div>
+  );
+}
+
+function RatingReference({ config }: { config: ZoneOfInvestmentConfig }) {
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-4 border-t border-(--color-hairline) pt-4 sm:grid-cols-2">
+      <div>
+        <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+          Competency — how capable and skilled are you at this activity?
+        </p>
+        <dl className="mt-2 space-y-1.5 text-xs text-(--color-ink-muted)">
+          <div>
+            <dt className="inline font-medium text-(--color-ink)">Low: </dt>
+            <dd className="inline">{config.competencyDefinitions.low}</dd>
+          </div>
+          <div>
+            <dt className="inline font-medium text-(--color-ink)">Medium: </dt>
+            <dd className="inline">{config.competencyDefinitions.medium}</dd>
+          </div>
+          <div>
+            <dt className="inline font-medium text-(--color-ink)">High: </dt>
+            <dd className="inline">{config.competencyDefinitions.high}</dd>
+          </div>
+        </dl>
+      </div>
+      <div>
+        <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+          Passion — how much energy, interest or enjoyment do you feel when doing it?
+        </p>
+        <dl className="mt-2 space-y-1.5 text-xs text-(--color-ink-muted)">
+          <div>
+            <dt className="inline font-medium text-(--color-ink)">Low: </dt>
+            <dd className="inline">{config.passionDefinitions.low}</dd>
+          </div>
+          <div>
+            <dt className="inline font-medium text-(--color-ink)">Medium: </dt>
+            <dd className="inline">{config.passionDefinitions.medium}</dd>
+          </div>
+          <div>
+            <dt className="inline font-medium text-(--color-ink)">High: </dt>
+            <dd className="inline">{config.passionDefinitions.high}</dd>
+          </div>
+        </dl>
       </div>
     </div>
   );

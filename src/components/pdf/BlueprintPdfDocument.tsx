@@ -73,28 +73,32 @@ export function BlueprintPdfDocument({
           ))}
         </View>
 
-        {data.operatingAltitude.length > 0 ? (
+        {data.executiveLeverageProfile ? (
           <>
-            <Text style={styles.sectionTitle}>Operating Altitude</Text>
+            <Text style={styles.sectionTitle}>Executive Leverage Profile</Text>
             <View style={styles.card}>
-              {data.operatingAltitude.map((a) => (
-                <View key={a.prompt} style={{ marginBottom: 6 }}>
-                  <Text style={styles.label}>{a.prompt}</Text>
-                  <Text style={styles.value}>{a.answer}</Text>
+              <Text style={styles.value}>{data.executiveLeverageProfile.profileLabel}</Text>
+              {data.executiveLeverageProfile.profileDescription ? (
+                <Text style={styles.label}>{data.executiveLeverageProfile.profileDescription}</Text>
+              ) : null}
+              {data.executiveLeverageProfile.strongestConstraints.map((c) => (
+                <View key={c.label} style={{ marginTop: 6 }}>
+                  <Text style={styles.value}>{c.label}</Text>
+                  <Text style={styles.label}>{c.interpretation}</Text>
                 </View>
               ))}
             </View>
           </>
         ) : null}
 
-        {data.zone.selected.length > 0 ? (
+        {data.zone.personalizedPlacements.length > 0 ? (
           <>
             <Text style={styles.sectionTitle}>Current Structure — Zone of Investment</Text>
             <View style={styles.card}>
-              {data.zone.selected.map((r) => (
-                <View key={r.responsibilityId} style={styles.row}>
-                  <Text style={styles.value}>{r.label}</Text>
-                  <Text style={styles.label}>{r.matrixCell ?? "Not yet rated"}</Text>
+              {data.zone.personalizedPlacements.map((p) => (
+                <View key={p.responsibilityId} style={styles.row}>
+                  <Text style={styles.value}>{p.label}</Text>
+                  <Text style={styles.label}>{p.cellName}</Text>
                 </View>
               ))}
             </View>

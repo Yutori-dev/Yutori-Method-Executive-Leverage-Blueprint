@@ -14,39 +14,61 @@ import type { RatingLevel } from "@/types/database";
  * section 21). See supabase/migrations/20260830000002_zone_and_delegation_functions.sql.
  */
 
-export async function selectResponsibilities(params: {
-  participantSessionId: string;
-  responsibilityIds: string[];
-  sessionPath: string;
-}) {
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.rpc("select_responsibilities", {
-    p_participant_session_id: params.participantSessionId,
-    p_responsibility_ids: params.responsibilityIds,
-  });
-
-  if (error) return { ok: false as const, message: error.message };
-  revalidatePath(params.sessionPath);
-  return { ok: true as const };
-}
-
+/**
+ * Rating a responsibility is the only write path -- there is no separate
+ * "selection" step. Either value may be null to clear that dimension;
+ * clearing either one un-maps the responsibility. The RPC itself enforces
+ * the 12-mapped ceiling and re-derives matrix_cell/macro_zone server-side.
+ */
 export async function rateResponsibility(params: {
   participantSessionId: string;
   responsibilityId: string;
-  competency: RatingLevel;
-  passion: RatingLevel;
+  competency: RatingLevel | null;
+  passion: RatingLevel | null;
   sessionPath: string;
 }) {
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.rpc("rate_responsibility", {
+  // Postgres has no per-parameter nullability annotation, so the generated
+  // RPC arg types are non-null `string` even though the function body
+  // explicitly accepts and handles null (verified live) -- cast past that
+  // generation gap rather than the function's real, tested contract.
+  const { data, error } = await supabase.rpc("rate_responsibility", {
     p_participant_session_id: params.participantSessionId,
     p_responsibility_id: params.responsibilityId,
-    p_competency: params.competency,
-    p_passion: params.passion,
+    p_competency: params.competency as string,
+    p_passion: params.passion as string,
   });
 
   if (error) return { ok: false as const, message: error.message };
   revalidatePath(params.sessionPath);
+  return {
+    ok: true as const,
+    matrixCell: data?.matrix_cell as string | null,
+    macroZone: data?.macro_zone as string | null,
+  };
+}
+
+/** Sets zone_of_investment_viewed_at once, first time a participant's UI
+ * renders the revealed personalized matrix. Never overwritten after that
+ * -- a plain RLS-scoped write (own row only), not RPC-gated, matching the
+ * "raw participant-authored data" trust level used for view/visit stats
+ * elsewhere (e.g. markModuleStarted). */
+export async function markZoneOfInvestmentViewed(params: { participantSessionId: string }) {
+  const supabase = await createServerSupabaseClient();
+  const { data: existing } = await supabase
+    .from("participant_sessions")
+    .select("zone_of_investment_viewed_at")
+    .eq("id", params.participantSessionId)
+    .maybeSingle();
+
+  if (existing?.zone_of_investment_viewed_at) return { ok: true as const };
+
+  const { error } = await supabase
+    .from("participant_sessions")
+    .update({ zone_of_investment_viewed_at: new Date().toISOString() })
+    .eq("id", params.participantSessionId);
+
+  if (error) return { ok: false as const, message: error.message };
   return { ok: true as const };
 }
 

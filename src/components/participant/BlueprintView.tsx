@@ -43,23 +43,34 @@ export function BlueprintView({
         </div>
       </section>
 
-      {data.operatingAltitude.length > 0 ? (
+      {data.executiveLeverageProfile ? (
         <section>
-          <h2 className="font-serif text-xl">Operating Altitude</h2>
+          <h2 className="font-serif text-xl">Executive Leverage Profile</h2>
           <Card className="mt-3">
-            <dl className="space-y-3">
-              {data.operatingAltitude.map((a) => (
-                <div key={a.prompt}>
-                  <dt className="text-xs text-(--color-ink-muted)">{a.prompt}</dt>
-                  <dd className="mt-0.5 text-sm text-(--color-ink)">{a.answer}</dd>
-                </div>
-              ))}
-            </dl>
+            <p className="text-sm text-(--color-ink)">{data.executiveLeverageProfile.profileLabel}</p>
+            {data.executiveLeverageProfile.profileDescription ? (
+              <p className="mt-2 text-sm text-(--color-ink-muted)">
+                {data.executiveLeverageProfile.profileDescription}
+              </p>
+            ) : null}
+            {data.executiveLeverageProfile.strongestConstraints.length > 0 ? (
+              <div className="mt-4 space-y-3 border-t border-(--color-hairline) pt-4">
+                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
+                  Strongest Leverage Constraints
+                </p>
+                {data.executiveLeverageProfile.strongestConstraints.map((c) => (
+                  <div key={c.label}>
+                    <p className="text-sm font-medium text-(--color-ink)">{c.label}</p>
+                    <p className="mt-0.5 text-sm text-(--color-ink-muted)">{c.interpretation}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </Card>
         </section>
       ) : null}
 
-      {data.zone.selected.length > 0 ? (
+      {data.zone.personalizedPlacements.length > 0 ? (
         <section>
           <h2 className="font-serif text-xl">Current Structure</h2>
           <p className="mt-1 text-sm text-(--color-ink-muted)">
@@ -67,7 +78,7 @@ export function BlueprintView({
             identifies a candidate worth examining further.
           </p>
           <Card className="mt-3">
-            <ZoneMatrix cells={data.zone.zoneCells} responsibilities={data.zone.selected} />
+            <ZoneMatrix cells={data.zone.zoneCells} placements={data.zone.personalizedPlacements} />
           </Card>
         </section>
       ) : null}

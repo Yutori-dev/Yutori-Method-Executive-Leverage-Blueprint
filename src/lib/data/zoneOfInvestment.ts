@@ -1,6 +1,5 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { isProduction } from "@/lib/env";
 import type { RatingLevel, MacroZone } from "@/types/database";
 
 export interface ResponsibilityOption {
@@ -9,13 +8,29 @@ export interface ResponsibilityOption {
   description: string | null;
 }
 
+/** State-1-safe: competency/passion only, never a zone name or macro zone --
+ * "The Zone names and macro-zone classifications should not appear during
+ * State 1" is enforced here, at the loader, not left to the component to
+ * remember not to render. */
 export interface RatedResponsibility {
   responsibilityId: string;
-  label: string;
   competency: RatingLevel | null;
   passion: RatingLevel | null;
-  matrixCell: string | null;
-  macroZone: MacroZone | null;
+}
+
+export interface PersonalizedPlacement {
+  responsibilityId: string;
+  label: string;
+  competencyLevel: RatingLevel;
+  passionLevel: RatingLevel;
+  cellName: string;
+  macroZone: MacroZone;
+}
+
+export interface ZoneOfInvestmentConfig {
+  competencyDefinitions: Record<RatingLevel, string>;
+  passionDefinitions: Record<RatingLevel, string>;
+  reflectionPrompts: string[];
 }
 
 export interface ZoneCellDefinition {
@@ -23,79 +38,131 @@ export interface ZoneCellDefinition {
   passionLevel: RatingLevel;
   cellName: string;
   macroZone: MacroZone;
-  explanation: string | null;
 }
 
 export interface ZoneOfInvestmentData {
-  /** The full selectable library (placeholder-gated in production). Never
-   * includes leverage_level -- that column is hidden from every
-   * participant-facing query (task instructions section 9). */
-  availableResponsibilities: ResponsibilityOption[];
-  /** This participant's current selection, with whatever rating exists so far. */
-  selected: RatedResponsibility[];
-  /** The active 9-cell configuration, for rendering the matrix legend. Empty
-   * until Yutori's mapping (or the dev placeholder) is configured. */
+  library: ResponsibilityOption[];
+  ratings: RatedResponsibility[];
+  mappedCount: number;
+  revealed: boolean;
+  alreadyViewed: boolean;
+  /** All 9 cells, for the grid's own labels -- always fetched, small table. */
   zoneCells: ZoneCellDefinition[];
+  /** Only populated once revealed=true. */
+  personalizedPlacements: PersonalizedPlacement[];
+  macroZoneDistribution: { investment: number; ambiguity: number; vulnerability: number };
+  config: ZoneOfInvestmentConfig;
 }
 
 export async function getZoneOfInvestmentData(
+  sessionId: string,
   participantSessionId: string,
 ): Promise<ZoneOfInvestmentData> {
   const supabase = await createServerSupabaseClient();
 
-  let responsibilitiesQuery = supabase
-    .from("responsibilities")
-    .select("id, label, description, is_placeholder")
-    .eq("active", true)
-    .order("sort_order", { ascending: true });
-  if (isProduction) {
-    responsibilitiesQuery = responsibilitiesQuery.eq("is_placeholder", false);
+  const [
+    { data: library },
+    { data: ratingRows },
+    { data: session },
+    { data: participantSession },
+    { data: config },
+    { data: zoneCells },
+  ] = await Promise.all([
+    supabase
+      .from("responsibilities")
+      .select("id, label, description")
+      .eq("active", true)
+      .eq("is_placeholder", false)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("participant_responsibilities")
+      .select("responsibility_id, competency, passion, matrix_cell, macro_zone, responsibilities(label)")
+      .eq("participant_session_id", participantSessionId),
+    supabase.from("sessions").select("zone_of_investment_revealed").eq("id", sessionId).maybeSingle(),
+    supabase
+      .from("participant_sessions")
+      .select("zone_of_investment_viewed_at")
+      .eq("id", participantSessionId)
+      .maybeSingle(),
+    supabase
+      .from("zone_of_investment_config")
+      .select(
+        "competency_low_def, competency_medium_def, competency_high_def, passion_low_def, passion_medium_def, passion_high_def, reflection_prompt_1, reflection_prompt_2, reflection_prompt_3",
+      )
+      .eq("active", true)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("zone_matrix_cells")
+      .select("competency_level, passion_level, cell_name, macro_zone")
+      .eq("active", true)
+      .eq("is_placeholder", false),
+  ]);
+
+  const revealed = session?.zone_of_investment_revealed ?? false;
+  const rows = ratingRows ?? [];
+
+  const mappedCount = rows.filter((r) => r.competency !== null && r.passion !== null).length;
+
+  const personalizedPlacements: PersonalizedPlacement[] = revealed
+    ? rows
+        .filter((r) => r.competency !== null && r.passion !== null && r.matrix_cell !== null)
+        .map((r) => ({
+          responsibilityId: r.responsibility_id,
+          label: (r.responsibilities as { label: string } | null)?.label ?? "[Removed responsibility]",
+          competencyLevel: r.competency as RatingLevel,
+          passionLevel: r.passion as RatingLevel,
+          cellName: r.matrix_cell as string,
+          macroZone: r.macro_zone as MacroZone,
+        }))
+    : [];
+
+  const macroZoneDistribution = { investment: 0, ambiguity: 0, vulnerability: 0 };
+  for (const p of personalizedPlacements) {
+    macroZoneDistribution[p.macroZone] += 1;
   }
-
-  let zoneCellsQuery = supabase
-    .from("zone_matrix_cells")
-    .select("competency_level, passion_level, cell_name, macro_zone, explanation, is_placeholder")
-    .eq("active", true);
-  if (isProduction) {
-    zoneCellsQuery = zoneCellsQuery.eq("is_placeholder", false);
-  }
-
-  // None of these three depend on each other's results, so they run as one
-  // round trip instead of three sequential ones.
-  const [{ data: responsibilities }, { data: participantResponsibilities }, { data: zoneCells }] =
-    await Promise.all([
-      responsibilitiesQuery,
-      supabase
-        .from("participant_responsibilities")
-        .select("responsibility_id, competency, passion, matrix_cell, macro_zone")
-        .eq("participant_session_id", participantSessionId),
-      zoneCellsQuery,
-    ]);
-
-  const responsibilityById = new Map((responsibilities ?? []).map((r) => [r.id, r]));
-
-  const selected: RatedResponsibility[] = (participantResponsibilities ?? []).map((pr) => ({
-    responsibilityId: pr.responsibility_id,
-    label: responsibilityById.get(pr.responsibility_id)?.label ?? "[Removed responsibility]",
-    competency: pr.competency as RatingLevel | null,
-    passion: pr.passion as RatingLevel | null,
-    matrixCell: pr.matrix_cell,
-    macroZone: pr.macro_zone as MacroZone | null,
-  }));
 
   return {
-    availableResponsibilities: (responsibilities ?? []).map((r) => ({
-      id: r.id,
-      label: r.label,
-      description: r.description,
+    library: (library ?? []).map((r) => ({ id: r.id, label: r.label, description: r.description })),
+    ratings: rows.map((r) => ({
+      responsibilityId: r.responsibility_id,
+      competency: r.competency as RatingLevel | null,
+      passion: r.passion as RatingLevel | null,
     })),
-    selected,
-    zoneCells: (zoneCells ?? []).map((c) => ({
-      competencyLevel: c.competency_level as RatingLevel,
-      passionLevel: c.passion_level as RatingLevel,
-      cellName: c.cell_name,
-      macroZone: c.macro_zone as MacroZone,
-      explanation: c.explanation,
-    })),
+    mappedCount,
+    revealed,
+    alreadyViewed: participantSession?.zone_of_investment_viewed_at !== null,
+    // Only sent to the client once revealed -- otherwise the real zone/
+    // macro-zone names would sit in the page's hydration payload
+    // (inspectable via view-source) even though the mapping-phase UI never
+    // renders them, undermining "zone names should not appear during
+    // State 1" even though nothing on screen shows them.
+    zoneCells: revealed
+      ? (zoneCells ?? []).map((c) => ({
+          competencyLevel: c.competency_level as RatingLevel,
+          passionLevel: c.passion_level as RatingLevel,
+          cellName: c.cell_name,
+          macroZone: c.macro_zone as MacroZone,
+        }))
+      : [],
+    personalizedPlacements,
+    macroZoneDistribution,
+    config: {
+      competencyDefinitions: {
+        low: config?.competency_low_def ?? "",
+        medium: config?.competency_medium_def ?? "",
+        high: config?.competency_high_def ?? "",
+      },
+      passionDefinitions: {
+        low: config?.passion_low_def ?? "",
+        medium: config?.passion_medium_def ?? "",
+        high: config?.passion_high_def ?? "",
+      },
+      reflectionPrompts: [config?.reflection_prompt_1, config?.reflection_prompt_2, config?.reflection_prompt_3].filter(
+        (p): p is string => !!p,
+      ),
+    },
   };
 }
+

@@ -7,6 +7,7 @@ import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import { RevealArchitectureControl } from "@/components/admin/RevealArchitectureControl";
+import { RevealZoneOfInvestmentControl } from "@/components/admin/RevealZoneOfInvestmentControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
@@ -70,6 +71,10 @@ export default async function SessionControlPanelPage({
   const architectureUnlocked = Boolean(
     architectureModule && activeModule && architectureModule.sort_order <= activeModule.sort_order,
   );
+  const currentStructureModule = modules.find((m) => m.key === "current_structure");
+  const currentStructureUnlocked = Boolean(
+    currentStructureModule && activeModule && currentStructureModule.sort_order <= activeModule.sort_order,
+  );
 
   const joinUrl =
     typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
@@ -100,6 +105,12 @@ export default async function SessionControlPanelPage({
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
             >
               Executive Leverage Diagnostic
+            </Link>
+            <Link
+              href={`/admin/sessions/${sessionId}/zone-of-investment`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Zone of Investment
             </Link>
             <Link
               href={`/admin/sessions/${sessionId}/present`}
@@ -158,6 +169,22 @@ export default async function SessionControlPanelPage({
             <div className="mt-6">
               <UnlockModuleControl sessionId={sessionId} nextModuleName={nextModule?.name ?? null} />
             </div>
+
+            {currentStructureUnlocked || session.zone_of_investment_revealed ? (
+              <div className="mt-6 border-t border-(--color-hairline) pt-6">
+                <h3 className="text-sm font-medium">Zone of Investment reveal</h3>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
+                  Separate from module unlocking -- reveals each participant&apos;s personalized
+                  matrix.
+                </p>
+                <div className="mt-3">
+                  <RevealZoneOfInvestmentControl
+                    sessionId={sessionId}
+                    alreadyRevealed={session.zone_of_investment_revealed}
+                  />
+                </div>
+              </div>
+            ) : null}
 
             {architectureUnlocked || session.architecture_revealed ? (
               <div className="mt-6 border-t border-(--color-hairline) pt-6">

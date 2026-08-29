@@ -92,7 +92,7 @@ export default async function AdminParticipantProfilePage({
                         <td className="py-2 pr-4 capitalize">{r.competency ?? "—"}</td>
                         <td className="py-2 pr-4 capitalize">{r.passion ?? "—"}</td>
                         <td className="py-2 pr-4 capitalize">{r.macroZone ?? "—"}</td>
-                        <td className="py-2">{LEVEL_LABEL[r.leverageLevel] ?? r.leverageLevel}</td>
+                        <td className="py-2">{LEVEL_LABEL[r.leverageLevel ?? ""] ?? "Not yet classified"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -118,7 +118,7 @@ export default async function AdminParticipantProfilePage({
                         {p.selectionOrder}. {p.label}
                       </span>
                       <span className="text-(--color-ink-muted)">
-                        {LEVEL_LABEL[p.leverageLevelSnapshot] ?? p.leverageLevelSnapshot}
+                        {LEVEL_LABEL[p.leverageLevelSnapshot ?? ""] ?? "Not yet classified"}
                       </span>
                     </li>
                   ))}

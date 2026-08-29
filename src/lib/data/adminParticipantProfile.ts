@@ -15,14 +15,17 @@ export interface AdminProfileResponsibility {
   macroZone: MacroZone | null;
   /** Unlike every participant-facing query, the admin coaching view is
    * meant to see this (brief section 17) -- it's simply never selected by
-   * participant-facing code, not blocked by RLS. */
-  leverageLevel: LeverageLevel;
+   * participant-facing code, not blocked by RLS. Null for content whose
+   * hidden leverage classification hasn't been supplied yet (the new real
+   * Zone of Investment responsibilities) -- a controlled-pending state,
+   * not an error. */
+  leverageLevel: LeverageLevel | null;
 }
 
 export interface AdminProfilePriority {
   label: string;
   selectionOrder: number;
-  leverageLevelSnapshot: LeverageLevel;
+  leverageLevelSnapshot: LeverageLevel | null;
 }
 
 export interface AdminParticipantProfile {
@@ -151,14 +154,14 @@ export async function getAdminParticipantProfile(
     })),
     operatingAltitude,
     zoneOfInvestment: (responsibilityRows ?? []).map((r) => {
-      const responsibility = r.responsibilities as unknown as { label: string; leverage_level: LeverageLevel };
+      const responsibility = r.responsibilities as unknown as { label: string; leverage_level: LeverageLevel | null };
       return {
         label: responsibility?.label ?? "[Removed responsibility]",
         competency: r.competency as RatingLevel | null,
         passion: r.passion as RatingLevel | null,
         matrixCell: r.matrix_cell,
         macroZone: r.macro_zone as MacroZone | null,
-        leverageLevel: responsibility?.leverage_level,
+        leverageLevel: responsibility?.leverage_level ?? null,
       };
     }),
     delegation: {
@@ -168,7 +171,7 @@ export async function getAdminParticipantProfile(
         return {
           label: responsibility?.label ?? "[Removed responsibility]",
           selectionOrder: p.selection_order,
-          leverageLevelSnapshot: p.leverage_level_snapshot as LeverageLevel,
+          leverageLevelSnapshot: p.leverage_level_snapshot as LeverageLevel | null,
         };
       }),
     },

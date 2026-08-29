@@ -89,7 +89,7 @@ export default async function ModulePage({
       />
     );
   } else if (moduleKey === "current_structure") {
-    const zoneData = await getZoneOfInvestmentData(dashboard.participantSessionId);
+    const zoneData = await getZoneOfInvestmentData(sessionId, dashboard.participantSessionId);
     content = (
       <ZoneOfInvestmentFlow
         data={zoneData}

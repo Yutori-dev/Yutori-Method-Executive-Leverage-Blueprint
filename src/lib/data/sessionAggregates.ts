@@ -30,6 +30,22 @@ export interface ExecutiveLeverageDiagnosticAggregates {
   rockCompletion: CountRow[];
 }
 
+export interface ZoneOfInvestmentParticipantRow {
+  name: string;
+  mappedCount: number;
+  investmentPercentage: number;
+  ambiguityPercentage: number;
+  vulnerabilityPercentage: number;
+}
+
+export interface ZoneOfInvestmentAggregates {
+  mappingCompletionCount: number;
+  mappingCompletionRate: number;
+  revealViewedCount: number;
+  revealViewedRate: number;
+  perParticipant: ZoneOfInvestmentParticipantRow[];
+}
+
 export interface SessionAggregates {
   registeredCount: number;
   fullyCompletedCount: number;
@@ -42,7 +58,20 @@ export interface SessionAggregates {
   reactionDistribution: CountRow[];
   selfIdentificationDistribution: CountRow[];
   executiveLeverageDiagnostic: ExecutiveLeverageDiagnosticAggregates;
+  zoneOfInvestment: ZoneOfInvestmentAggregates;
+  whiteWhaleCompletionCount: number;
+  whiteWhaleCompletionRate: number;
+  leadershipWiringCompletionCount: number;
+  leadershipWiringCompletionRate: number;
 }
+
+const EMPTY_ZONE_OF_INVESTMENT_AGGREGATES: ZoneOfInvestmentAggregates = {
+  mappingCompletionCount: 0,
+  mappingCompletionRate: 0,
+  revealViewedCount: 0,
+  revealViewedRate: 0,
+  perParticipant: [],
+};
 
 const EMPTY_DIAGNOSTIC_AGGREGATES: ExecutiveLeverageDiagnosticAggregates = {
   startedCount: 0,
@@ -107,7 +136,9 @@ function countBy<T>(rows: T[], keyFn: (row: T) => string | null | undefined, lab
 export async function getSessionAggregates(sessionIds?: string[]): Promise<SessionAggregates> {
   const supabase = await createServerSupabaseClient();
 
-  let enrollmentQuery = supabase.from("participant_sessions").select("id, completion_state, self_identification");
+  let enrollmentQuery = supabase
+    .from("participant_sessions")
+    .select("id, completion_state, self_identification, zone_of_investment_viewed_at, participants(first_name, last_name)");
   if (sessionIds) enrollmentQuery = enrollmentQuery.in("session_id", sessionIds);
 
   const [{ data: enrollments }, { data: modules }, { data: diagnosticAssessment }] = await Promise.all([
@@ -145,6 +176,11 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       reactionDistribution: [],
       selfIdentificationDistribution: [],
       executiveLeverageDiagnostic: EMPTY_DIAGNOSTIC_AGGREGATES,
+      zoneOfInvestment: EMPTY_ZONE_OF_INVESTMENT_AGGREGATES,
+      whiteWhaleCompletionCount: 0,
+      whiteWhaleCompletionRate: 0,
+      leadershipWiringCompletionCount: 0,
+      leadershipWiringCompletionRate: 0,
     };
   }
 
@@ -158,6 +194,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     { data: diagnosticQuestions },
     { data: diagnosticResponses },
     { data: diagnosticResults },
+    { data: reflectionRows },
   ] = await Promise.all([
     supabase
       .from("participant_module_progress")
@@ -165,7 +202,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("participant_responsibilities")
-      .select("macro_zone, responsibility_id, responsibilities(label)")
+      .select("participant_session_id, competency, passion, macro_zone, responsibility_id, responsibilities(label)")
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("priority_delegation_opportunities")
@@ -196,7 +233,16 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
           .in("participant_session_id", participantSessionIds)
           .eq("assessments.id", diagnosticAssessmentId)
       : Promise.resolve({ data: [] }),
+    supabase
+      .from("participant_reflections")
+      .select("participant_session_id, white_whale")
+      .in("participant_session_id", participantSessionIds),
   ]);
+
+  const whiteWhaleCompletedCount = (reflectionRows ?? []).filter(
+    (r) => (r.white_whale ?? "").trim().length > 0,
+  ).length;
+  const leadershipWiringCompletedCount = (enrollments ?? []).filter((e) => e.self_identification !== null).length;
 
   const moduleCompletion: ModuleCompletionRow[] = (modules ?? []).map((m) => {
     const rows = (progressRows ?? []).filter((p) => p.module_id === m.id);
@@ -221,6 +267,12 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     questions: diagnosticQuestions ?? [],
     responses: diagnosticResponses ?? [],
     results: diagnosticResults ?? [],
+  });
+
+  const zoneOfInvestment = computeZoneOfInvestmentAggregates({
+    registeredCount,
+    enrollments: enrollments ?? [],
+    responsibilityRows: responsibilityRows ?? [],
   });
 
   return {
@@ -263,6 +315,12 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       (key) => SELF_IDENTIFICATION_LABEL[key] ?? key,
     ),
     executiveLeverageDiagnostic,
+    zoneOfInvestment,
+    whiteWhaleCompletionCount: whiteWhaleCompletedCount,
+    whiteWhaleCompletionRate: registeredCount > 0 ? Math.round((whiteWhaleCompletedCount / registeredCount) * 1000) / 10 : 0,
+    leadershipWiringCompletionCount: leadershipWiringCompletedCount,
+    leadershipWiringCompletionRate:
+      registeredCount > 0 ? Math.round((leadershipWiringCompletedCount / registeredCount) * 1000) / 10 : 0,
   };
 }
 
@@ -350,5 +408,76 @@ function computeExecutiveLeverageDiagnosticAggregates(params: {
     cohortProfile,
     topConstraints,
     rockCompletion,
+  };
+}
+
+const ZONE_OF_INVESTMENT_MIN_MAPPED = 10;
+
+/**
+ * Zone of Investment's facilitator dashboard section (mapping completion,
+ * reveal-viewed, per-participant table). Cohort macro-zone distribution
+ * reuses the existing top-level zoneDistribution field rather than being
+ * duplicated here.
+ */
+function computeZoneOfInvestmentAggregates(params: {
+  registeredCount: number;
+  enrollments: {
+    id: string;
+    zone_of_investment_viewed_at: string | null;
+    participants: unknown;
+  }[];
+  responsibilityRows: {
+    participant_session_id: string;
+    competency: string | null;
+    passion: string | null;
+    macro_zone: string | null;
+  }[];
+}): ZoneOfInvestmentAggregates {
+  const { registeredCount, enrollments, responsibilityRows } = params;
+
+  const mappedByParticipant = new Map<string, { investment: number; ambiguity: number; vulnerability: number; total: number }>();
+  for (const row of responsibilityRows) {
+    if (row.competency === null || row.passion === null) continue;
+    const entry = mappedByParticipant.get(row.participant_session_id) ?? {
+      investment: 0,
+      ambiguity: 0,
+      vulnerability: 0,
+      total: 0,
+    };
+    entry.total += 1;
+    if (row.macro_zone === "investment") entry.investment += 1;
+    else if (row.macro_zone === "ambiguity") entry.ambiguity += 1;
+    else if (row.macro_zone === "vulnerability") entry.vulnerability += 1;
+    mappedByParticipant.set(row.participant_session_id, entry);
+  }
+
+  const mappingCompletionCount = [...mappedByParticipant.values()].filter(
+    (v) => v.total >= ZONE_OF_INVESTMENT_MIN_MAPPED,
+  ).length;
+  const revealViewedCount = enrollments.filter((e) => e.zone_of_investment_viewed_at !== null).length;
+
+  const nameById = new Map(
+    enrollments.map((e) => {
+      const p = e.participants as { first_name: string; last_name: string } | null;
+      return [e.id, p ? `${p.first_name} ${p.last_name}` : "[Removed participant]"];
+    }),
+  );
+
+  const perParticipant: ZoneOfInvestmentParticipantRow[] = [...mappedByParticipant.entries()]
+    .map(([participantSessionId, v]) => ({
+      name: nameById.get(participantSessionId) ?? "[Removed participant]",
+      mappedCount: v.total,
+      investmentPercentage: v.total > 0 ? Math.round((v.investment / v.total) * 1000) / 10 : 0,
+      ambiguityPercentage: v.total > 0 ? Math.round((v.ambiguity / v.total) * 1000) / 10 : 0,
+      vulnerabilityPercentage: v.total > 0 ? Math.round((v.vulnerability / v.total) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.mappedCount - a.mappedCount);
+
+  return {
+    mappingCompletionCount,
+    mappingCompletionRate: registeredCount > 0 ? Math.round((mappingCompletionCount / registeredCount) * 1000) / 10 : 0,
+    revealViewedCount,
+    revealViewedRate: registeredCount > 0 ? Math.round((revealViewedCount / registeredCount) * 1000) / 10 : 0,
+    perParticipant,
   };
 }
