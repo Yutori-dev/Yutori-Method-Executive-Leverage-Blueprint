@@ -18,6 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           {user ? (
             <div className="flex items-center gap-4 text-sm text-(--color-ink-muted)">
+              <Link href="/admin/admins" className="underline underline-offset-4 hover:text-(--color-ink)">
+                Manage admins
+              </Link>
               <span>{user.email}</span>
               <SignOutButton />
             </div>

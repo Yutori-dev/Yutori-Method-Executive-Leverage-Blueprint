@@ -528,3 +528,31 @@ than a new "complete" column, matching the Module 0 precedent
 `participant_reflections.white_whale` is non-empty; Leadership Wiring is
 complete when `participant_sessions.self_identification` is non-null.
 Nothing new needed to be written to track it.
+
+## Self-service admin provisioning: the service-role client's first use inside the deployed app
+
+`src/lib/supabase/admin.ts` (a service-role client factory) already existed
+from Milestone 1, written for `scripts/create-admin.ts` — a local,
+human-run script. `src/lib/actions/admins.ts` is the first time that client
+is used *inside a request the app itself serves*, because provisioning an
+admin genuinely requires privileges `admin_users`' RLS deliberately doesn't
+grant to any signed-in session (`admin_users` has no insert policy at all
+— "admin accounts are provisioned via the service role... never from the
+client," per its original RLS migration comment). Two things make this
+safe rather than a hole in that boundary:
+
+1. The action re-derives the *caller's* admin status first, using the
+   caller's own RLS-scoped session (`admin_users` select, which IS allowed
+   for admins) — only after that check passes does it reach for the
+   service-role client. A non-admin's request never touches the privileged
+   client at all.
+2. The service-role client is never imported by anything that isn't itself
+   gated this way — same discipline as every `SECURITY DEFINER` RPC in
+   this app re-checking ownership/authorization internally rather than
+   trusting the caller.
+
+The logic itself (find-or-create the auth user by email, then upsert
+`admin_users`) is a direct port of `create-admin.ts`'s script logic, kept
+in sync rather than duplicated with drift — the script still exists for
+bootstrapping the very first admin on a brand-new project, where no admin
+exists yet to use the in-app screen.

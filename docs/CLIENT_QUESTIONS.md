@@ -14,15 +14,16 @@ throughout) versus what they'll gate starting in Milestone 2.
    YPO portal) — if it needs to be read aloud or typed manually, we may want
    a shorter/friendlier code format than the current auto-generated one.
 
-2. **Admin authentication mechanism.** Not specified in the brief. We used
-   the same passwordless magic-link pattern as participants, gated by an
-   allowlist table. New admins are currently provisioned by running a script
-   with the Supabase service role key — i.e. by whoever has developer
-   access, not self-service. The brief notes "future architecture should not
-   make additional admin accounts difficult to add" (section 3.1) — if
-   Nicole/Valerie need to add facilitators themselves without engineering
-   involvement, that's a small additional screen worth scoping into a later
-   milestone.
+2. **[RESOLVED] Admin authentication mechanism + self-service provisioning.**
+   Same passwordless magic-link pattern as participants, gated by an
+   allowlist table. Any existing admin can now add another one directly in
+   the app (`/admin/admins`, or "Manage admins" in the header on any admin
+   page) — enter an email and name, they can sign in immediately. Fulfills
+   brief section 3.1's "future architecture should not make additional
+   admin accounts difficult to add." The local script
+   (`npm run seed:admin`) still exists for provisioning the very first
+   admin on a fresh project, since a brand-new project has no admin yet to
+   use the in-app screen.
 
 3. **Deployment target.** The original brief was written for "a skilled
    Replit specialist." The Milestone 1 instructions we received specified a

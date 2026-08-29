@@ -6,6 +6,9 @@ Engine), Milestone 2 (Zone of Investment + Delegation/Leverage), Milestone 3
 Intelligence + QA) — are implemented and connected to a live Supabase
 project.
 
+**Live at [yutori-method-blueprint.vercel.app](https://yutori-method-blueprint.vercel.app)**,
+deployed via Vercel with GitHub auto-deploy on push to `main`.
+
 > **Performance:** the original 75-participant load test found the app was
 > correct but too slow (dashboard/blueprint page loads averaging 4.5-9.5s,
 > worst case 26s). After parallelizing and reducing the query count on every
@@ -273,7 +276,9 @@ in earlier delivery messages. All of it is now built:
    npm run seed:admin -- you@example.com "Your Name"
    ```
 
-   Sign in at `/admin/login`.
+   Sign in at `/admin/login`. From here on, adding more admins doesn't need
+   this script or developer access at all — any signed-in admin can add
+   another one at `/admin/admins` ("Manage admins" in the header).
 
 6. **Create a session** from `/admin`, then use the join link it generates
    (`/join/<code>`) to register as a participant in another browser/session.

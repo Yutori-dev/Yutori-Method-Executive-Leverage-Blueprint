@@ -6,9 +6,13 @@ import type { Database } from "@/types/database";
 
 /**
  * Service-role client. Bypasses RLS entirely -- use only for narrowly
- * scoped, deliberately privileged operations (e.g. provisioning an admin
- * account in scripts/create-admin.ts). Never import this from anything that
- * handles a request on behalf of an end user.
+ * scoped, deliberately privileged operations (provisioning an admin
+ * account: scripts/create-admin.ts locally, src/lib/actions/admins.ts from
+ * the app itself). Never import this from anything that handles a request
+ * on behalf of an end user, and every caller must itself re-check the
+ * caller is already an admin first -- this client has no authorization
+ * boundary of its own, same caveat as every SECURITY DEFINER RPC in this
+ * app.
  */
 export function createAdminSupabaseClient() {
   return createClient<Database>(
