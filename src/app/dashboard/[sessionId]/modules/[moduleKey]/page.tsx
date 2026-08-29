@@ -5,7 +5,6 @@ import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleCont
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData } from "@/lib/data/architecture";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { AssessmentForm } from "@/components/participant/AssessmentForm";
@@ -13,6 +12,7 @@ import { GenericPlaceholderModule } from "@/components/participant/GenericPlaceh
 import { ZoneOfInvestmentFlow } from "@/components/participant/ZoneOfInvestmentFlow";
 import { DelegationFlow } from "@/components/participant/DelegationFlow";
 import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
+import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
 
 const DELEGATION_BELIEFS_ASSESSMENT_KEY = "dev_demo_delegation_beliefs";
 
@@ -33,25 +33,6 @@ export default async function ModulePage({
   // Server-side enforcement -- a hidden/removed link is not access control.
   if (currentModule.state === "LOCKED") {
     redirect(`/dashboard/${sessionId}`);
-  }
-
-  if (currentModule.state === "OPEN") {
-    const supabase = await createServerSupabaseClient();
-    await supabase
-      .from("participant_module_progress")
-      .upsert(
-        {
-          participant_session_id: dashboard.participantSessionId,
-          module_id: currentModule.id,
-          status: "in_progress",
-          started_at: new Date().toISOString(),
-        },
-        { onConflict: "participant_session_id,module_id" },
-      );
-    await supabase
-      .from("participant_sessions")
-      .update({ current_module_id: currentModule.id, last_active_at: new Date().toISOString() })
-      .eq("id", dashboard.participantSessionId);
   }
 
   const sessionPath = `/dashboard/${sessionId}`;
@@ -125,6 +106,13 @@ export default async function ModulePage({
   return (
     <main className="flex-1 py-16">
       <Container narrow={!WIDE_MODULES.has(moduleKey)}>
+        <ModuleStartTracker
+          shouldTrack={currentModule.state === "OPEN"}
+          participantSessionId={dashboard.participantSessionId}
+          moduleId={currentModule.id}
+          moduleKey={currentModule.key}
+          sessionPath={sessionPath}
+        />
         <Link
           href={sessionPath}
           className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"

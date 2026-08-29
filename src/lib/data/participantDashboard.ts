@@ -30,26 +30,27 @@ export async function getParticipantDashboard(
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: participant }, { data: session }, { data: modules }] = await Promise.all([
-    supabase.from("participants").select("first_name, last_name").eq("id", user.id).maybeSingle(),
-    supabase
-      .from("sessions")
-      .select("id, name, organization, status, active_module_id")
-      .eq("id", sessionId)
-      .maybeSingle(),
-    supabase.from("modules").select("*").eq("active", true).order("sort_order", { ascending: true }),
-  ]);
+  // participant_sessions doesn't depend on any of the other three results --
+  // it only needs sessionId/user.id, which are already known -- so it runs
+  // in the same round trip instead of waiting on them first.
+  const [{ data: participant }, { data: session }, { data: modules }, { data: participantSession }] =
+    await Promise.all([
+      supabase.from("participants").select("first_name, last_name").eq("id", user.id).maybeSingle(),
+      supabase
+        .from("sessions")
+        .select("id, name, organization, status, active_module_id")
+        .eq("id", sessionId)
+        .maybeSingle(),
+      supabase.from("modules").select("*").eq("active", true).order("sort_order", { ascending: true }),
+      supabase
+        .from("participant_sessions")
+        .select("id")
+        .eq("session_id", sessionId)
+        .eq("participant_id", user.id)
+        .maybeSingle(),
+    ]);
 
-  if (!participant || !session || !modules) return null;
-
-  const { data: participantSession } = await supabase
-    .from("participant_sessions")
-    .select("id")
-    .eq("session_id", sessionId)
-    .eq("participant_id", user.id)
-    .maybeSingle();
-
-  if (!participantSession) return null;
+  if (!participant || !session || !modules || !participantSession) return null;
 
   const { data: progressRows } = await supabase
     .from("participant_module_progress")
