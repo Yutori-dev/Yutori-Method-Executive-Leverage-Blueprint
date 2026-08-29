@@ -16,7 +16,7 @@ type Mode = "create" | "signin";
  * link once that's resolved (see supabase/config.toml's enable_confirmations
  * comment and docs/ARCHITECTURE_DECISIONS.md).
  */
-export function JoinForm({ joinCode }: { joinCode: string }) {
+export function JoinForm({ joinCode }: { joinCode?: string }) {
   const supabase = createClient();
   const router = useRouter();
   const [status, setStatus] = useState<Status>("checking");
@@ -40,13 +40,16 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
       }
 
       setStatus("already-signed-in");
-      const { error } = await supabase.rpc("join_session", { p_join_code: joinCode });
-      if (cancelled) return;
 
-      if (error) {
-        setErrorMessage(error.message);
-        setStatus("error");
-        return;
+      if (joinCode) {
+        const { error } = await supabase.rpc("join_session", { p_join_code: joinCode });
+        if (cancelled) return;
+
+        if (error) {
+          setErrorMessage(error.message);
+          setStatus("error");
+          return;
+        }
       }
 
       router.push("/dashboard");
@@ -68,7 +71,7 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
     setErrorMessage(null);
     setStatus("submitting");
 
-    savePendingProfile({ email, firstName, lastName, joinCode });
+    savePendingProfile({ email, firstName, lastName, joinCode: joinCode ?? "" });
 
     const { data, error } = await supabase.auth.signUp({ email, password });
 
@@ -91,7 +94,7 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
       return;
     }
 
-    router.push(`/complete-profile?join=${encodeURIComponent(joinCode)}`);
+    router.push(joinCode ? `/complete-profile?join=${encodeURIComponent(joinCode)}` : "/complete-profile");
   }
 
   async function handleSignIn(formEvent: React.FormEvent) {
@@ -107,12 +110,13 @@ export function JoinForm({ joinCode }: { joinCode: string }) {
       return;
     }
 
-    const { error: joinError } = await supabase.rpc("join_session", { p_join_code: joinCode });
-
-    if (joinError) {
-      setErrorMessage(joinError.message);
-      setStatus("form");
-      return;
+    if (joinCode) {
+      const { error: joinError } = await supabase.rpc("join_session", { p_join_code: joinCode });
+      if (joinError) {
+        setErrorMessage(joinError.message);
+        setStatus("form");
+        return;
+      }
     }
 
     router.push("/dashboard");

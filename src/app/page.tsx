@@ -13,7 +13,13 @@ export default function HomePage() {
           A persistent companion to your Yutori Method workshop. You&apos;ll need the
           session link your facilitator shared to begin.
         </p>
-        <div className="mt-10">
+        <div className="mt-10 flex items-center justify-center gap-6">
+          <Link
+            href="/login"
+            className="text-xs tracking-wide text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+          >
+            Participant sign in / sign up
+          </Link>
           <Link
             href="/admin/login"
             className="text-xs tracking-wide text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
