@@ -27,6 +27,28 @@ export function JoinForm({ joinCode }: { joinCode?: string }) {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Same account can be both an admin and a participant -- rather than
+  // asking which kind of account this is, detect it after auth and route
+  // accordingly, same as the admin login page's own is_admin() check.
+  async function redirectAfterAuth() {
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+    if (isAdmin) {
+      router.push("/admin");
+      return;
+    }
+
+    if (joinCode) {
+      const { error } = await supabase.rpc("join_session", { p_join_code: joinCode });
+      if (error) {
+        setErrorMessage(error.message);
+        setStatus("error");
+        return;
+      }
+    }
+
+    router.push("/dashboard");
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -40,19 +62,7 @@ export function JoinForm({ joinCode }: { joinCode?: string }) {
       }
 
       setStatus("already-signed-in");
-
-      if (joinCode) {
-        const { error } = await supabase.rpc("join_session", { p_join_code: joinCode });
-        if (cancelled) return;
-
-        if (error) {
-          setErrorMessage(error.message);
-          setStatus("error");
-          return;
-        }
-      }
-
-      router.push("/dashboard");
+      await redirectAfterAuth();
     })();
 
     return () => {
@@ -110,16 +120,7 @@ export function JoinForm({ joinCode }: { joinCode?: string }) {
       return;
     }
 
-    if (joinCode) {
-      const { error: joinError } = await supabase.rpc("join_session", { p_join_code: joinCode });
-      if (joinError) {
-        setErrorMessage(joinError.message);
-        setStatus("form");
-        return;
-      }
-    }
-
-    router.push("/dashboard");
+    await redirectAfterAuth();
   }
 
   if (status === "checking" || status === "already-signed-in") {
