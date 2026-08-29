@@ -382,3 +382,93 @@ versioning discipline already used for `assessments`, `zone_matrix_cells`,
 and `recommendation_rules` so historical data stays interpretable after
 content changes, applied here to a legal/consent fact instead of workshop
 content.
+
+## Guided progression: destination resolution lives in one pure function
+
+`resolveParticipantDestination()` (`src/lib/moduleState.ts`) is the single
+source of truth for "where should this participant be right now" —
+Module 0, a specific module, the holding state, or all-done. Both the
+dashboard (what it renders as the CONTINUE call-to-action) and the module
+page (whether a direct URL visit is allowed) call the same function rather
+than each re-deriving the answer, for the same reason `deriveModuleState()`
+itself is centralized: two independent re-implementations of "what's next"
+would eventually drift, and the drift would show up as a participant able
+to reach a module through one code path but not the other.
+
+The function treats "cohort-unlocked" and "reached by this participant" as
+two different facts, which is the actual gap the client's spec closes: a
+late joiner can have several modules cohort-unlocked at once
+(`sessions.active_module_id` only ever moves forward, cohort-wide), but
+should still be guided through their own first incomplete one rather than
+whichever the cohort has already reached. `ModuleRow` and the module page's
+redirect guard both key off the *same* "reachable" definition (complete, or
+the exact current step) so a participant can always revisit a finished
+module to look back at their answers, but never jump ahead — "cannot jump
+ahead" and "cannot look back" are different requirements, and only the
+first one is in the spec.
+
+## Executive Leverage Diagnostic™: percentage thresholds reuse the existing scoring-rules table
+
+`assessment_scoring_rules` (built in Milestone 2 for Delegation Beliefs)
+already has `min_score`/`max_score`/`result_label`/`interpretation` columns
+— exactly the shape "percentage band → profile name → profile copy" needs.
+Rather than a new table, the Diagnostic's three profile bands
+(HIGH/CONSTRAINED/INSUFFICIENT LEVERAGE) are three rows in that same table,
+with `dimension` fixed to `'overall_percentage'`. Unlike Delegation
+Beliefs — which leaves this table empty and falls back to labeled
+placeholder copy because no real scoring exists yet — the Diagnostic's
+content is fully specified, so `calculate_executive_leverage_diagnostic()`
+adds real `>= min_score and <= max_score` range matching that
+`calculate_delegation_readiness()` never needed to implement (its own
+lookup only ever returns the first active row, since with an empty table
+there's nothing to match against).
+
+`questions.tie_break_priority` stores the client's fixed 13-item tie-break
+list directly as a per-question integer rather than a separate ranking
+table. Selecting the three lowest-scoring questions is then just
+`order by score asc, tie_break_priority asc limit 3` — one ordering that
+correctly implements "lowest three, ties broken by the fixed list"
+regardless of how many questions actually tie at the boundary, without any
+special-cased "is this exactly the third slot" logic.
+
+`max_points` is computed as `sum(max(score_value) per scored question)`
+rather than the spec's stated constant of 52. Both give the same answer
+today (13 scored questions × a 0-4 range = 52), but computing it live means
+the admin config screen can change a question's scoring range without a
+corresponding code change silently breaking the percentage math.
+
+## Executive Leverage Diagnostic™: admin config saves are plain authenticated writes, not an RPC
+
+`assessments`, `questions`, `answer_options`, and `assessment_scoring_rules`
+already carry `for all using (is_admin())` (or equivalent) RLS policies
+from Milestone 1/2 — admins already have full CRUD on all four tables via
+their own session, unused until now because nothing needed to write to
+them outside a migration. `saveExecutiveLeverageDiagnosticVersion()`
+(`src/lib/actions/diagnosticConfig.ts`) is therefore a plain server action
+doing four sequential authenticated inserts (assessment → questions →
+answer_options → scoring_rules) rather than a `SECURITY DEFINER` RPC —
+there's no privilege escalation to encapsulate, since the caller already
+has exactly the privilege the writes need. It always inserts a new
+`assessments` row at `version + 1` and a full fresh set of child rows,
+never updating current rows in place, matching the versioning convention
+used everywhere else in this schema. Verified live: editing content creates
+a real new version, the previous version's rows are provably untouched,
+and a participant already scored under the old version keeps their
+original `rules_version` and result.
+
+## Bug found and fixed: `ensure_participant` had two live overloads
+
+While testing the Diagnostic, calling `ensure_participant` with only two
+arguments failed with "could not choose the best candidate function."
+`20260901000003_privacy_consent.sql` added `p_privacy_consent` as a third
+parameter via `create or replace function` — but Postgres treats a
+different parameter *count* as a distinct overload, not a replacement, so
+the original two-argument function stayed live alongside the new
+three-argument one. The Next.js app was never affected (`CompleteProfileForm.tsx`
+always passes all three arguments, which unambiguously resolves), but it
+was real latent risk for any other caller. Fixed in
+`20260902000004_drop_stale_ensure_participant_overload.sql` by dropping the
+stale two-argument overload — worth remembering for any future
+`create or replace function` that changes a signature's arity rather than
+just a body: it needs an explicit `drop function` for the old shape, since
+`create or replace` alone won't remove it.

@@ -46,6 +46,14 @@ CEO/EA Case (I), Observational Homework (J), Brand Assets (K). Milestone 1
 ships clearly labeled `[YUTORI CONTENT PENDING]` placeholders everywhere
 these belong.
 
+**[RESOLVED] Item A, Leadership Leverage Diagnostic, is now real content.**
+You sent a full Developer Implementation Specification V1 for the
+"Executive Leverage Diagnostic™" — 15 questions, scoring formula, profile
+categories, constraint tie-break order, facilitator dashboard, and admin
+configuration. Built exactly to that spec and replaces the Operating
+Altitude module's placeholder assessment; see `README.md` and
+`docs/TESTING.md` for what was verified. Items B-K remain open.
+
 ## Milestone 2 scope boundary (please confirm)
 
 5. **Executive Support Audit and the leverage-mapping reveal are not in

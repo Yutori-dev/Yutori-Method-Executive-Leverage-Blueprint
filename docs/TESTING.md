@@ -441,3 +441,84 @@ against the live project, not just typechecked.
       checking it; the collapsible notice actually expands
 - [ ] Mobile viewport for all of the above — Module 0, Presentation Mode,
       and the follow-up queue table are all new and untested at phone width
+
+---
+
+## Guided progression + Executive Leverage Diagnostic™
+
+Client sent a refined progression spec (CONTINUE button, exact holding-state
+copy, late joiners start at their first activity) and a full Developer
+Implementation Specification V1 for the Executive Leverage Diagnostic —
+both fully specified, not content-pending, so the acceptance bar here is
+"matches the spec exactly," verified live against the real database and a
+production build.
+
+### What was actually verified live
+
+- [x] Late joiner with 3 modules cohort-unlocked lands on module 1 only —
+      the dashboard's CONTINUE link points at `operating_altitude`, with no
+      link anywhere on the page to `current_structure` or `delegation`
+      even though both are cohort-unlocked
+- [x] A direct URL visit to a cohort-unlocked-but-unreached module
+      redirects away (307) — real server-side enforcement, not just a
+      hidden link
+- [x] The participant's actual first module is directly reachable (200)
+- [x] Completing module 1 advances the dashboard's CONTINUE target to
+      module 2
+- [x] The exact copy "You're all set for now. We'll continue together
+      shortly." renders when the next module is locked
+- [x] All 15 Diagnostic questions seeded correctly (13 scored, 2 unscored),
+      max points sums to 52
+- [x] All-4s participant → 100% → HIGH LEVERAGE
+- [x] All-2s participant → exactly 50% (the CONSTRAINED band's inclusive
+      floor) → CONSTRAINED LEVERAGE, not INSUFFICIENT
+- [x] All-0s participant → 0% → INSUFFICIENT LEVERAGE
+- [x] 38/52 points → 73.08%, just under HIGH's 75% floor → correctly stays
+      CONSTRAINED
+- [x] A participant tied on every scored question returns exactly
+      Follow-Through Dependency, Operational Dependency, Highest-Value
+      Capacity — the spec's first three tie-break priorities, in order
+- [x] Calling the scoring RPC with a required question unanswered is
+      rejected server-side (not just a disabled button)
+- [x] `rules_version` on every stored result matches the assessment
+      version at calculation time
+- [x] Both new admin pages (`/admin/sessions/[id]/diagnostic`,
+      `/admin/diagnostic-config`) return 200 against a production build and
+      render all expected sections
+- [x] Admin config "save as new version": exercised the real insert
+      sequence live — a new `assessments` version was created, the
+      previous version's rows were provably untouched afterward, a new
+      participant scored against the new version got the new version's
+      `rules_version`, and cleanup confirmed the live version reverts
+      correctly (this test edited then removed its own test version; it
+      did not touch real participant data)
+- [x] Found and fixed a real bug in the process: `ensure_participant` had
+      two live overloads (see `docs/ARCHITECTURE_DECISIONS.md`) — caught
+      because this verification script called it with two arguments and
+      hit "could not choose the best candidate function"
+
+- [x] `npm run typecheck` — passes, no errors
+- [x] `npm run lint` — passes, no errors or warnings
+- [x] `npm run build` — production build succeeds against the live project
+
+### What still needs a manual browser click-through
+
+- [ ] The Diagnostic's 15 questions render and autosave correctly as an
+      actual participant clicking through radio buttons, not just via
+      direct API calls
+- [ ] "See my Executive Leverage Profile" button and the resulting profile
+      + three-constraint cards read as a coherent result screen
+- [ ] The CONTINUE button's label and placement feel like a clear, single
+      next action on every module, not just Operating Altitude
+- [ ] The admin config screen's ~250 fields are usable in practice — the
+      per-question `<details>` sections, in particular, on a real screen
+      size
+- [ ] Mobile viewport for the Diagnostic questions, results, and holding
+      state
+
+### Not part of this pass
+
+Items B-K of the brief's Content Dependency Register (Responsibility
+Library through Brand Assets) remain open — only item A (Leadership
+Leverage Diagnostic) was resolved. Google Sheets sync remains blocked on
+Google Cloud OAuth credentials.

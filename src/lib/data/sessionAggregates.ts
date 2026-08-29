@@ -14,6 +14,22 @@ export interface CountRow {
   count: number;
 }
 
+export interface ConstraintRankingRow {
+  label: string;
+  percentage: number;
+}
+
+export interface ExecutiveLeverageDiagnosticAggregates {
+  startedCount: number;
+  completedCount: number;
+  completionRate: number;
+  capacityBaseline: CountRow[];
+  capacityPressurePercentage: number;
+  cohortProfile: CountRow[];
+  topConstraints: ConstraintRankingRow[];
+  rockCompletion: CountRow[];
+}
+
 export interface SessionAggregates {
   registeredCount: number;
   fullyCompletedCount: number;
@@ -25,7 +41,19 @@ export interface SessionAggregates {
   primarySignalDistribution: CountRow[];
   reactionDistribution: CountRow[];
   selfIdentificationDistribution: CountRow[];
+  executiveLeverageDiagnostic: ExecutiveLeverageDiagnosticAggregates;
 }
+
+const EMPTY_DIAGNOSTIC_AGGREGATES: ExecutiveLeverageDiagnosticAggregates = {
+  startedCount: 0,
+  completedCount: 0,
+  completionRate: 0,
+  capacityBaseline: [],
+  capacityPressurePercentage: 0,
+  cohortProfile: [],
+  topConstraints: [],
+  rockCompletion: [],
+};
 
 const ZONE_LABEL: Record<string, string> = {
   investment: "Zone of Investment",
@@ -82,7 +110,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
   let enrollmentQuery = supabase.from("participant_sessions").select("id, completion_state, self_identification");
   if (sessionIds) enrollmentQuery = enrollmentQuery.in("session_id", sessionIds);
 
-  const [{ data: enrollments }, { data: modules }] = await Promise.all([
+  const [{ data: enrollments }, { data: modules }, { data: diagnosticAssessment }] = await Promise.all([
     enrollmentQuery,
     supabase
       .from("modules")
@@ -90,6 +118,14 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       .eq("active", true)
       .eq("requires_live_workshop", false)
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("assessments")
+      .select("id")
+      .eq("key", "executive_leverage_diagnostic")
+      .eq("active", true)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const participantSessionIds = (enrollments ?? []).map((e) => e.id);
@@ -108,28 +144,59 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       primarySignalDistribution: [],
       reactionDistribution: [],
       selfIdentificationDistribution: [],
+      executiveLeverageDiagnostic: EMPTY_DIAGNOSTIC_AGGREGATES,
     };
   }
 
-  const [{ data: progressRows }, { data: responsibilityRows }, { data: priorityRows }, { data: recommendationRows }] =
-    await Promise.all([
-      supabase
-        .from("participant_module_progress")
-        .select("module_id, status")
-        .in("participant_session_id", participantSessionIds),
-      supabase
-        .from("participant_responsibilities")
-        .select("macro_zone, responsibility_id, responsibilities(label)")
-        .in("participant_session_id", participantSessionIds),
-      supabase
-        .from("priority_delegation_opportunities")
-        .select("responsibility_id, leverage_level_snapshot, responsibilities(label)")
-        .in("participant_session_id", participantSessionIds),
-      supabase
-        .from("architecture_recommendations")
-        .select("primary_signal_leverage_level, is_tied, reaction")
-        .in("participant_session_id", participantSessionIds),
-    ]);
+  const diagnosticAssessmentId = diagnosticAssessment?.id ?? null;
+
+  const [
+    { data: progressRows },
+    { data: responsibilityRows },
+    { data: priorityRows },
+    { data: recommendationRows },
+    { data: diagnosticQuestions },
+    { data: diagnosticResponses },
+    { data: diagnosticResults },
+  ] = await Promise.all([
+    supabase
+      .from("participant_module_progress")
+      .select("module_id, status")
+      .in("participant_session_id", participantSessionIds),
+    supabase
+      .from("participant_responsibilities")
+      .select("macro_zone, responsibility_id, responsibilities(label)")
+      .in("participant_session_id", participantSessionIds),
+    supabase
+      .from("priority_delegation_opportunities")
+      .select("responsibility_id, leverage_level_snapshot, responsibilities(label)")
+      .in("participant_session_id", participantSessionIds),
+    supabase
+      .from("architecture_recommendations")
+      .select("primary_signal_leverage_level, is_tied, reaction")
+      .in("participant_session_id", participantSessionIds),
+    diagnosticAssessmentId
+      ? supabase
+          .from("questions")
+          .select("sort_order, scored, constraint_label, answer_options(value, label, metadata)")
+          .eq("assessment_id", diagnosticAssessmentId)
+          .eq("active", true)
+      : Promise.resolve({ data: [] }),
+    diagnosticAssessmentId
+      ? supabase
+          .from("responses")
+          .select("participant_session_id, answer, questions!inner(assessment_id, sort_order)")
+          .in("participant_session_id", participantSessionIds)
+          .eq("questions.assessment_id", diagnosticAssessmentId)
+      : Promise.resolve({ data: [] }),
+    diagnosticAssessmentId
+      ? supabase
+          .from("assessment_results")
+          .select("participant_session_id, overall_result, dimension_scores, assessments!inner(id)")
+          .in("participant_session_id", participantSessionIds)
+          .eq("assessments.id", diagnosticAssessmentId)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const moduleCompletion: ModuleCompletionRow[] = (modules ?? []).map((m) => {
     const rows = (progressRows ?? []).filter((p) => p.module_id === m.id);
@@ -148,6 +215,13 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     responsibility_id: string;
     responsibilities: unknown;
   }) => (row.responsibilities as { label: string } | null)?.label ?? row.responsibility_id;
+
+  const executiveLeverageDiagnostic = computeExecutiveLeverageDiagnosticAggregates({
+    registeredCount,
+    questions: diagnosticQuestions ?? [],
+    responses: diagnosticResponses ?? [],
+    results: diagnosticResults ?? [],
+  });
 
   return {
     registeredCount,
@@ -188,5 +262,93 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       (e) => e.self_identification,
       (key) => SELF_IDENTIFICATION_LABEL[key] ?? key,
     ),
+    executiveLeverageDiagnostic,
+  };
+}
+
+/**
+ * The Executive Leverage Diagnostic's 5-section facilitator dashboard
+ * (Developer Implementation Specification V1, section 5). Top constraints
+ * are read from assessment_results.dimension_scores -- the scoring RPC's
+ * own snapshot -- rather than re-deriving scores here a second time.
+ */
+function computeExecutiveLeverageDiagnosticAggregates(params: {
+  registeredCount: number;
+  questions: {
+    sort_order: number;
+    scored: boolean;
+    constraint_label: string | null;
+    answer_options: { value: string; label: string; metadata: unknown }[] | null;
+  }[];
+  responses: { participant_session_id: string; answer: unknown; questions: unknown }[];
+  results: { participant_session_id: string; overall_result: string | null; dimension_scores: unknown }[];
+}): ExecutiveLeverageDiagnosticAggregates {
+  const { registeredCount, questions, responses, results } = params;
+
+  const baselineQuestion = questions.find((q) => q.sort_order === 0) ?? null;
+  const rockQuestion = questions.find((q) => q.sort_order === 11) ?? null;
+  const scoredQuestions = questions.filter((q) => q.scored && q.constraint_label);
+
+  const questionSortOrderOf = (row: { questions: unknown }) =>
+    (row.questions as { sort_order: number } | null)?.sort_order ?? null;
+
+  const baselineResponses = responses.filter((r) => questionSortOrderOf(r) === 0);
+  const rockResponses = responses.filter((r) => questionSortOrderOf(r) === 11);
+  const startedCount = new Set(responses.map((r) => r.participant_session_id)).size;
+  const completedCount = results.length;
+
+  const labelForValue = (
+    question: { answer_options: { value: string; label: string; metadata: unknown }[] | null } | null,
+    value: unknown,
+  ) => question?.answer_options?.find((o) => o.value === value)?.label ?? String(value ?? "");
+
+  const capacityBaseline = countBy(
+    baselineResponses,
+    (r) => (r.answer as string | null) ?? null,
+    (value) => labelForValue(baselineQuestion, value),
+  );
+
+  const capacityPressureCount = baselineResponses.filter((r) => {
+    const option = baselineQuestion?.answer_options?.find((o) => o.value === r.answer);
+    return (option?.metadata as { capacity_pressure?: boolean } | null)?.capacity_pressure === true;
+  }).length;
+
+  const rockCompletion = countBy(
+    rockResponses,
+    (r) => (r.answer as string | null) ?? null,
+    (value) => labelForValue(rockQuestion, value),
+  );
+
+  const cohortProfile = countBy(
+    results,
+    (r) => r.overall_result,
+    (label) => label,
+  );
+
+  const topConstraints: ConstraintRankingRow[] = scoredQuestions
+    .map((q) => {
+      const lowCount = results.filter((r) => {
+        const scores = (r.dimension_scores as Record<string, number> | null) ?? {};
+        const score = scores[q.constraint_label as string];
+        return score === 0 || score === 1;
+      }).length;
+      return {
+        label: q.constraint_label as string,
+        percentage: completedCount > 0 ? Math.round((lowCount / completedCount) * 1000) / 10 : 0,
+      };
+    })
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, 5);
+
+  return {
+    startedCount,
+    completedCount,
+    completionRate: registeredCount > 0 ? Math.round((completedCount / registeredCount) * 1000) / 10 : 0,
+    capacityBaseline,
+    capacityPressurePercentage:
+      baselineResponses.length > 0 ? Math.round((capacityPressureCount / baselineResponses.length) * 1000) / 10 : 0,
+    cohortProfile,
+    topConstraints,
+    rockCompletion,
   };
 }

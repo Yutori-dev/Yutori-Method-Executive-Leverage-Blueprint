@@ -27,7 +27,7 @@ export function GenericPlaceholderModule({
   function handleComplete() {
     startTransition(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey, sessionPath });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
@@ -47,7 +47,7 @@ export function GenericPlaceholderModule({
 
       <div className="mt-8">
         <Button onClick={handleComplete} disabled={isPending || alreadyComplete}>
-          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "Mark module complete"}
+          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
         </Button>
       </div>
     </Card>

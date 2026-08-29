@@ -1,11 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
+import { hasCompletedExecutiveContext } from "@/lib/data/moduleZeroStatus";
+import { resolveParticipantDestination } from "@/lib/moduleState";
 import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleContent";
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData } from "@/lib/data/architecture";
 import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
+import { getExecutiveLeverageDiagnosticData } from "@/lib/data/executiveLeverageDiagnostic";
 import { getSuccessVisionData } from "@/lib/data/successVision";
 import { Container } from "@/components/ui/Container";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
@@ -19,7 +22,6 @@ import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
 
 const DELEGATION_BELIEFS_ASSESSMENT_KEY = "dev_demo_delegation_beliefs";
-const OPERATING_ALTITUDE_ASSESSMENT_KEY = "dev_demo_operating_altitude";
 
 const WIDE_MODULES = new Set(["current_structure", "delegation"]);
 
@@ -40,19 +42,34 @@ export default async function ModulePage({
     redirect(`/dashboard/${sessionId}`);
   }
 
+  // Guided-progression model: a participant can revisit a module they've
+  // already completed, but can't jump ahead to a cohort-unlocked module
+  // they haven't reached yet -- a late joiner in particular may find
+  // several modules cohort-unlocked at once (see resolveParticipantDestination).
+  if (currentModule.state !== "COMPLETE") {
+    const contextDone = await hasCompletedExecutiveContext(dashboard.participantSessionId);
+    const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
+    const destination = resolveParticipantDestination(contextDone, trackedModules);
+    const isCurrentStep = destination.type === "module" && destination.moduleKey === moduleKey;
+    if (!isCurrentStep) {
+      redirect(`/dashboard/${sessionId}`);
+    }
+  }
+
   const sessionPath = `/dashboard/${sessionId}`;
   const alreadyComplete = currentModule.state === "COMPLETE";
 
   let content: React.ReactNode;
 
   if (moduleKey === "operating_altitude") {
-    const [assessment, operatingAltitudeData] = await Promise.all([
-      getDemoAssessmentByKey(OPERATING_ALTITUDE_ASSESSMENT_KEY, dashboard.participantSessionId),
+    const [diagnostic, operatingAltitudeData] = await Promise.all([
+      getExecutiveLeverageDiagnosticData(dashboard.participantSessionId),
       getOperatingAltitudeData(dashboard.participantSessionId),
     ]);
     content = (
       <OperatingAltitudeFlow
-        assessment={assessment}
+        diagnosticAssessment={diagnostic.assessment}
+        diagnosticResult={diagnostic.result}
         data={operatingAltitudeData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
@@ -121,6 +138,7 @@ export default async function ModulePage({
         moduleKey={currentModule.key}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
+        isPlaceholder
       />
     ) : (
       <GenericPlaceholderModule

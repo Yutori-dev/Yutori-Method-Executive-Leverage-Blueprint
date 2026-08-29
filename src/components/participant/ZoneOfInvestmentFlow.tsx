@@ -133,7 +133,7 @@ export function ZoneOfInvestmentFlow({
         moduleKey: "current_structure",
         sessionPath,
       });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
@@ -261,7 +261,7 @@ export function ZoneOfInvestmentFlow({
 
       <div className="flex items-center gap-4">
         <Button onClick={handleMarkComplete} disabled={isPending || alreadyComplete}>
-          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "Mark module complete"}
+          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
         </Button>
         <button
           onClick={() => setPhase("rate")}

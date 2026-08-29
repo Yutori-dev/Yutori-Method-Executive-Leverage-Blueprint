@@ -15,6 +15,16 @@ project.
 > / all RPCs under 500ms avg — a 45-65% improvement despite more concurrent
 > load. Full before/after numbers in `docs/TESTING.md`.
 
+> **Executive Leverage Diagnostic™ + guided progression:** the client's own
+> Developer Implementation Specification V1 for the diagnostic (real,
+> 15-question scored content — brief Content Dependency Register item A) is
+> now live, replacing the Operating Altitude module's placeholder, along
+> with a guided single-track participant progression model (a CONTINUE
+> button, an exact holding-state screen, and late joiners starting at their
+> own first activity rather than the cohort's current one). Every scoring
+> rule, threshold boundary, and the tie-break priority order were verified
+> live against the real database — see `docs/TESTING.md`.
+
 This README covers what's implemented, how to run it, and what's explicitly
 deferred to later milestones. See also:
 
@@ -148,6 +158,38 @@ in earlier delivery messages. All of it is now built:
   Opportunities), surfaced next to the primary signal.
 - `multi_select` (checkbox) and `numeric` question types added to the
   configurable activity engine, needed for the fuller Module 0 content.
+
+**Executive Leverage Diagnostic™ + guided progression:**
+
+- The client's own Developer Implementation Specification V1: 15 real
+  single-select questions (13 scored, 2 context-only), a percentage-based
+  scoring formula, three profile categories, a "three lowest-scoring
+  questions" constraint output with a fixed tie-break priority order, and
+  a numeric score that is never participant-facing anywhere — enforced by
+  what the participant-facing server action is capable of returning, not
+  just by what a component renders. Replaces the Operating Altitude
+  module's Milestone-1 placeholder assessment; White Whale and V/I/H
+  self-identification are unchanged alongside it.
+- A 5-section facilitator dashboard for the Diagnostic
+  (`/admin/sessions/[id]/diagnostic`) — completion, the Whole-Person
+  Capacity Baseline (including the "Experiencing Meaningful Capacity
+  Pressure" calculation), the cohort's Executive Leverage Profile
+  distribution, the top 5 cohort-wide leverage constraints, and Rock
+  completion as context only.
+- An admin configuration screen (`/admin/diagnostic-config`) — question
+  wording, response-option wording and scores, scored/dashboard-visible
+  flags, constraint labels and interpretation copy, tie-break priority, and
+  profile thresholds are all editable. Saving always creates a **new
+  version** rather than mutating live rows — a participant already scored
+  under the current version keeps that exact result; only new calculations
+  use the edited content.
+- Guided single-track participant progression: a single **CONTINUE**
+  action advances through required activities in order; a participant who
+  can't go further yet sees "You're all set for now. We'll continue
+  together shortly."; and a late joiner starts at their own first
+  incomplete activity even if the facilitator has already cohort-unlocked
+  several modules — enforced server-side (a direct URL to a
+  not-yet-reached module redirects away), not just by hiding links.
 
 ## What's deliberately not built
 

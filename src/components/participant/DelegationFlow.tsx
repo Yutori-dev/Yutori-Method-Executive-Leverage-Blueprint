@@ -116,7 +116,7 @@ export function DelegationFlow({
   function handleMarkComplete() {
     startTransition(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey: "delegation", sessionPath });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
@@ -135,6 +135,7 @@ export function DelegationFlow({
               moduleKey="delegation"
               sessionPath={sessionPath}
               alreadyComplete={alreadyComplete}
+              isPlaceholder
               hideCompleteButton
               onRequiredAnsweredChange={setRequiredAnswered}
             />
@@ -262,7 +263,7 @@ export function DelegationFlow({
       {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
 
       <Button onClick={handleMarkComplete} disabled={!canComplete || isPending || alreadyComplete}>
-        {alreadyComplete ? "Module complete" : "Mark module complete"}
+        {alreadyComplete ? "Module complete" : "CONTINUE"}
       </Button>
     </div>
   );

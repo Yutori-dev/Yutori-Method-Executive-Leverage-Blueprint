@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AssessmentForm } from "./AssessmentForm";
+import { ExecutiveLeverageDiagnosticFlow } from "./ExecutiveLeverageDiagnosticFlow";
 import { CharacterPreview } from "./CharacterPreview";
 import { setSelfIdentification, saveReflection } from "@/lib/actions/reflections";
 import { markModuleComplete } from "@/lib/actions/participant";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import type { DemoAssessment } from "@/lib/data/moduleContent";
 import type { OperatingAltitudeData } from "@/lib/data/operatingAltitude";
+import type { ExecutiveLeverageProfileResult } from "@/lib/data/executiveLeverageDiagnostic";
 import type { SelfIdentification } from "@/types/database";
 
 const OPTIONS: { value: SelfIdentification; label: string }[] = [
@@ -20,14 +21,16 @@ const OPTIONS: { value: SelfIdentification; label: string }[] = [
 ];
 
 export function OperatingAltitudeFlow({
-  assessment,
+  diagnosticAssessment,
+  diagnosticResult,
   data,
   participantSessionId,
   moduleId,
   sessionPath,
   alreadyComplete,
 }: {
-  assessment: DemoAssessment | null;
+  diagnosticAssessment: DemoAssessment | null;
+  diagnosticResult: ExecutiveLeverageProfileResult | null;
   data: OperatingAltitudeData;
   participantSessionId: string;
   moduleId: string;
@@ -35,7 +38,7 @@ export function OperatingAltitudeFlow({
   alreadyComplete: boolean;
 }) {
   const router = useRouter();
-  const [requiredAnswered, setRequiredAnswered] = useState(assessment === null);
+  const [result, setResult] = useState<ExecutiveLeverageProfileResult | null>(diagnosticResult);
   const [selfId, setSelfId] = useState<SelfIdentification | null>(data.selfIdentification);
   const [whiteWhale, setWhiteWhale] = useState(data.whiteWhale);
   const [whiteWhaleSaveState, setWhiteWhaleSaveState] = useState<"idle" | "saving" | "saved">("idle");
@@ -80,28 +83,23 @@ export function OperatingAltitudeFlow({
         moduleKey: "operating_altitude",
         sessionPath,
       });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
-  const canComplete = requiredAnswered && selfId !== null;
+  const canComplete = result !== null && selfId !== null;
 
   return (
     <div className="space-y-8">
-      {assessment ? (
-        <section>
-          <AssessmentForm
-            assessment={assessment}
-            participantSessionId={participantSessionId}
-            moduleId={moduleId}
-            moduleKey="operating_altitude"
-            sessionPath={sessionPath}
-            alreadyComplete={alreadyComplete}
-            hideCompleteButton
-            onRequiredAnsweredChange={setRequiredAnswered}
-          />
-        </section>
-      ) : null}
+      <ExecutiveLeverageDiagnosticFlow
+        assessment={diagnosticAssessment}
+        result={result}
+        participantSessionId={participantSessionId}
+        moduleId={moduleId}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+        onResultChange={setResult}
+      />
 
       <section>
         <h2 className="font-serif text-xl">An important project left unrealized</h2>
@@ -158,7 +156,7 @@ export function OperatingAltitudeFlow({
       </section>
 
       <Button onClick={handleMarkComplete} disabled={!canComplete || isPending || alreadyComplete}>
-        {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "Mark module complete"}
+        {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
       </Button>
     </div>
   );

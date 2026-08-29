@@ -42,6 +42,12 @@ export default async function AdminSessionsPage() {
             >
               Analytics (all sessions)
             </Link>
+            <Link
+              href="/admin/diagnostic-config"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Diagnostic config
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>

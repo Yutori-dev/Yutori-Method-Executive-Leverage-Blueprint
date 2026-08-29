@@ -176,10 +176,14 @@ export type Database = {
           created_at: string
           dimension_scores: Json
           id: string
+          internal_percentage: number | null
           interpretation: string | null
           overall_result: string | null
           participant_session_id: string
           rules_version: number
+          started_at: string | null
+          strongest_constraints: Json | null
+          total_points: number | null
           updated_at: string
         }
         Insert: {
@@ -188,10 +192,14 @@ export type Database = {
           created_at?: string
           dimension_scores?: Json
           id?: string
+          internal_percentage?: number | null
           interpretation?: string | null
           overall_result?: string | null
           participant_session_id: string
           rules_version: number
+          started_at?: string | null
+          strongest_constraints?: Json | null
+          total_points?: number | null
           updated_at?: string
         }
         Update: {
@@ -200,10 +208,14 @@ export type Database = {
           created_at?: string
           dimension_scores?: Json
           id?: string
+          internal_percentage?: number | null
           interpretation?: string | null
           overall_result?: string | null
           participant_session_id?: string
           rules_version?: number
+          started_at?: string | null
+          strongest_constraints?: Json | null
+          total_points?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -407,6 +419,44 @@ export type Database = {
           },
         ]
       }
+      participant_reflections: {
+        Row: {
+          created_at: string
+          id: string
+          participant_session_id: string
+          success_vision: string | null
+          success_vision_white_whale_followup: string | null
+          updated_at: string
+          white_whale: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_session_id: string
+          success_vision?: string | null
+          success_vision_white_whale_followup?: string | null
+          updated_at?: string
+          white_whale?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_session_id?: string
+          success_vision?: string | null
+          success_vision_white_whale_followup?: string | null
+          updated_at?: string
+          white_whale?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_reflections_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_responsibilities: {
         Row: {
           competency: string | null
@@ -454,44 +504,6 @@ export type Database = {
             columns: ["responsibility_id"]
             isOneToOne: false
             referencedRelation: "responsibilities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      participant_reflections: {
-        Row: {
-          created_at: string
-          id: string
-          participant_session_id: string
-          success_vision: string | null
-          success_vision_white_whale_followup: string | null
-          updated_at: string
-          white_whale: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          participant_session_id: string
-          success_vision?: string | null
-          success_vision_white_whale_followup?: string | null
-          updated_at?: string
-          white_whale?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          participant_session_id?: string
-          success_vision?: string | null
-          success_vision_white_whale_followup?: string | null
-          updated_at?: string
-          white_whale?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "participant_reflections_participant_session_id_fkey"
-            columns: ["participant_session_id"]
-            isOneToOne: true
-            referencedRelation: "participant_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -637,11 +649,16 @@ export type Database = {
           active: boolean
           assessment_id: string
           config: Json
+          constraint_label: string | null
           created_at: string
+          dashboard_visible: boolean
           id: string
+          interpretation_copy: string | null
           prompt: string
           required: boolean
+          scored: boolean
           sort_order: number
+          tie_break_priority: number | null
           type: string
           updated_at: string
           version: number
@@ -650,11 +667,16 @@ export type Database = {
           active?: boolean
           assessment_id: string
           config?: Json
+          constraint_label?: string | null
           created_at?: string
+          dashboard_visible?: boolean
           id?: string
+          interpretation_copy?: string | null
           prompt: string
           required?: boolean
+          scored?: boolean
           sort_order?: number
+          tie_break_priority?: number | null
           type: string
           updated_at?: string
           version?: number
@@ -663,11 +685,16 @@ export type Database = {
           active?: boolean
           assessment_id?: string
           config?: Json
+          constraint_label?: string | null
           created_at?: string
+          dashboard_visible?: boolean
           id?: string
+          interpretation_copy?: string | null
           prompt?: string
           required?: boolean
+          scored?: boolean
           sort_order?: number
+          tie_break_priority?: number | null
           type?: string
           updated_at?: string
           version?: number
@@ -991,10 +1018,14 @@ export type Database = {
           created_at: string
           dimension_scores: Json
           id: string
+          internal_percentage: number | null
           interpretation: string | null
           overall_result: string | null
           participant_session_id: string
           rules_version: number
+          started_at: string | null
+          strongest_constraints: Json | null
+          total_points: number | null
           updated_at: string
         }
         SetofOptions: {
@@ -1004,29 +1035,74 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      ensure_participant: {
-        Args: {
-          p_first_name: string
-          p_last_name: string
-          p_privacy_consent?: boolean
-        }
+      calculate_executive_leverage_diagnostic: {
+        Args: { p_participant_session_id: string }
         Returns: {
+          assessment_id: string
+          calculated_at: string
           created_at: string
-          email: string
-          first_name: string
+          dimension_scores: Json
           id: string
-          last_login: string | null
-          last_name: string
-          privacy_consent_given_at: string | null
-          privacy_consent_version: string | null
+          internal_percentage: number | null
+          interpretation: string | null
+          overall_result: string | null
+          participant_session_id: string
+          rules_version: number
+          started_at: string | null
+          strongest_constraints: Json | null
+          total_points: number | null
+          updated_at: string
         }
         SetofOptions: {
           from: "*"
-          to: "participants"
+          to: "assessment_results"
           isOneToOne: true
           isSetofReturn: false
         }
       }
+      ensure_participant:
+        | {
+            Args: { p_first_name: string; p_last_name: string }
+            Returns: {
+              created_at: string
+              email: string
+              first_name: string
+              id: string
+              last_login: string | null
+              last_name: string
+              privacy_consent_given_at: string | null
+              privacy_consent_version: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "participants"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_first_name: string
+              p_last_name: string
+              p_privacy_consent?: boolean
+            }
+            Returns: {
+              created_at: string
+              email: string
+              first_name: string
+              id: string
+              last_login: string | null
+              last_name: string
+              privacy_consent_given_at: string | null
+              privacy_consent_version: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "participants"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       get_session_by_join_code: {
         Args: { p_join_code: string }
         Returns: {
@@ -1056,6 +1132,7 @@ export type Database = {
           id: string
           last_active_at: string
           participant_id: string
+          self_identification: string | null
           session_id: string
           started_at: string | null
         }

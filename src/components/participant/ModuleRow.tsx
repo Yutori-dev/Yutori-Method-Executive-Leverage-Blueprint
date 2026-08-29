@@ -23,19 +23,27 @@ export function ModuleRow({
   module,
   sessionId,
   index,
+  isReachable,
 }: {
   module: DashboardModule;
   sessionId: string;
   index: number;
+  /** Guided-progression model: a module is only clickable once the
+   * participant has actually reached it (it's their current step) or
+   * already finished it -- being cohort-unlocked isn't enough on its own,
+   * since a late joiner may have several modules cohort-unlocked at once
+   * (see resolveParticipantDestination in src/lib/moduleState.ts). */
+  isReachable: boolean;
 }) {
   const isLocked = module.state === "LOCKED";
-  const isInteractive = !isLocked;
+  const isDimmed = isLocked || !isReachable;
+  const isInteractive = isReachable;
 
   const content = (
     <div
       className={cn(
         "flex items-center justify-between gap-4 rounded-xl border px-5 py-4 transition-colors",
-        isLocked
+        isDimmed
           ? "border-(--color-hairline) bg-transparent"
           : "border-(--color-hairline) bg-(--color-paper-raised) hover:border-(--color-accent)",
       )}
@@ -44,13 +52,13 @@ export function ModuleRow({
         <span
           className={cn(
             "font-serif text-lg italic",
-            isLocked ? "text-(--color-locked)" : "text-(--color-accent)",
+            isDimmed ? "text-(--color-locked)" : "text-(--color-accent)",
           )}
         >
           {String(index + 1).padStart(2, "0")}
         </span>
         <div>
-          <p className={cn("font-medium", isLocked && "text-(--color-ink-muted)")}>
+          <p className={cn("font-medium", isDimmed && "text-(--color-ink-muted)")}>
             {module.name}
           </p>
           {module.requiresLiveWorkshop ? (

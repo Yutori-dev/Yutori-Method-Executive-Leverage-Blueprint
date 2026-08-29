@@ -30,7 +30,7 @@ export function ExecutiveContextFlow({
           [YUTORI CONTENT PENDING] Executive context questions are not configured yet.
         </p>
         <div className="mt-4">
-          <Button onClick={() => router.push(`/dashboard/${sessionId}`)}>Continue to dashboard</Button>
+          <Button onClick={() => router.push(`/dashboard/${sessionId}`)}>CONTINUE</Button>
         </div>
       </Card>
     );
@@ -45,17 +45,12 @@ export function ExecutiveContextFlow({
         moduleKey="module_0_context"
         sessionPath={`/dashboard/${sessionId}`}
         alreadyComplete={false}
+        isPlaceholder
         hideCompleteButton
         onRequiredAnsweredChange={setRequiredAnswered}
       />
-      <Button
-        onClick={() => {
-          router.push(`/dashboard/${sessionId}`);
-          router.refresh();
-        }}
-        disabled={!requiredAnswered}
-      >
-        Continue to dashboard
+      <Button onClick={() => router.push(`/dashboard/${sessionId}`)} disabled={!requiredAnswered}>
+        CONTINUE
       </Button>
     </div>
   );

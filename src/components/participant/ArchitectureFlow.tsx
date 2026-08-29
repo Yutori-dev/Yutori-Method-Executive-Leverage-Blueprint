@@ -76,7 +76,7 @@ export function ArchitectureFlow({
   function handleMarkComplete() {
     startTransition(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey: "architecture", sessionPath });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
@@ -204,7 +204,7 @@ export function ArchitectureFlow({
       </Card>
 
       <Button onClick={handleMarkComplete} disabled={!rec?.reaction || isPending || alreadyComplete}>
-        {alreadyComplete ? "Module complete" : "Mark module complete"}
+        {alreadyComplete ? "Module complete" : "CONTINUE"}
       </Button>
     </div>
   );

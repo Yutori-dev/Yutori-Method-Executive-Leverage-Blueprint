@@ -59,7 +59,7 @@ export function SuccessFlow({
   function handleMarkComplete() {
     startTransition(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey: "success", sessionPath });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
@@ -98,7 +98,7 @@ export function SuccessFlow({
 
       <div className="flex items-center gap-4">
         <Button onClick={handleMarkComplete} disabled={!canComplete || isPending || alreadyComplete}>
-          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "Mark module complete"}
+          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
         </Button>
         {saveState !== "idle" ? (
           <span className="text-xs text-(--color-ink-muted)">

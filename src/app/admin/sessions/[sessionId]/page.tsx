@@ -96,6 +96,12 @@ export default async function SessionControlPanelPage({
               Aggregate results
             </Link>
             <Link
+              href={`/admin/sessions/${sessionId}/diagnostic`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Executive Leverage Diagnostic
+            </Link>
+            <Link
               href={`/admin/sessions/${sessionId}/present`}
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
             >

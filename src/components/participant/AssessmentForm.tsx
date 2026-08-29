@@ -18,6 +18,7 @@ export function AssessmentForm({
   moduleKey,
   sessionPath,
   alreadyComplete,
+  isPlaceholder,
   hideCompleteButton = false,
   onRequiredAnsweredChange,
 }: {
@@ -27,6 +28,10 @@ export function AssessmentForm({
   moduleKey: string;
   sessionPath: string;
   alreadyComplete: boolean;
+  /** Real, approved content (e.g. the Executive Leverage Diagnostic) must
+   * never show the "Development placeholder" badge -- only dev-only demo
+   * assessments (fetched via getDemoAssessmentByKey) should. */
+  isPlaceholder: boolean;
   /** When embedded inside a larger multi-part module flow (e.g. Delegation
    * in Milestone 2), the parent owns the "mark module complete" action and
    * just wants to know when required questions are answered. */
@@ -89,15 +94,17 @@ export function AssessmentForm({
   function handleComplete() {
     startCompleting(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey, sessionPath });
-      router.refresh();
+      router.push(sessionPath);
     });
   }
 
   return (
     <div className="space-y-6">
-      <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
-        Development placeholder — {assessment.assessmentName}
-      </p>
+      {isPlaceholder ? (
+        <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
+          Development placeholder — {assessment.assessmentName}
+        </p>
+      ) : null}
 
       {assessment.questions.map((question) => (
         <Card key={question.id}>
@@ -209,7 +216,7 @@ export function AssessmentForm({
       <div className="flex items-center gap-4">
         {!hideCompleteButton ? (
           <Button onClick={handleComplete} disabled={!requiredComplete || isCompleting || alreadyComplete}>
-            {alreadyComplete ? "Module complete" : isCompleting ? "Saving..." : "Mark module complete"}
+            {alreadyComplete ? "Module complete" : isCompleting ? "Saving..." : "CONTINUE"}
           </Button>
         ) : null}
         <SaveIndicator state={saveState} />
