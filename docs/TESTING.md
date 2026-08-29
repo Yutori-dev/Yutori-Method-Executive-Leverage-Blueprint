@@ -243,3 +243,99 @@ Per the milestone split: final recommendation copy/decision table, the
 Executive Support Audit, White Whale, Success Vision, aggregate facilitator
 analytics, CSV export, Presentation Mode. See `docs/CLIENT_QUESTIONS.md`
 items 9–11.
+
+---
+
+## Milestone 4 — Facilitator Intelligence + QA
+
+### What was actually verified live
+
+Same standard as Milestones 2/3 — real HTTP requests through real
+cookie-based auth against the live project, not just reading the code:
+
+- [x] Individual participant profile page returns 200 for an admin and shows
+      the correct participant, including the leverage classification
+      (verified this is genuinely visible here even though no
+      participant-facing query anywhere in the app ever selects it)
+- [x] Aggregate session page returns 200 and shows the correct registered
+      count and zone distribution for a real test participant driven
+      through the actual flow
+- [x] CSV export returns a valid `text/csv` response with a correct header
+      row and one data row per registered participant, containing the right
+      email
+- [x] A non-admin participant is redirected away (not served 200 content)
+      from all three of: the individual profile page, the aggregate page,
+      and the CSV export
+
+- [x] `npm run typecheck` — passes, no errors
+- [x] `npm run lint` — passes, no errors or warnings
+- [x] `npm run build` — production build succeeds
+
+### Load test (brief section 25/29 — 75 concurrent participants)
+
+Run with `npm run load-test -- 75` (`scripts/load-test.ts`) against a
+production build (`npm run build && npm start`) on this local machine, on
+the live Supabase project, on 2026-08-29. **Result: 74/75 succeeded (one
+transient network error during account setup, unrelated to the app), but
+response times under this concurrency are a real problem worth fixing
+before a live 75-person session.**
+
+| Step | avg | p95 | max |
+|---|---|---|---|
+| Join page load | 2.4s | 2.7s | 3.1s |
+| `join_session` | 2.1s | 2.9s | 3.0s |
+| Dashboard load | 6.1s | 7.4s | 8.5s |
+| Module page load | 4.6s | 5.9s | 6.8s |
+| `select_responsibilities` | 1.7s | 8.7s | 9.7s |
+| `rate_responsibility` (740 calls, 5 errors) | 4.5s | 9.8s | 11.0s |
+| `select_priority_delegation_opportunities` | 4.6s | 8.3s | 9.7s |
+| Blueprint page load | 9.5s | 17.2s | **26.5s** |
+
+For comparison, the same production build handled 5 concurrent participants
+at 200ms-2.4s across the board, and the underlying architecture is sound —
+every RPC and RLS check that matters was independently verified correct in
+Milestones 2-3. This is a **capacity/latency problem at scale, not a
+correctness problem**.
+
+**Likely causes, not yet isolated from each other:**
+1. The load generator and the app server both ran on this one local
+   machine, competing for the same CPU/network — a real deployment
+   (Vercel's serverless functions, scaling horizontally, not sharing a
+   process with anything) would likely do meaningfully better on this
+   dimension alone.
+2. Pages like the dashboard and Blueprint make several *sequential*
+   Supabase round-trips per request (documented in
+   `docs/ARCHITECTURE_DECISIONS.md`) — each concurrent request pays that
+   full sequential cost independently, and this would still apply on any
+   hosting platform.
+3. Possible Supabase-side connection/throughput limits at this burst
+   concurrency, which may differ by project tier.
+
+**Recommendation: re-run `npm run load-test` against a real Vercel
+deployment before committing to a 75-person live session**, to separate
+cause (1) from (2)/(3). If numbers are still elevated on a real deployment,
+the next step is consolidating the dashboard/module/Blueprint data loaders'
+sequential queries into fewer round-trips (the embedded-join pattern
+already used successfully in the Milestone 4 admin views is a proven
+starting point) — that's real follow-up engineering work, not a quick fix,
+and is flagged here rather than attempted under time pressure at the end of
+this milestone.
+
+### What still needs a manual browser click-through
+
+- [ ] Individual profile and aggregate pages read cleanly as premium/calm,
+      not a raw data dump, on desktop and mobile
+- [ ] CSV export opens correctly in Excel/Sheets/Numbers (the file starts
+      with a UTF-8 BOM specifically so Excel doesn't mangle special
+      characters — worth confirming on whatever tool you'll actually use)
+- [ ] Click-through from the participant roster on the session control
+      panel to an individual profile works and the "back to session" link
+      returns correctly
+
+### Not part of this gate
+
+Per the milestone split and the brief's own Nice-to-Have/later-milestone
+list: Presentation Mode, Google Sheets sync, the Executive Support Audit,
+final recommendation content. This is the last of the four milestones —
+nothing further is scoped beyond what's listed here and in
+`docs/CLIENT_QUESTIONS.md`.

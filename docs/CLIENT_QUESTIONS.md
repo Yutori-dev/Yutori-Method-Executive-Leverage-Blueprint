@@ -120,6 +120,29 @@ these belong.
     logic, approved copy), it's a data change to that table — no code
     change needed.
 
+## Milestone 4 notes
+
+12. **Aggregate views only show data that actually exists.** The facilitator
+    aggregate dashboard (module completion, Zone of Investment distribution,
+    most common Priority Delegation Opportunities, recommendation/reaction
+    breakdown) deliberately does not attempt Visionary/Integrator
+    distribution, Executive Support Audit results, current-support-role
+    breakdowns, or EOS/Bloom usage — none of that content has been built
+    (see items 5 and 9), and an empty chart for it would be misleading
+    rather than useful. It'll extend naturally once those pieces exist.
+
+13. **CSV export columns are a curated set, not a raw dump.** Brief section
+    22 lists "raw responses" among the export columns; we exported a
+    structured summary per participant instead (identity, module
+    completion, Zone of Investment counts by macro zone, the three Priority
+    Delegation Opportunities with leverage levels, the architecture
+    recommendation signal and reaction) rather than every raw question/
+    answer pair, which doesn't flatten cleanly into CSV columns across a
+    configurable question set. Say the word if you specifically need the
+    raw per-question answers included too — that's a straightforward
+    addition, just deferred as a judgment call on what's actually useful
+    in a spreadsheet.
+
 ## Legal (brief section 26) — not blocking Milestone 1, must resolve before real participant data is collected
 
 Privacy policy, retention term, deletion policy, research consent, Terms of

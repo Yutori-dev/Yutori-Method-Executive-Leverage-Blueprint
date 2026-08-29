@@ -244,3 +244,26 @@ live (extracting real tokens from a generated link and confirming
 `setSession()` accepts them); the client-side redirect behavior needs a
 real browser to fully exercise, same testing-tool limitation noted
 throughout this file.
+
+## Milestone 4 addendum: the admin coaching view deliberately un-hides what participants never see
+
+`getAdminParticipantProfile()` selects `responsibilities.leverage_level`
+directly, which no participant-facing query anywhere in the app does. This
+isn't a gap in the hiding logic -- the brief is explicit that the
+classification exists for internal/coaching use (section 9: "System retains
+internally: leverage_level = Orchestration") and that the admin profile
+should support exactly this kind of one-page coaching view (section 17).
+The distinction that actually matters is *who's asking*, not the column
+itself: RLS already restricts `responsibilities` reads appropriately, and
+this loader runs only behind `/admin/**`, which the proxy gates to admins
+before any Server Component even renders.
+
+## Milestone 4 addendum: aggregates are computed in application code, not SQL
+
+`getSessionAggregates()` fetches raw rows scoped to a session (via its
+participant_sessions ids) and reduces them in TypeScript rather than
+writing grouped/aggregate SQL. Sessions are expected to top out around
+75 participants (brief section 3), so the row counts involved are small
+enough that this is simpler and safer than hand-rolling several `GROUP BY`
+queries, at negligible cost. Revisit this if a much larger session size
+ever becomes real.

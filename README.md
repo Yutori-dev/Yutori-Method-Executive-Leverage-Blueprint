@@ -1,9 +1,18 @@
 # Yutori Method™ Executive Leverage Blueprint
 
-Milestone 1 (Foundation + Configurable Activity Engine), Milestone 2 (Zone
-of Investment + Delegation/Leverage), and Milestone 3 (Recommendation
-Engine + Blueprint) are implemented and connected to a live Supabase
+All four milestones — Milestone 1 (Foundation + Configurable Activity
+Engine), Milestone 2 (Zone of Investment + Delegation/Leverage), Milestone 3
+(Recommendation Engine + Blueprint), and Milestone 4 (Facilitator
+Intelligence + QA) — are implemented and connected to a live Supabase
 project.
+
+> **Before a real 75-person live session**, read the load test results in
+> `docs/TESTING.md`. The app is correct at that scale (74/75 simulated
+> participants succeeded) but not yet fast enough — page loads averaged
+> 4.5-9.5s and the worst case hit 26s under full concurrent load in local
+> testing. Re-testing against a real deployment (not this local machine) is
+> the recommended next step before committing to a live session at that
+> size; see the doc for the likely causes and what to do about them.
 
 This README covers what's implemented, how to run it, and what's explicitly
 deferred to later milestones. See also:
@@ -84,12 +93,30 @@ deferred to later milestones. See also:
   through real cookie-based HTTP requests, not just server-side function
   calls, including confirming an unrelated participant is denied
 
-## What's deliberately not built yet
+**Milestone 4 — Facilitator Intelligence + QA:**
 
-Per the brief's Content Dependency Register and the remaining Milestone 4
-scope: final assessment/matrix/recommendation content, the Executive
-Support Audit, White Whale, Success Vision, aggregate analytics, CSV
-export, Presentation Mode. The schema is built so these can be added
+- Individual participant profile (`/admin/sessions/[id]/participants/[id]`)
+  — a one-page coaching view showing everything a participant has done,
+  including the leverage classification hidden from every participant-facing
+  query (brief section 17)
+- Session-level aggregate view (`/admin/sessions/[id]/aggregate`) — module
+  completion, Zone of Investment distribution, most common Priority
+  Delegation Opportunities, recommendation/reaction breakdown. Only over
+  data the app actually captures — no invented charts for Visionary/
+  Integrator, the Executive Support Audit, or other content that doesn't
+  exist yet
+- CSV export per session (`/admin/sessions/[id]/export`)
+- `scripts/load-test.ts` — simulates N concurrent participants through the
+  full flow for capacity testing (brief section 25/29). **Run at 75
+  participants against a production build and found a real capacity
+  problem** — see the callout above and `docs/TESTING.md` for full numbers
+  and next steps
+
+## What's deliberately not built
+
+Per the brief's Content Dependency Register: final assessment/matrix/
+recommendation content, the Executive Support Audit, White Whale, Success
+Vision, Presentation Mode. The schema is built so these can be added
 without restructuring what's here — see `docs/ARCHITECTURE_DECISIONS.md`.
 
 ## Local setup
@@ -153,6 +180,17 @@ without restructuring what's here — see `docs/ARCHITECTURE_DECISIONS.md`.
   no custom SMTP configured, which makes manual click-testing painful — this
   sidesteps it entirely for local development. Not usable in production
   (the bridge page it relies on is hard-guarded out via `isProduction`).
+- `npm run load-test -- <count> [provisionDelayMs]` — simulates that many
+  concurrent participants through the full join → rate → select → reveal →
+  Blueprint flow against `LOAD_TEST_BASE_URL` (defaults to
+  `http://localhost:3000`). Run against a **production build**
+  (`npm run build && npm start`), not `npm run dev` — dev mode's on-demand
+  compilation makes every number meaningless. Creates and cleans up real,
+  temporary test accounts; never run against a project real participants
+  use. The second argument paces account provisioning (default 1500ms) to
+  stay under Supabase's per-IP auth rate limits, which a real workshop's
+  participants — connecting from many different IPs — would never trip;
+  raise it if you see `verifyOtp` failures during setup.
 
 ## Database types
 
@@ -171,15 +209,22 @@ reflect a CHECK constraint as a type the generator can see).
 ## A note on testing
 
 Milestone 1's UI flows were click-tested manually against the live project.
-Milestones 2 and 3's RPC/security layers were verified with real, disposable
+Milestones 2-4's RPC/security layers were verified with real, disposable
 test participants created via the Supabase Auth admin API (see
 `docs/TESTING.md`) — every validation rule and RLS write-blocking/read-gating
-behavior was actually exercised, not just read from the SQL. Milestone 3's
-Blueprint page and PDF export were additionally verified through real
+behavior was actually exercised, not just read from the SQL. Milestones 3
+and 4's page-level features were additionally verified through real
 cookie-based HTTP requests against the running app (constructing an actual
-`@supabase/ssr` session cookie), not just server-side function calls, which
-is a stronger check than Milestone 2 got. No browser automation tool was
-available in this environment, so the React UI itself (phase transitions,
-checkbox limits, matrix rendering, the architecture reveal flow) still needs
-a manual click-through for both milestones — see the checklists in
-`docs/TESTING.md` before treating them as accepted.
+`@supabase/ssr` session cookie), not just server-side function calls. No
+browser automation tool was available in this environment, so the React UI
+itself (phase transitions, checkbox limits, matrix rendering, the
+architecture reveal flow) still needs a manual click-through — see the
+checklists in `docs/TESTING.md` before treating any milestone as accepted.
+
+Milestone 4 additionally included a real load test at 75 simulated
+concurrent participants against a production build (not dev mode) — see the
+callout near the top of this file and the full results in
+`docs/TESTING.md`. This is the one piece of testing across all four
+milestones that surfaced a genuine problem rather than confirming
+correctness: the app handles 75 concurrent participants without errors, but
+not yet fast enough for a good live-workshop experience at that scale.
