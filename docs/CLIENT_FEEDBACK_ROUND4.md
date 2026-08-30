@@ -254,12 +254,27 @@ worth getting the actual Section 4 spec from Nicole whenever it's ready.
       current-support data still doesn't influence the architecture
       recommendation's output. Everything else in the Intake spec is done.
 
+## Nicole's live-test feedback (2026-09-07)
+
+- [x] **"Did not recall seeing this full set of questions upon
+      registering."** Full Name and Email Address (spec Questions 1-2)
+      were already collected at signup, so the intake form only asked for
+      what signup didn't have — Company/Role/Current Executive Support.
+      That made those two questions invisible as part of "the intake" even
+      though the data existed. Fixed: First Name/Last Name (editable,
+      prefilled) and Email Address (shown, read-only — it's the auth
+      identifier) now appear as visible questions on the intake form
+      itself, in spec order, mirrored on the admin edit form too. Verified
+      live: name updates correctly, empty name rejected.
+- [x] **Zone of Investment selection-step conflict — resolved, went with
+      Nicole's spec.** Reverted the round-4 "pick your 10-12 first, then
+      grade" step; participants now rate all 21 responsibilities directly
+      on one screen with a live counter, matching her V1 developer spec
+      exactly. Unrelated round-4 improvements (visual separation, headers,
+      realtime push-nav) are untouched.
+
 ## Genuinely still open (not something to silently resolve)
 
-- [ ] **Zone of Investment selection-step conflict** (see audit above) —
-      your explicit ask vs. Nicole's formal spec disagree on whether
-      there's a separate "pick your 10-12 first" screen. Left as you
-      asked; still needs a decision on whether to tell Nicole or revert.
 - [ ] **Section 4 (the `leverage` module / "Executive Support Audit")** —
       confirmed completely unbuilt, no spec received yet. Doesn't block
       anything else.
