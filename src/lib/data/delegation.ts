@@ -6,6 +6,12 @@ export interface EligibleCandidate {
   responsibilityId: string;
   label: string;
   matrixCell: string | null;
+  macroZone: "ambiguity" | "vulnerability";
+}
+
+export interface PressureTestState {
+  response: "yes" | "somewhat" | "no";
+  revisited: boolean;
 }
 
 export interface PrioritySelection {
@@ -25,6 +31,7 @@ export interface DelegationCandidatesData {
    * for Priority Delegation Opportunity selection (brief section 11). */
   eligible: EligibleCandidate[];
   currentSelections: PrioritySelection[];
+  pressureTest: PressureTestState | null;
 }
 
 export async function getDelegationCandidates(
@@ -34,7 +41,7 @@ export async function getDelegationCandidates(
 
   // responsibilities(label) is embedded directly instead of resolved
   // through a separate batch lookup.
-  const [{ data: rated }, { data: priorities }] = await Promise.all([
+  const [{ data: rated }, { data: priorities }, { data: pressureTestRow }] = await Promise.all([
     supabase
       .from("participant_responsibilities")
       .select("responsibility_id, matrix_cell, macro_zone, responsibilities(label)")
@@ -45,6 +52,11 @@ export async function getDelegationCandidates(
       .select("responsibility_id, selection_order, leverage_level_snapshot, responsibilities(label)")
       .eq("participant_session_id", participantSessionId)
       .order("selection_order", { ascending: true }),
+    supabase
+      .from("priority_delegation_pressure_test")
+      .select("response, revisited")
+      .eq("participant_session_id", participantSessionId)
+      .maybeSingle(),
   ]);
 
   const labelOf = (row: { responsibilities: unknown }) =>
@@ -55,6 +67,7 @@ export async function getDelegationCandidates(
       responsibilityId: r.responsibility_id,
       label: labelOf(r),
       matrixCell: r.matrix_cell,
+      macroZone: r.macro_zone as "ambiguity" | "vulnerability",
     })),
     currentSelections: (priorities ?? []).map((p) => ({
       responsibilityId: p.responsibility_id,
@@ -62,5 +75,8 @@ export async function getDelegationCandidates(
       selectionOrder: p.selection_order,
       leverageLevelSnapshot: p.leverage_level_snapshot as LeverageLevel,
     })),
+    pressureTest: pressureTestRow
+      ? { response: pressureTestRow.response as "yes" | "somewhat" | "no", revisited: pressureTestRow.revisited }
+      : null,
   };
 }

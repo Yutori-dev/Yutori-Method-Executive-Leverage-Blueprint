@@ -53,6 +53,7 @@ export interface SessionAggregates {
   zoneDistribution: CountRow[];
   mostSelectedResponsibilities: CountRow[];
   mostCommonPriorityOpportunities: CountRow[];
+  pressureTestDistribution: CountRow[];
   priorityLeverageDistribution: CountRow[];
   primarySignalDistribution: CountRow[];
   reactionDistribution: CountRow[];
@@ -63,6 +64,7 @@ export interface SessionAggregates {
   whiteWhaleCompletionRate: number;
   leadershipWiringCompletionCount: number;
   leadershipWiringCompletionRate: number;
+  leadershipWiringDashboardNote: string | null;
 }
 
 const EMPTY_ZONE_OF_INVESTMENT_AGGREGATES: ZoneOfInvestmentAggregates = {
@@ -103,6 +105,12 @@ const REACTION_LABEL: Record<string, string> = {
   not_yet: "Not yet",
 };
 
+const PRESSURE_TEST_LABEL: Record<string, string> = {
+  yes: "Yes",
+  somewhat: "Somewhat",
+  no: "No",
+};
+
 const SELF_IDENTIFICATION_LABEL: Record<string, string> = {
   visionary: "Visionary",
   integrator: "Integrator",
@@ -141,23 +149,33 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     .select("id, completion_state, self_identification, zone_of_investment_viewed_at, participants(first_name, last_name)");
   if (sessionIds) enrollmentQuery = enrollmentQuery.in("session_id", sessionIds);
 
-  const [{ data: enrollments }, { data: modules }, { data: diagnosticAssessment }] = await Promise.all([
-    enrollmentQuery,
-    supabase
-      .from("modules")
-      .select("id, key, name")
-      .eq("active", true)
-      .eq("requires_live_workshop", false)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("assessments")
-      .select("id")
-      .eq("key", "executive_leverage_diagnostic")
-      .eq("active", true)
-      .order("version", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const [{ data: enrollments }, { data: modules }, { data: diagnosticAssessment }, { data: wiringConfig }] =
+    await Promise.all([
+      enrollmentQuery,
+      supabase
+        .from("modules")
+        .select("id, key, name")
+        .eq("active", true)
+        .eq("requires_live_workshop", false)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("assessments")
+        .select("id")
+        .eq("key", "executive_leverage_diagnostic")
+        .eq("active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("leadership_wiring_config")
+        .select("dashboard_note")
+        .eq("active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  const leadershipWiringDashboardNote = wiringConfig?.dashboard_note ?? null;
 
   const participantSessionIds = (enrollments ?? []).map((e) => e.id);
   const registeredCount = participantSessionIds.length;
@@ -171,6 +189,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       zoneDistribution: [],
       mostSelectedResponsibilities: [],
       mostCommonPriorityOpportunities: [],
+      pressureTestDistribution: [],
       priorityLeverageDistribution: [],
       primarySignalDistribution: [],
       reactionDistribution: [],
@@ -181,6 +200,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       whiteWhaleCompletionRate: 0,
       leadershipWiringCompletionCount: 0,
       leadershipWiringCompletionRate: 0,
+      leadershipWiringDashboardNote,
     };
   }
 
@@ -190,6 +210,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     { data: progressRows },
     { data: responsibilityRows },
     { data: priorityRows },
+    { data: pressureTestRows },
     { data: recommendationRows },
     { data: diagnosticQuestions },
     { data: diagnosticResponses },
@@ -207,6 +228,10 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     supabase
       .from("priority_delegation_opportunities")
       .select("responsibility_id, leverage_level_snapshot, responsibilities(label)")
+      .in("participant_session_id", participantSessionIds),
+    supabase
+      .from("priority_delegation_pressure_test")
+      .select("response")
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("architecture_recommendations")
@@ -294,6 +319,11 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       (r) => responsibilityLabelByResponsibility(r),
       (label) => label,
     ).slice(0, 10),
+    pressureTestDistribution: countBy(
+      pressureTestRows ?? [],
+      (r) => r.response,
+      (key) => PRESSURE_TEST_LABEL[key] ?? key,
+    ),
     priorityLeverageDistribution: countBy(
       priorityRows ?? [],
       (r) => r.leverage_level_snapshot,
@@ -321,6 +351,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     leadershipWiringCompletionCount: leadershipWiringCompletedCount,
     leadershipWiringCompletionRate:
       registeredCount > 0 ? Math.round((leadershipWiringCompletedCount / registeredCount) * 1000) / 10 : 0,
+    leadershipWiringDashboardNote,
   };
 }
 

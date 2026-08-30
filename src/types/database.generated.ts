@@ -938,6 +938,38 @@ export type Database = {
           },
         ]
       }
+      priority_delegation_pressure_test: {
+        Row: {
+          created_at: string
+          participant_session_id: string
+          response: string
+          revisited: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          participant_session_id: string
+          response: string
+          revisited?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          participant_session_id?: string
+          response?: string
+          revisited?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priority_delegation_pressure_test_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           active: boolean
@@ -1694,6 +1726,10 @@ export type Database = {
         }
       }
       mark_intake_started: { Args: never; Returns: undefined }
+      mark_priority_delegation_revisited: {
+        Args: { p_participant_session_id: string }
+        Returns: undefined
+      }
       rate_responsibility: {
         Args: {
           p_competency: string
@@ -1774,6 +1810,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_pressure_test_response: {
+        Args: { p_participant_session_id: string; p_response: string }
+        Returns: undefined
       }
       save_workshop_feedback_settings: {
         Args: { p_diagnostic_follow_up_url: string }

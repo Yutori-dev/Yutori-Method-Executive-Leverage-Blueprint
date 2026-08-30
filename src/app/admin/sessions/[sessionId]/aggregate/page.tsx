@@ -93,6 +93,17 @@ export default async function SessionAggregatePage({
           </Card>
 
           <Card>
+            <h2 className="font-serif text-lg">Pressure test</h2>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">
+              &ldquo;If you no longer owned these responsibilities, would you experience a
+              meaningful increase in available capacity?&rdquo;
+            </p>
+            <div className="mt-4">
+              <CountBarList rows={aggregates.pressureTestDistribution} emptyLabel="No pressure test responses yet." />
+            </div>
+          </Card>
+
+          <Card>
             <h2 className="font-serif text-lg">Primary recommendation signal</h2>
             <p className="mt-1 text-xs text-(--color-ink-muted)">
               &quot;Mixed&quot; means the participant&apos;s three priorities didn&apos;t share a
@@ -119,6 +130,9 @@ export default async function SessionAggregatePage({
             <div className="mt-4">
               <CountBarList rows={aggregates.selfIdentificationDistribution} emptyLabel="No self-identifications yet." />
             </div>
+            {aggregates.leadershipWiringDashboardNote ? (
+              <p className="mt-3 text-xs text-(--color-ink-muted)">{aggregates.leadershipWiringDashboardNote}</p>
+            ) : null}
           </Card>
 
           <Card>

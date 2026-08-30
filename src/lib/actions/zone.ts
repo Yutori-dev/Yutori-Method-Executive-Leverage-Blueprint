@@ -87,3 +87,30 @@ export async function selectPriorityDelegationOpportunities(params: {
   revalidatePath(params.sessionPath);
   return { ok: true as const };
 }
+
+export async function savePressureTestResponse(params: {
+  participantSessionId: string;
+  response: "yes" | "somewhat" | "no";
+  sessionPath: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("save_pressure_test_response", {
+    p_participant_session_id: params.participantSessionId,
+    p_response: params.response,
+  });
+
+  if (error) return { ok: false as const, message: error.message };
+  revalidatePath(params.sessionPath);
+  return { ok: true as const };
+}
+
+export async function markPriorityDelegationRevisited(params: { participantSessionId: string; sessionPath: string }) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("mark_priority_delegation_revisited", {
+    p_participant_session_id: params.participantSessionId,
+  });
+
+  if (error) return { ok: false as const, message: error.message };
+  revalidatePath(params.sessionPath);
+  return { ok: true as const };
+}
