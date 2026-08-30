@@ -134,12 +134,105 @@ already have: company, role/title, and current executive support.
       Part 5 recommendation engine," i.e. future work; this round only
       makes the structured data available for it to use later, doesn't
       build the mapping logic itself.
-- [ ] **Still needs a live DB push + `supabase gen types` regen** before
-      this can be verified end-to-end (blocked on Supabase CLI re-login,
-      same recurring issue as every DB change this session).
+- [x] Live DB push + type regen — done, verified live end-to-end.
 
 ## Not a build item
 
 - [ ] **Live support during the Sept 3, 9-11am EST session** — this is a
       staffing/availability commitment for a person, not something to
       implement in code. For you to answer directly with the client.
+
+---
+
+# Round 5 — full V1 developer specs (2026-08-30, same day)
+
+Client sent formal "Developer Implementation Specification — V1" documents
+for Intake, Executive Leverage Diagnostic, White Whale, Leadership Wiring,
+Zone of Investment, Delegation Beliefs Assessment, and Priority Delegation
+Opportunities. Asked to audit the four already-shipped activities against
+their formal specs and fix any drift, and rebuild the two that needed it.
+
+## "Section 4" question — resolved, no spec needed to unblock this round
+
+Checked the codebase directly: Section 4 = the `leverage` module
+("Executive Support Audit and leverage mapping reveal"), sort_order 4,
+between Delegation and Architecture. **It's completely unbuilt** — a
+participant reaches a literal `[YUTORI CONTENT PENDING]` placeholder card
+today. The `leverage_level` classification these specs reference ("Hidden
+Executive Leverage Level," "for later use in Section 4") already exists as
+a data field and is already being computed/stored — nothing participant-
+facing consumes it yet. This doesn't block anything in this round; still
+worth getting the actual Section 4 spec from Nicole whenever it's ready.
+
+## Audit: 4 already-shipped activities vs. their formal specs
+
+- [x] **White Whale** — exact match. Header, setup copy, prompt,
+      placeholder, privacy note all verified byte-for-byte against the DB
+      content. No changes needed.
+- [x] **Leadership Wiring** — exact match on header/prompt/descriptions.
+      **Found and left open**: `leadership_wiring_config.dashboard_note`
+      (the facilitator-dashboard "what this represents" caption the spec
+      asks for) is seeded in the DB but never fetched or rendered anywhere
+      — minor polish gap, not fixed this round, flagging so it doesn't get
+      lost.
+- [x] **Zone of Investment** — content (21 responsibilities, 9 zone
+      names/macro-zones, competency/passion definitions, reflection
+      prompts) matches exactly. Fixed two missing headers ("Map Your
+      Current Responsibilities," "Your Zone of Investment Map") that the
+      spec calls for and the UI didn't show.
+      **⚠️ Flagging, not resolving unilaterally**: Nicole's formal spec
+      describes rating all 21 responsibilities directly on one screen (no
+      separate selection step) — but you explicitly asked for a bulk
+      "pick your 10-12 first" step in round 4, which is now built and
+      live. These two now genuinely conflict. Left the selection step in
+      place (it was your explicit, detailed, most-recent instruction) but
+      you should know the two don't match — worth deciding whether to tell
+      Nicole about the deviation or revert it.
+- [x] **Executive Leverage Diagnostic** — turned out to already match the
+      new spec almost entirely (question count, 52-point scoring, exact
+      thresholds, exact profile names/descriptions, exact constraint
+      labels, exact tie-break priority order — all built against an
+      earlier draft of this same spec). Only response-option *wording*
+      differed, on the Baseline question and 8 of 13 scored questions.
+      Shipped as assessment version 2 with corrected wording only,
+      everything else carried over unchanged. Verified live end-to-end
+      (signup → answer all 15 → calculate → correct result and tie-break
+      order).
+
+## Rebuilt: Delegation Beliefs Assessment
+
+- [x] Full rebuild, replacing the dev-only 4-question placeholder. Real
+      schema (10 belief questions across Trust & Control / Team & Outcomes
+      / Workload & Resources, individually-interpreted Ownership Transfer
+      Indicators), real content, server-side scoring/interpretation/tie
+      logic, admin-configurable thresholds, one-question-at-a-time
+      participant flow. Priority Delegation Opportunities now gates on
+      this real result instead of the old unconfigured "Delegation
+      Readiness" step. Blueprint (web + PDF) and the admin coaching view
+      updated to show Primary Delegation Barrier + Priority Ownership
+      Transfer Opportunity.
+- [x] Verified live: domain averaging, threshold-based interpretation
+      selection, strongest-barrier ties, "no primary barrier surfaced"
+      fallback, ownership-transfer flagging with correct tiebreak, and
+      per-question autosave gated on module unlock.
+- [ ] Admin editing of Delegation Beliefs copy (intro text, domain
+      interpretation copy, question wording) — not built. Content is
+      correct because it's seeded directly from the spec via migration;
+      there's just no admin UI to edit it later without another migration.
+
+## Still to do
+
+- [ ] **Priority Delegation Opportunities enhancement** (its own full
+      spec, not yet started this round): the pressure-test step (Yes/
+      Somewhat/No after selecting), the "revisit vs. keep selections"
+      flow, and the fewer-than-3-eligible / zero-eligible copy and
+      required-count adjustment. The existing fewer-than-3 handling
+      already works functionally, just with different wording than the
+      spec.
+- [ ] **Participant Intake**: admin edit of a participant's own intake
+      data, and architecture-recalculation flagging on edit-after-
+      generation (both already flagged as gaps in round 4, still open).
+- [ ] **Leadership Wiring**: render the seeded `dashboard_note` on the
+      facilitator dashboard (see audit above).
+- [ ] Diagnostic response-option wording — resolved this round (see
+      above); the earlier "send me the text" ask is now moot.
