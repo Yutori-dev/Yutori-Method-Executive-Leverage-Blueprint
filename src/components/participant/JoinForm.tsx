@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { savePendingProfile } from "@/lib/pendingProfile";
+import { signUpParticipant, signInParticipant } from "@/lib/actions/participantAuth";
 import { Button } from "@/components/ui/Button";
 
 type Status = "checking" | "form" | "submitting" | "already-signed-in" | "error";
@@ -83,28 +84,12 @@ export function JoinForm({ joinCode }: { joinCode?: string }) {
 
     savePendingProfile({ email, firstName, lastName, joinCode: joinCode ?? "" });
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
-
-    if (error) {
-      setErrorMessage(
-        /already registered|already exists/i.test(error.message)
-          ? 'An account with this email already exists. Use "Sign in" below instead.'
-          : error.message,
-      );
-      setStatus("form");
-      return;
-    }
-
-    if (!data.session) {
-      // No confirmation email is sent in this temporary setup, so a
-      // missing session here means this email is already registered
-      // (Supabase's anti-enumeration response to a duplicate signUp).
-      setErrorMessage('An account with this email already exists. Use "Sign in" below instead.');
-      setStatus("form");
-      return;
-    }
-
-    router.push(joinCode ? `/complete-profile?join=${encodeURIComponent(joinCode)}` : "/complete-profile");
+    // Runs server-side (sign up, and the redirect on success) so the auth
+    // cookie write and the navigation happen in the same response -- see
+    // src/lib/actions/participantAuth.ts's comment for why that matters.
+    const result = await signUpParticipant({ email, password, joinCode: joinCode ?? "" });
+    setErrorMessage(result.message);
+    setStatus("form");
   }
 
   async function handleSignIn(formEvent: React.FormEvent) {
@@ -112,15 +97,9 @@ export function JoinForm({ joinCode }: { joinCode?: string }) {
     setErrorMessage(null);
     setStatus("submitting");
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInError) {
-      setErrorMessage("Incorrect email or password.");
-      setStatus("form");
-      return;
-    }
-
-    await redirectAfterAuth();
+    const result = await signInParticipant({ email, password, joinCode: joinCode ?? "" });
+    setErrorMessage(result.message);
+    setStatus("form");
   }
 
   if (status === "checking" || status === "already-signed-in") {

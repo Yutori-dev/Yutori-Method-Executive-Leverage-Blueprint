@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { signInAdmin } from "@/lib/actions/adminAuth";
 import { Button } from "@/components/ui/Button";
 
 /**
@@ -13,10 +12,11 @@ import { Button } from "@/components/ui/Button";
  * password-holding account (participants included), an is_admin() check
  * after sign-in replaces what the old magic-link callback route used to
  * do -- a non-admin's valid credentials still get signed back out here.
+ *
+ * Sign-in itself runs as a Server Action (signInAdmin) rather than through
+ * the browser client -- see that function's comment for why.
  */
 export function AdminLoginForm() {
-  const supabase = createClient();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -27,24 +27,11 @@ export function AdminLoginForm() {
     setSubmitting(true);
     setErrorMessage(null);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInError) {
-      setErrorMessage("Incorrect email or password.");
-      setSubmitting(false);
-      return;
-    }
-
-    const { data: isAdmin } = await supabase.rpc("is_admin");
-
-    if (!isAdmin) {
-      await supabase.auth.signOut();
-      setErrorMessage("This account is not an admin.");
-      setSubmitting(false);
-      return;
-    }
-
-    router.push("/admin");
+    // A successful sign-in never returns here -- signInAdmin redirects from
+    // inside the server action instead. Only a failure result reaches here.
+    const result = await signInAdmin({ email, password });
+    setErrorMessage(result.message);
+    setSubmitting(false);
   }
 
   return (
