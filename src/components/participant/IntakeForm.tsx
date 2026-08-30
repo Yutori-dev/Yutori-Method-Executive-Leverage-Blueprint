@@ -82,7 +82,6 @@ export function IntakeForm({
     }
 
     router.push(sessionPath);
-    router.refresh();
   }
 
   return (

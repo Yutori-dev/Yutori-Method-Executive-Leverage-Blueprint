@@ -10,7 +10,6 @@ export function SignOutButton({ redirectTo }: { redirectTo: string }) {
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push(redirectTo);
-    router.refresh();
   }
 
   return (

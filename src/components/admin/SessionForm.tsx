@@ -34,7 +34,6 @@ export function SessionForm({
         } else if (sessionId) {
           await updateSession(sessionId, { name, organization, eventDate, format });
           router.push(`/admin/sessions/${sessionId}`);
-          router.refresh();
         }
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");

@@ -58,7 +58,6 @@ export function CompleteProfileForm({
 
     clearPendingProfile();
     router.push("/dashboard");
-    router.refresh();
   }
 
   return (
