@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         supabase
           .from("participants")
           .select(
-            "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
+            "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none",
           )
           .eq("id", enrollment.participant_id)
           .maybeSingle(),
@@ -60,7 +60,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .order("selection_order", { ascending: true }),
         supabase
           .from("architecture_recommendations")
-          .select("is_tied, primary_signal_leverage_level, reaction, reaction_note")
+          .select(
+            "primary_signal_type, primary_leverage_need, leading_leverage_need, secondary_leverage_needs, reaction, reaction_note",
+          )
           .eq("participant_session_id", enrollment.id)
           .maybeSingle(),
       ]);
@@ -95,6 +97,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         currentSupportChiefOfStaff: participant.current_support_chief_of_staff,
         currentSupportChiefIntegrator: participant.current_support_chief_integrator,
         currentSupportCoo: participant.current_support_coo,
+        currentSupportAiAutomation: participant.current_support_ai_automation,
         currentSupportOther: participant.current_support_other,
         currentSupportOtherText: participant.current_support_other_text,
         currentSupportNone: participant.current_support_none,
@@ -113,7 +116,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       priorityByOrder.get(2) ? (LEVEL_LABEL[priorityByOrder.get(2)!.level ?? ""] ?? "") : "",
       priorityByOrder.get(3)?.label ?? "",
       priorityByOrder.get(3) ? (LEVEL_LABEL[priorityByOrder.get(3)!.level ?? ""] ?? "") : "",
-      recommendation ? (recommendation.is_tied ? "Mixed" : (LEVEL_LABEL[recommendation.primary_signal_leverage_level ?? ""] ?? "")) : "",
+      recommendation?.primary_signal_type ?? "",
+      recommendation
+        ? (LEVEL_LABEL[recommendation.primary_leverage_need ?? recommendation.leading_leverage_need ?? ""] ?? "")
+        : "",
+      recommendation ? (recommendation.secondary_leverage_needs ?? []).map((l: string) => LEVEL_LABEL[l] ?? l).join(" · ") : "",
       recommendation?.reaction ?? "",
       recommendation?.reaction_note ?? "",
     ]);
@@ -141,7 +148,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       "Priority 2 leverage",
       "Priority 3",
       "Priority 3 leverage",
-      "Architecture primary signal",
+      "Architecture signal type",
+      "Architecture primary/leading level",
+      "Architecture secondary needs",
       "Architecture reaction",
       "Architecture reaction note",
     ],

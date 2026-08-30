@@ -151,18 +151,33 @@ export default async function AdminParticipantProfilePage({
                 </div>
               ) : null}
               {profile.delegation.priorities.length > 0 ? (
-                <ol className="mt-3 space-y-1.5">
-                  {profile.delegation.priorities.map((p) => (
-                    <li key={p.selectionOrder} className="flex items-center justify-between text-sm">
-                      <span>
-                        {p.selectionOrder}. {p.label}
-                      </span>
-                      <span className="text-(--color-ink-muted)">
-                        {LEVEL_LABEL[p.leverageLevelSnapshot ?? ""] ?? "Not yet classified"}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
+                <>
+                  <ol className="mt-3 space-y-1.5">
+                    {profile.delegation.priorities.map((p) => (
+                      <li key={p.selectionOrder} className="flex items-center justify-between text-sm">
+                        <span>
+                          {p.selectionOrder}. {p.label}
+                        </span>
+                        <span className="text-(--color-ink-muted)">
+                          {LEVEL_LABEL[p.leverageLevelSnapshot ?? ""] ?? "Not yet classified"}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="mt-3 text-xs text-(--color-ink-muted)">
+                    Leverage pattern:{" "}
+                    {(() => {
+                      const counts = new Map<string, number>();
+                      for (const p of profile.delegation.priorities) {
+                        if (!p.leverageLevelSnapshot) continue;
+                        counts.set(p.leverageLevelSnapshot, (counts.get(p.leverageLevelSnapshot) ?? 0) + 1);
+                      }
+                      return counts.size > 0
+                        ? [...counts.entries()].map(([level, count]) => `${count} ${LEVEL_LABEL[level]}`).join(" · ")
+                        : "Not yet classified";
+                    })()}
+                  </p>
+                </>
               ) : null}
             </Card>
           ) : null}
@@ -179,12 +194,45 @@ export default async function AdminParticipantProfilePage({
                 </p>
               ) : null}
               <p className="mt-2 text-sm">
-                Primary signal:{" "}
-                {profile.architecture.isTied
-                  ? "Mixed (no clear majority)"
-                  : (LEVEL_LABEL[profile.architecture.primarySignalLeverageLevel ?? ""] ?? "—")}
+                Signal type: <span className="capitalize">{profile.architecture.signalType.replace("_", " ")}</span>
               </p>
-              <p className="mt-2 text-sm text-(--color-ink-muted)">{profile.architecture.rationale}</p>
+              {profile.architecture.primaryLeverageNeed ? (
+                <p className="mt-1 text-sm">
+                  Primary Leverage Need: {LEVEL_LABEL[profile.architecture.primaryLeverageNeed]}
+                </p>
+              ) : null}
+              {profile.architecture.leadingLeverageNeed ? (
+                <p className="mt-1 text-sm">
+                  Leading Leverage Need: {LEVEL_LABEL[profile.architecture.leadingLeverageNeed]}
+                </p>
+              ) : null}
+              {profile.architecture.multiLayerLevels.length > 0 ? (
+                <p className="mt-1 text-sm">
+                  Multi-layer levels: {profile.architecture.multiLayerLevels.map((l) => LEVEL_LABEL[l]).join(", ")}
+                </p>
+              ) : null}
+              {profile.architecture.auditCorroboration ? (
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  Audit corroboration: <span className="capitalize">{profile.architecture.auditCorroboration}</span>
+                </p>
+              ) : null}
+              {profile.architecture.secondaryLeverageNeeds.length > 0 ? (
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  Secondary needs: {profile.architecture.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(", ")}
+                </p>
+              ) : null}
+              {profile.architecture.currentSupportMatchState.length > 0 ? (
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  Current support classified as:{" "}
+                  {profile.architecture.currentSupportMatchState.map((l) => LEVEL_LABEL[l]).join(", ")}
+                </p>
+              ) : null}
+              {profile.architecture.primaryRecommendedAction ? (
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  Recommended action:{" "}
+                  <span className="capitalize">{profile.architecture.primaryRecommendedAction.replace(/_/g, " ")}</span>
+                </p>
+              ) : null}
               {profile.architecture.reaction ? (
                 <p className="mt-3 text-sm">
                   Reaction: <span className="capitalize">{profile.architecture.reaction.replace("_", " ")}</span>

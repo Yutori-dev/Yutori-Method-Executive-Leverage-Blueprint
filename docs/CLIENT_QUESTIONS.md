@@ -32,11 +32,13 @@ throughout) versus what they'll gate starting in Milestone 2.
    Flagging the discrepancy in case Replit hosting was still assumed
    somewhere downstream.
 
-4. **Character module during the virtual-only phase.** We show "Character —
-   Live Workshop" as a permanently locked seventh row on the dashboard
-   (never counted toward virtual progress), per brief sections 1.2/5.1/12.
-   Confirm you want it visible-but-locked during the virtual workshop rather
-   than hidden entirely until the live-workshop milestone exists.
+4. **Fit module during the virtual-only phase.** We show "Fit (Live
+   Workshop)" (renamed from "Character — Live Workshop" per Nicole's
+   2026-08-30 menu update) as a permanently locked seventh row on the
+   dashboard (never counted toward virtual progress), per brief sections
+   1.2/5.1/12. Confirm you want it visible-but-locked during the virtual
+   workshop rather than hidden entirely until the live-workshop milestone
+   exists.
 
 ## Content dependencies (brief section 30) — not blocking Milestone 1, will block Milestone 2+
 
@@ -83,7 +85,12 @@ Altitude module's placeholder assessment; see `README.md` and
    when the leverage-level mapping is built"). Until that's supplied, a
    participant whose 3 priorities include one of these new responsibilities
    gets a controlled "pending" Architecture result rather than a guessed
-   one — see `docs/ARCHITECTURE_DECISIONS.md`.
+   one — see `docs/ARCHITECTURE_DECISIONS.md`. As of 2026-08-30, two more
+   features depend on this same mapping: the Priority Leverage
+   Opportunities Reveal and the reworked Executive Support Architecture
+   engine (see `docs/CLIENT_FEEDBACK_ROUND4.md`) — both are fully built
+   and tested against controlled data, but will show a pending state for
+   every real participant until this is supplied.
 
 7. **[RESOLVED] Final 9-cell Zone of Investment mapping and terminology
    (content dependency C).** Same spec supplied the exact 9 zone names

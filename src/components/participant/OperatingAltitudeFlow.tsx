@@ -214,7 +214,7 @@ export function OperatingAltitudeFlow({
         {selfId ? (
           <div className="mt-6">
             <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
-              Character — unlocked in the live workshop
+              Fit — unlocked in the live workshop
             </p>
             <div className="mt-3">
               <CharacterPreview leadershipWiring={selfId} />

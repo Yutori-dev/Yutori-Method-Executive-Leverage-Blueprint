@@ -1,6 +1,9 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
+import { whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
 import type { BlueprintData } from "@/lib/data/blueprint";
+import type { ArchitectureRecommendationView } from "@/lib/data/architecture";
+import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
 
 const INK = "#1c1f26";
 const INK_MUTED = "#5b6270";
@@ -68,7 +71,7 @@ export function BlueprintPdfDocument({
           {`\nCurrent executive support: ${formatCurrentSupport(data.participant.currentSupport)}`}
         </Text>
 
-        <Text style={styles.sectionTitle}>Character</Text>
+        <Text style={styles.sectionTitle}>Fit</Text>
         {data.selfIdentification ? (
           <Text style={{ ...styles.value, marginBottom: 4 }}>
             Leadership Wiring: {data.selfIdentification.charAt(0).toUpperCase() + data.selfIdentification.slice(1)}
@@ -103,7 +106,7 @@ export function BlueprintPdfDocument({
 
         {data.zone.personalizedPlacements.length > 0 ? (
           <>
-            <Text style={styles.sectionTitle}>Current Structure — Zone of Investment</Text>
+            <Text style={styles.sectionTitle}>Investment</Text>
             <View style={styles.card}>
               {data.zone.personalizedPlacements.map((p) => (
                 <View key={p.responsibilityId} style={styles.row}>
@@ -155,6 +158,12 @@ export function BlueprintPdfDocument({
                       ) : null}
                     </View>
                   ))}
+                {data.priorityLeverage.revealed && data.priorityLeverage.pattern.length > 0 ? (
+                  <Text style={{ ...styles.label, marginTop: 6 }}>
+                    Leverage pattern:{" "}
+                    {data.priorityLeverage.pattern.map((p) => `${p.count} ${LEVEL_LABEL[p.level]}`).join(" · ")}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
           </>
@@ -196,13 +205,8 @@ export function BlueprintPdfDocument({
 
         <Text style={styles.sectionTitle}>Executive Support Architecture</Text>
         <View style={styles.card}>
-          {data.architecture.revealed && data.architecture.recommendation ? (
-            <>
-              <Text style={styles.value}>
-                {data.architecture.recommendation.primaryResult ?? "Mixed leverage profile"}
-              </Text>
-              <Text style={styles.label}>{data.architecture.recommendation.rationale}</Text>
-            </>
+          {data.architecture.revealed && data.architecture.recommendation && data.architectureConfig ? (
+            <ArchitectureSummary rec={data.architecture.recommendation} config={data.architectureConfig} />
           ) : (
             <Text style={styles.label}>Awaiting facilitator reveal.</Text>
           )}
@@ -232,5 +236,46 @@ export function BlueprintPdfDocument({
         </Text>
       </Page>
     </Document>
+  );
+}
+
+function ArchitectureSummary({
+  rec,
+  config,
+}: {
+  rec: ArchitectureRecommendationView;
+  config: ExecutiveSupportArchitectureConfigInput;
+}) {
+  const headlineLevel = rec.primaryLeverageNeed ?? rec.leadingLeverageNeed;
+
+  if (rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel)) {
+    return (
+      <>
+        <Text style={styles.value}>{rec.multiLayerLevels.map((l) => LEVEL_LABEL[l]).join(" · ")} Leverage</Text>
+        {rec.leadingLeverageNeed ? (
+          <Text style={styles.label}>{withLevel(config.leadingNeedBody, rec.leadingLeverageNeed)}</Text>
+        ) : null}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Text style={styles.value}>{LEVEL_LABEL[headlineLevel!]} Leverage</Text>
+      <Text style={styles.label}>{whatThisMeansCopy(headlineLevel!, config)}</Text>
+      {rec.primaryRecommendedAction ? (
+        <Text style={{ ...styles.label, marginTop: 4 }}>{actionCopy(rec.primaryRecommendedAction, config)}</Text>
+      ) : null}
+      {rec.auditCorroboration === "strong" && rec.primaryLeverageNeed ? (
+        <Text style={{ ...styles.label, marginTop: 4 }}>
+          {withLevel(config.corroborationStrongBody, rec.primaryLeverageNeed)}
+        </Text>
+      ) : null}
+      {rec.secondaryLeverageNeeds.length > 0 ? (
+        <Text style={{ ...styles.label, marginTop: 4 }}>
+          Secondary: {rec.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(" · ")}
+        </Text>
+      ) : null}
+    </>
   );
 }

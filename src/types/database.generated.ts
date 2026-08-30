@@ -103,63 +103,75 @@ export type Database = {
       }
       architecture_recommendations: {
         Row: {
+          architecture_logic_version: number
+          audit_corroboration: string | null
           calculated_at: string
           created_at: string
+          current_support_match_state: string[]
           id: string
-          is_tied: boolean
+          leading_leverage_need: string | null
+          multi_layer_levels: string[]
           needs_recalculation: boolean
           participant_session_id: string
-          primary_result: string | null
-          primary_role: string | null
-          primary_signal_leverage_level: string | null
-          rationale: string
+          primary_leverage_need: string | null
+          primary_recommended_action: string | null
+          primary_signal_type: string
           reaction: string | null
           reaction_note: string | null
           reaction_submitted_at: string | null
-          rules_version: number
-          secondary_result: string | null
-          secondary_signal_leverage_level: string | null
-          supporting_signals: Json
+          recommended_primary_architecture: string | null
+          recommended_secondary_architectures: string[]
+          secondary_leverage_needs: string[]
+          secondary_recommended_actions: string[]
+          systems_amplifier_flag: boolean
           updated_at: string
         }
         Insert: {
+          architecture_logic_version?: number
+          audit_corroboration?: string | null
           calculated_at?: string
           created_at?: string
+          current_support_match_state?: string[]
           id?: string
-          is_tied?: boolean
+          leading_leverage_need?: string | null
+          multi_layer_levels?: string[]
           needs_recalculation?: boolean
           participant_session_id: string
-          primary_result?: string | null
-          primary_role?: string | null
-          primary_signal_leverage_level?: string | null
-          rationale: string
+          primary_leverage_need?: string | null
+          primary_recommended_action?: string | null
+          primary_signal_type: string
           reaction?: string | null
           reaction_note?: string | null
           reaction_submitted_at?: string | null
-          rules_version: number
-          secondary_result?: string | null
-          secondary_signal_leverage_level?: string | null
-          supporting_signals?: Json
+          recommended_primary_architecture?: string | null
+          recommended_secondary_architectures?: string[]
+          secondary_leverage_needs?: string[]
+          secondary_recommended_actions?: string[]
+          systems_amplifier_flag?: boolean
           updated_at?: string
         }
         Update: {
+          architecture_logic_version?: number
+          audit_corroboration?: string | null
           calculated_at?: string
           created_at?: string
+          current_support_match_state?: string[]
           id?: string
-          is_tied?: boolean
+          leading_leverage_need?: string | null
+          multi_layer_levels?: string[]
           needs_recalculation?: boolean
           participant_session_id?: string
-          primary_result?: string | null
-          primary_role?: string | null
-          primary_signal_leverage_level?: string | null
-          rationale?: string
+          primary_leverage_need?: string | null
+          primary_recommended_action?: string | null
+          primary_signal_type?: string
           reaction?: string | null
           reaction_note?: string | null
           reaction_submitted_at?: string | null
-          rules_version?: number
-          secondary_result?: string | null
-          secondary_signal_leverage_level?: string | null
-          supporting_signals?: Json
+          recommended_primary_architecture?: string | null
+          recommended_secondary_architectures?: string[]
+          secondary_leverage_needs?: string[]
+          secondary_recommended_actions?: string[]
+          systems_amplifier_flag?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -524,6 +536,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      executive_support_architecture_config: {
+        Row: {
+          active: boolean
+          add_execution_copy: string
+          add_orchestration_copy: string
+          add_strategic_copy: string
+          add_strategic_from_orchestration_copy: string
+          add_systems_copy: string
+          audit_only_intro: string
+          corroboration_strong_body: string
+          corroboration_strong_header: string
+          created_at: string
+          evolve_or_add_orchestration_copy: string
+          id: string
+          leading_need_body: string
+          leading_need_header: string
+          multi_layer_intro: string
+          results_header: string
+          secondary_need_header: string
+          strengthen_execution_copy: string
+          strengthen_orchestration_copy: string
+          strengthen_strategic_copy: string
+          strengthen_systems_copy: string
+          systems_amplifier_prepend: string
+          version: number
+          what_this_means_execution: string
+          what_this_means_orchestration: string
+          what_this_means_strategic: string
+          what_this_means_systems: string
+        }
+        Insert: {
+          active?: boolean
+          add_execution_copy: string
+          add_orchestration_copy: string
+          add_strategic_copy: string
+          add_strategic_from_orchestration_copy: string
+          add_systems_copy: string
+          audit_only_intro: string
+          corroboration_strong_body: string
+          corroboration_strong_header: string
+          created_at?: string
+          evolve_or_add_orchestration_copy: string
+          id?: string
+          leading_need_body: string
+          leading_need_header: string
+          multi_layer_intro: string
+          results_header: string
+          secondary_need_header: string
+          strengthen_execution_copy: string
+          strengthen_orchestration_copy: string
+          strengthen_strategic_copy: string
+          strengthen_systems_copy: string
+          systems_amplifier_prepend: string
+          version?: number
+          what_this_means_execution: string
+          what_this_means_orchestration: string
+          what_this_means_strategic: string
+          what_this_means_systems: string
+        }
+        Update: {
+          active?: boolean
+          add_execution_copy?: string
+          add_orchestration_copy?: string
+          add_strategic_copy?: string
+          add_strategic_from_orchestration_copy?: string
+          add_systems_copy?: string
+          audit_only_intro?: string
+          corroboration_strong_body?: string
+          corroboration_strong_header?: string
+          created_at?: string
+          evolve_or_add_orchestration_copy?: string
+          id?: string
+          leading_need_body?: string
+          leading_need_header?: string
+          multi_layer_intro?: string
+          results_header?: string
+          secondary_need_header?: string
+          strengthen_execution_copy?: string
+          strengthen_orchestration_copy?: string
+          strengthen_strategic_copy?: string
+          strengthen_systems_copy?: string
+          systems_amplifier_prepend?: string
+          version?: number
+          what_this_means_execution?: string
+          what_this_means_orchestration?: string
+          what_this_means_strategic?: string
+          what_this_means_systems?: string
+        }
+        Relationships: []
       }
       executive_support_audit_config: {
         Row: {
@@ -1027,6 +1129,7 @@ export type Database = {
           created_at: string
           current_role_title: string | null
           current_support_admin_or_va: boolean
+          current_support_ai_automation: boolean
           current_support_chief_integrator: boolean
           current_support_chief_of_staff: boolean
           current_support_coo: boolean
@@ -1052,6 +1155,7 @@ export type Database = {
           created_at?: string
           current_role_title?: string | null
           current_support_admin_or_va?: boolean
+          current_support_ai_automation?: boolean
           current_support_chief_integrator?: boolean
           current_support_chief_of_staff?: boolean
           current_support_coo?: boolean
@@ -1077,6 +1181,7 @@ export type Database = {
           created_at?: string
           current_role_title?: string | null
           current_support_admin_or_va?: boolean
+          current_support_ai_automation?: boolean
           current_support_chief_integrator?: boolean
           current_support_chief_of_staff?: boolean
           current_support_coo?: boolean
@@ -1217,6 +1322,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      priority_leverage_reveal_config: {
+        Row: {
+          active: boolean
+          audit_context_header: string
+          created_at: string
+          id: string
+          interpretation_body: string
+          interpretation_headline: string
+          leverage_pattern_header: string
+          no_secondary_gap_label: string
+          reveal_header: string
+          reveal_intro: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          audit_context_header: string
+          created_at?: string
+          id?: string
+          interpretation_body: string
+          interpretation_headline: string
+          leverage_pattern_header: string
+          no_secondary_gap_label: string
+          reveal_header: string
+          reveal_intro: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          audit_context_header?: string
+          created_at?: string
+          id?: string
+          interpretation_body?: string
+          interpretation_headline?: string
+          leverage_pattern_header?: string
+          no_secondary_gap_label?: string
+          reveal_header?: string
+          reveal_intro?: string
+          version?: number
+        }
+        Relationships: []
       }
       questions: {
         Row: {
@@ -1422,6 +1569,7 @@ export type Database = {
           leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
+          priority_leverage_reveal_unlocked: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1440,6 +1588,7 @@ export type Database = {
           leadership_wiring_unlocked?: boolean
           name: string
           organization?: string | null
+          priority_leverage_reveal_unlocked?: boolean
           status?: string
           updated_at?: string
           white_whale_unlocked?: boolean
@@ -1458,6 +1607,7 @@ export type Database = {
           leadership_wiring_unlocked?: boolean
           name?: string
           organization?: string | null
+          priority_leverage_reveal_unlocked?: boolean
           status?: string
           updated_at?: string
           white_whale_unlocked?: boolean
@@ -1674,6 +1824,35 @@ export type Database = {
           leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
+          priority_leverage_reveal_unlocked: boolean
+          status: string
+          updated_at: string
+          white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
+          zone_of_investment_revealed: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_reveal_priority_leverage: {
+        Args: { p_session_id: string }
+        Returns: {
+          active_module_id: string | null
+          architecture_revealed: boolean
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          format: string
+          id: string
+          join_code: string
+          leadership_wiring_unlocked: boolean
+          name: string
+          organization: string | null
+          priority_leverage_reveal_unlocked: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1701,6 +1880,7 @@ export type Database = {
           leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
+          priority_leverage_reveal_unlocked: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1728,6 +1908,7 @@ export type Database = {
           leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
+          priority_leverage_reveal_unlocked: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1755,6 +1936,7 @@ export type Database = {
           leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
+          priority_leverage_reveal_unlocked: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1782,6 +1964,7 @@ export type Database = {
           leadership_wiring_unlocked: boolean
           name: string
           organization: string | null
+          priority_leverage_reveal_unlocked: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1800,6 +1983,7 @@ export type Database = {
           p_company_name: string
           p_current_role_title: string
           p_current_support_admin_or_va: boolean
+          p_current_support_ai_automation: boolean
           p_current_support_chief_integrator: boolean
           p_current_support_chief_of_staff: boolean
           p_current_support_coo: boolean
@@ -1819,6 +2003,7 @@ export type Database = {
           created_at: string
           current_role_title: string | null
           current_support_admin_or_va: boolean
+          current_support_ai_automation: boolean
           current_support_chief_integrator: boolean
           current_support_chief_of_staff: boolean
           current_support_coo: boolean
@@ -1849,23 +2034,27 @@ export type Database = {
       calculate_architecture_recommendation: {
         Args: { p_participant_session_id: string }
         Returns: {
+          architecture_logic_version: number
+          audit_corroboration: string | null
           calculated_at: string
           created_at: string
+          current_support_match_state: string[]
           id: string
-          is_tied: boolean
+          leading_leverage_need: string | null
+          multi_layer_levels: string[]
           needs_recalculation: boolean
           participant_session_id: string
-          primary_result: string | null
-          primary_role: string | null
-          primary_signal_leverage_level: string | null
-          rationale: string
+          primary_leverage_need: string | null
+          primary_recommended_action: string | null
+          primary_signal_type: string
           reaction: string | null
           reaction_note: string | null
           reaction_submitted_at: string | null
-          rules_version: number
-          secondary_result: string | null
-          secondary_signal_leverage_level: string | null
-          supporting_signals: Json
+          recommended_primary_architecture: string | null
+          recommended_secondary_architectures: string[]
+          secondary_leverage_needs: string[]
+          secondary_recommended_actions: string[]
+          systems_amplifier_flag: boolean
           updated_at: string
         }
         SetofOptions: {
@@ -1946,6 +2135,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      calculate_executive_support_architecture: {
+        Args: { p_participant_session_id: string }
+        Returns: {
+          architecture_logic_version: number
+          audit_corroboration: string | null
+          calculated_at: string
+          created_at: string
+          current_support_match_state: string[]
+          id: string
+          leading_leverage_need: string | null
+          multi_layer_levels: string[]
+          needs_recalculation: boolean
+          participant_session_id: string
+          primary_leverage_need: string | null
+          primary_recommended_action: string | null
+          primary_signal_type: string
+          reaction: string | null
+          reaction_note: string | null
+          reaction_submitted_at: string | null
+          recommended_primary_architecture: string | null
+          recommended_secondary_architectures: string[]
+          secondary_leverage_needs: string[]
+          secondary_recommended_actions: string[]
+          systems_amplifier_flag: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "architecture_recommendations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       calculate_executive_support_audit_results: {
         Args: { p_participant_session_id: string }
         Returns: {
@@ -1978,6 +2200,7 @@ export type Database = {
           created_at: string
           current_role_title: string | null
           current_support_admin_or_va: boolean
+          current_support_ai_automation: boolean
           current_support_chief_integrator: boolean
           current_support_chief_of_staff: boolean
           current_support_coo: boolean
@@ -2004,6 +2227,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      executive_support_architecture_next_move: {
+        Args: {
+          p_has_execution: boolean
+          p_has_orchestration: boolean
+          p_has_strategic: boolean
+          p_has_systems: boolean
+          p_level: string
+        }
+        Returns: string
       }
       get_session_by_join_code: {
         Args: { p_join_code: string }
@@ -2097,6 +2330,7 @@ export type Database = {
           p_company_name: string
           p_current_role_title: string
           p_current_support_admin_or_va: boolean
+          p_current_support_ai_automation: boolean
           p_current_support_chief_integrator: boolean
           p_current_support_chief_of_staff: boolean
           p_current_support_coo: boolean
@@ -2115,6 +2349,7 @@ export type Database = {
           created_at: string
           current_role_title: string | null
           current_support_admin_or_va: boolean
+          current_support_ai_automation: boolean
           current_support_chief_integrator: boolean
           current_support_chief_of_staff: boolean
           current_support_coo: boolean
@@ -2186,23 +2421,27 @@ export type Database = {
           p_reaction: string
         }
         Returns: {
+          architecture_logic_version: number
+          audit_corroboration: string | null
           calculated_at: string
           created_at: string
+          current_support_match_state: string[]
           id: string
-          is_tied: boolean
+          leading_leverage_need: string | null
+          multi_layer_levels: string[]
           needs_recalculation: boolean
           participant_session_id: string
-          primary_result: string | null
-          primary_role: string | null
-          primary_signal_leverage_level: string | null
-          rationale: string
+          primary_leverage_need: string | null
+          primary_recommended_action: string | null
+          primary_signal_type: string
           reaction: string | null
           reaction_note: string | null
           reaction_submitted_at: string | null
-          rules_version: number
-          secondary_result: string | null
-          secondary_signal_leverage_level: string | null
-          supporting_signals: Json
+          recommended_primary_architecture: string | null
+          recommended_secondary_architectures: string[]
+          secondary_leverage_needs: string[]
+          secondary_recommended_actions: string[]
+          systems_amplifier_flag: boolean
           updated_at: string
         }
         SetofOptions: {

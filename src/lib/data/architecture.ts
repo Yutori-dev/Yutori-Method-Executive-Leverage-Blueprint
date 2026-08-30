@@ -2,35 +2,32 @@ import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { ArchitectureReaction, LeverageLevel } from "@/types/database";
 
-export interface SupportingSignal {
-  selectionOrder: number;
-  responsibilityLabel: string;
-  leverageLevelSnapshot: LeverageLevel;
-}
+export type ArchitectureSignalType = "primary" | "multi_layer" | "audit_only" | "pending";
+export type ArchitectureCorroboration = "strong" | "secondary" | "none";
 
 export interface ArchitectureRecommendationView {
-  isTied: boolean;
-  primarySignalLeverageLevel: LeverageLevel | null;
-  /** Only present for a genuine 2-1 split among the three priorities --
-   * see docs/CLIENT_QUESTIONS.md item 11 for how this differs from
-   * secondaryResult, which stays content-dependent and empty. */
-  secondarySignalLeverageLevel: LeverageLevel | null;
-  primaryResult: string | null;
-  primaryRole: string | null;
-  secondaryResult: string | null;
-  rationale: string;
-  supportingSignals: SupportingSignal[];
+  signalType: ArchitectureSignalType;
+  primaryLeverageNeed: LeverageLevel | null;
+  leadingLeverageNeed: LeverageLevel | null;
+  multiLayerLevels: LeverageLevel[];
+  auditCorroboration: ArchitectureCorroboration | null;
+  secondaryLeverageNeeds: LeverageLevel[];
+  recommendedPrimaryArchitecture: LeverageLevel | null;
+  primaryRecommendedAction: string | null;
+  secondaryRecommendedActions: string[];
+  currentSupportMatchState: LeverageLevel[];
+  systemsAmplifierFlag: boolean;
   reaction: ArchitectureReaction | null;
   reactionNote: string | null;
+  needsRecalculation: boolean;
 }
 
 export interface ArchitectureData {
-  priorityOpportunitiesReady: boolean;
   hasCalculated: boolean;
   revealed: boolean;
   /** Only populated once `revealed` is true -- RLS blocks reading this row
    * beforehand regardless, so this mirrors what the database will actually
-   * return (brief section 9 / task instructions section 21). */
+   * return. */
   recommendation: ArchitectureRecommendationView | null;
 }
 
@@ -40,11 +37,7 @@ export async function getArchitectureData(
 ): Promise<ArchitectureData> {
   const supabase = await createServerSupabaseClient();
 
-  const [{ count: priorityCount }, { data: session }, { data: hasCalculated }] = await Promise.all([
-    supabase
-      .from("priority_delegation_opportunities")
-      .select("id", { count: "exact", head: true })
-      .eq("participant_session_id", participantSessionId),
+  const [{ data: session }, { data: hasCalculated }] = await Promise.all([
     supabase.from("sessions").select("architecture_revealed").eq("id", sessionId).maybeSingle(),
     supabase.rpc("has_calculated_architecture", { p_participant_session_id: participantSessionId }),
   ]);
@@ -56,29 +49,32 @@ export async function getArchitectureData(
     const { data: rec } = await supabase
       .from("architecture_recommendations")
       .select(
-        "is_tied, primary_signal_leverage_level, secondary_signal_leverage_level, primary_result, primary_role, secondary_result, rationale, supporting_signals, reaction, reaction_note",
+        "primary_signal_type, primary_leverage_need, leading_leverage_need, multi_layer_levels, audit_corroboration, secondary_leverage_needs, recommended_primary_architecture, primary_recommended_action, secondary_recommended_actions, current_support_match_state, systems_amplifier_flag, reaction, reaction_note, needs_recalculation",
       )
       .eq("participant_session_id", participantSessionId)
       .maybeSingle();
 
     if (rec) {
       recommendation = {
-        isTied: rec.is_tied,
-        primarySignalLeverageLevel: rec.primary_signal_leverage_level as LeverageLevel | null,
-        secondarySignalLeverageLevel: rec.secondary_signal_leverage_level as LeverageLevel | null,
-        primaryResult: rec.primary_result,
-        primaryRole: rec.primary_role,
-        secondaryResult: rec.secondary_result,
-        rationale: rec.rationale,
-        supportingSignals: (rec.supporting_signals as unknown as SupportingSignal[]) ?? [],
+        signalType: rec.primary_signal_type as ArchitectureSignalType,
+        primaryLeverageNeed: rec.primary_leverage_need as LeverageLevel | null,
+        leadingLeverageNeed: rec.leading_leverage_need as LeverageLevel | null,
+        multiLayerLevels: (rec.multi_layer_levels ?? []) as LeverageLevel[],
+        auditCorroboration: rec.audit_corroboration as ArchitectureCorroboration | null,
+        secondaryLeverageNeeds: (rec.secondary_leverage_needs ?? []) as LeverageLevel[],
+        recommendedPrimaryArchitecture: rec.recommended_primary_architecture as LeverageLevel | null,
+        primaryRecommendedAction: rec.primary_recommended_action,
+        secondaryRecommendedActions: rec.secondary_recommended_actions ?? [],
+        currentSupportMatchState: (rec.current_support_match_state ?? []) as LeverageLevel[],
+        systemsAmplifierFlag: rec.systems_amplifier_flag,
         reaction: rec.reaction as ArchitectureReaction | null,
         reactionNote: rec.reaction_note,
+        needsRecalculation: rec.needs_recalculation,
       };
     }
   }
 
   return {
-    priorityOpportunitiesReady: (priorityCount ?? 0) === 3,
     hasCalculated: hasCalculated === true,
     revealed,
     recommendation,

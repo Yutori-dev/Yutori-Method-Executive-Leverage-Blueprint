@@ -9,7 +9,7 @@ export async function calculateArchitectureRecommendation(params: {
   sessionPath: string;
 }) {
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.rpc("calculate_architecture_recommendation", {
+  const { error } = await supabase.rpc("calculate_executive_support_architecture", {
     p_participant_session_id: params.participantSessionId,
   });
 

@@ -61,9 +61,15 @@ export interface AdminParticipantProfile {
   } | null;
   architecture: {
     revealed: boolean;
-    primarySignalLeverageLevel: LeverageLevel | null;
-    isTied: boolean;
-    rationale: string | null;
+    signalType: string;
+    primaryLeverageNeed: LeverageLevel | null;
+    leadingLeverageNeed: LeverageLevel | null;
+    multiLayerLevels: LeverageLevel[];
+    auditCorroboration: string | null;
+    currentSupportMatchState: LeverageLevel[];
+    secondaryLeverageNeeds: LeverageLevel[];
+    recommendedPrimaryArchitecture: LeverageLevel | null;
+    primaryRecommendedAction: string | null;
     reaction: ArchitectureReaction | null;
     reactionNote: string | null;
     needsRecalculation: boolean;
@@ -88,7 +94,7 @@ export async function getAdminParticipantProfile(
     supabase
       .from("participants")
       .select(
-        "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
+        "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none",
       )
       .eq("id", enrollment.participant_id)
       .maybeSingle(),
@@ -119,7 +125,9 @@ export async function getAdminParticipantProfile(
       .order("selection_order", { ascending: true }),
     supabase
       .from("architecture_recommendations")
-      .select("primary_signal_leverage_level, is_tied, rationale, reaction, reaction_note, needs_recalculation")
+      .select(
+        "primary_signal_type, primary_leverage_need, leading_leverage_need, multi_layer_levels, audit_corroboration, current_support_match_state, secondary_leverage_needs, recommended_primary_architecture, primary_recommended_action, reaction, reaction_note, needs_recalculation",
+      )
       .eq("participant_session_id", participantSessionId)
       .maybeSingle(),
   ]);
@@ -172,6 +180,7 @@ export async function getAdminParticipantProfile(
         currentSupportChiefOfStaff: participant.current_support_chief_of_staff,
         currentSupportChiefIntegrator: participant.current_support_chief_integrator,
         currentSupportCoo: participant.current_support_coo,
+        currentSupportAiAutomation: participant.current_support_ai_automation,
         currentSupportOther: participant.current_support_other,
         currentSupportOtherText: participant.current_support_other_text,
         currentSupportNone: participant.current_support_none,
@@ -228,9 +237,15 @@ export async function getAdminParticipantProfile(
     architecture: recommendation
       ? {
           revealed: session.architecture_revealed,
-          primarySignalLeverageLevel: recommendation.primary_signal_leverage_level as LeverageLevel | null,
-          isTied: recommendation.is_tied,
-          rationale: recommendation.rationale,
+          signalType: recommendation.primary_signal_type,
+          primaryLeverageNeed: recommendation.primary_leverage_need as LeverageLevel | null,
+          leadingLeverageNeed: recommendation.leading_leverage_need as LeverageLevel | null,
+          multiLayerLevels: (recommendation.multi_layer_levels ?? []) as LeverageLevel[],
+          auditCorroboration: recommendation.audit_corroboration,
+          currentSupportMatchState: (recommendation.current_support_match_state ?? []) as LeverageLevel[],
+          secondaryLeverageNeeds: (recommendation.secondary_leverage_needs ?? []) as LeverageLevel[],
+          recommendedPrimaryArchitecture: recommendation.recommended_primary_architecture as LeverageLevel | null,
+          primaryRecommendedAction: recommendation.primary_recommended_action,
           reaction: recommendation.reaction as ArchitectureReaction | null,
           reactionNote: recommendation.reaction_note,
           needsRecalculation: recommendation.needs_recalculation,

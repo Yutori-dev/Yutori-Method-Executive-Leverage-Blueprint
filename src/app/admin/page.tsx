@@ -84,6 +84,18 @@ export default async function AdminSessionsPage() {
             >
               Executive Support Audit config
             </Link>
+            <Link
+              href="/admin/priority-leverage-reveal-config"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Priority Leverage Reveal config
+            </Link>
+            <Link
+              href="/admin/executive-support-architecture-config"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Executive Support Architecture config
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>

@@ -64,6 +64,20 @@ const EMPTY_EXECUTIVE_SUPPORT_AUDIT_AGGREGATES: ExecutiveSupportAuditAggregates 
   noSecondaryCount: 0,
 };
 
+export interface PriorityLeverageAggregates {
+  confirmedCount: number;
+  confirmedRate: number;
+  singleLevelClusterCount: number;
+  multiLevelSpanCount: number;
+}
+
+const EMPTY_PRIORITY_LEVERAGE_AGGREGATES: PriorityLeverageAggregates = {
+  confirmedCount: 0,
+  confirmedRate: 0,
+  singleLevelClusterCount: 0,
+  multiLevelSpanCount: 0,
+};
+
 export interface SessionAggregates {
   registeredCount: number;
   fullyCompletedCount: number;
@@ -84,6 +98,7 @@ export interface SessionAggregates {
   leadershipWiringCompletionRate: number;
   leadershipWiringDashboardNote: string | null;
   executiveSupportAudit: ExecutiveSupportAuditAggregates;
+  priorityLeverage: PriorityLeverageAggregates;
 }
 
 const EMPTY_ZONE_OF_INVESTMENT_AGGREGATES: ZoneOfInvestmentAggregates = {
@@ -221,6 +236,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       leadershipWiringCompletionRate: 0,
       leadershipWiringDashboardNote,
       executiveSupportAudit: EMPTY_EXECUTIVE_SUPPORT_AUDIT_AGGREGATES,
+      priorityLeverage: EMPTY_PRIORITY_LEVERAGE_AGGREGATES,
     };
   }
 
@@ -248,7 +264,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("priority_delegation_opportunities")
-      .select("responsibility_id, leverage_level_snapshot, responsibilities(label)")
+      .select("participant_session_id, responsibility_id, leverage_level_snapshot, responsibilities(label)")
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("priority_delegation_pressure_test")
@@ -260,7 +276,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("architecture_recommendations")
-      .select("primary_signal_leverage_level, is_tied, reaction")
+      .select("primary_signal_type, primary_leverage_need, leading_leverage_need, reaction")
       .in("participant_session_id", participantSessionIds),
     diagnosticAssessmentId
       ? supabase
@@ -347,6 +363,28 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     noSecondaryCount,
   };
 
+  const priorityLevelsByParticipant = new Map<string, Set<string>>();
+  for (const row of priorityRows ?? []) {
+    if (!row.leverage_level_snapshot) continue;
+    const levels = priorityLevelsByParticipant.get(row.participant_session_id) ?? new Set<string>();
+    levels.add(row.leverage_level_snapshot);
+    priorityLevelsByParticipant.set(row.participant_session_id, levels);
+  }
+  let singleLevelClusterCount = 0;
+  let multiLevelSpanCount = 0;
+  for (const levels of priorityLevelsByParticipant.values()) {
+    if (levels.size === 1) singleLevelClusterCount++;
+    else if (levels.size > 1) multiLevelSpanCount++;
+  }
+  const priorityLeverageConfirmedCount = new Set((priorityRows ?? []).map((r) => r.participant_session_id)).size;
+  const priorityLeverage: PriorityLeverageAggregates = {
+    confirmedCount: priorityLeverageConfirmedCount,
+    confirmedRate:
+      registeredCount > 0 ? Math.round((priorityLeverageConfirmedCount / registeredCount) * 1000) / 10 : 0,
+    singleLevelClusterCount,
+    multiLevelSpanCount,
+  };
+
   return {
     registeredCount,
     fullyCompletedCount,
@@ -378,8 +416,13 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     ),
     primarySignalDistribution: countBy(
       recommendationRows ?? [],
-      (r) => (r.is_tied ? "tied" : r.primary_signal_leverage_level),
-      (key) => (key === "tied" ? "Mixed (no clear majority)" : (LEVEL_LABEL[key] ?? key)),
+      (r) => r.primary_leverage_need ?? r.leading_leverage_need ?? `signal:${r.primary_signal_type}`,
+      (key) =>
+        key.startsWith("signal:")
+          ? ({ "signal:multi_layer": "Multi-layer (no leading need)", "signal:audit_only": "Audit-only", "signal:pending": "Pending" }[
+              key
+            ] ?? key)
+          : (LEVEL_LABEL[key] ?? key),
     ),
     reactionDistribution: countBy(
       recommendationRows ?? [],
@@ -400,6 +443,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       registeredCount > 0 ? Math.round((leadershipWiringCompletedCount / registeredCount) * 1000) / 10 : 0,
     leadershipWiringDashboardNote,
     executiveSupportAudit,
+    priorityLeverage,
   };
 }
 

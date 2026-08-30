@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { calculateArchitectureRecommendation, submitArchitectureReaction } from "@/lib/actions/architecture";
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import type { ArchitectureData } from "@/lib/data/architecture";
-import type { ArchitectureReaction } from "@/types/database";
+import { LEVEL_LABEL, whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
+import type { ArchitectureData, ArchitectureRecommendationView } from "@/lib/data/architecture";
+import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
+import type { ArchitectureReaction, LeverageLevel } from "@/types/database";
 
 const REACTIONS: { value: ArchitectureReaction; label: string }[] = [
   { value: "yes", label: "Yes" },
@@ -17,22 +18,16 @@ const REACTIONS: { value: ArchitectureReaction; label: string }[] = [
   { value: "not_yet", label: "Not yet" },
 ];
 
-const LEVEL_LABEL: Record<string, string> = {
-  execution: "Execution",
-  orchestration: "Orchestration",
-  strategic: "Strategic",
-  systems: "Systems",
-};
-
 export function ArchitectureFlow({
   data,
+  config,
   participantSessionId,
   moduleId,
-  sessionId,
   sessionPath,
   alreadyComplete,
 }: {
   data: ArchitectureData;
+  config: ExecutiveSupportArchitectureConfigInput | null;
   participantSessionId: string;
   moduleId: string;
   sessionId: string;
@@ -80,28 +75,11 @@ export function ArchitectureFlow({
     });
   }
 
-  if (!data.priorityOpportunitiesReady) {
-    return (
-      <Card>
-        <p className="text-sm text-(--color-ink)">
-          Complete your Priority Delegation Opportunities in the Delegation module first.
-        </p>
-        <Link
-          href={`/dashboard/${sessionId}/modules/delegation`}
-          className="mt-4 inline-block text-sm text-(--color-accent) underline underline-offset-4"
-        >
-          Go to Delegation
-        </Link>
-      </Card>
-    );
-  }
-
   if (!data.hasCalculated) {
     return (
       <Card>
         <p className="text-sm text-(--color-ink-muted)">
-          Your Priority Delegation Opportunities are in. When you&apos;re ready, calculate your
-          Executive Support Architecture.
+          When you&apos;re ready, calculate your Executive Support Architecture.
         </p>
         <div className="mt-4">
           <Button onClick={handleCalculate} disabled={isPending}>
@@ -127,49 +105,35 @@ export function ArchitectureFlow({
 
   const rec = data.recommendation;
 
+  if (!rec || !config || rec.signalType === "pending") {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <p className="font-serif text-xl text-(--color-ink)">Your results have been recorded.</p>
+          <p className="mt-2 text-sm text-(--color-ink-muted)">
+            One or more of your Priority Delegation Opportunities does not yet have its leverage
+            classification configured, so your Executive Support Architecture recommendation is
+            pending.
+          </p>
+        </Card>
+        <Button onClick={handleMarkComplete} disabled={isPending || alreadyComplete}>
+          {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
-          Your Executive Support Architecture
-        </p>
-        <p className="mt-4 text-(--color-ink)">
-          {rec?.primaryResult ?? "Mixed leverage profile"}
-        </p>
-        <p className="mt-2 text-sm text-(--color-ink-muted)">{rec?.rationale}</p>
-
-        {rec?.secondarySignalLeverageLevel ? (
-          <p className="mt-3 text-sm text-(--color-ink-muted)">
-            Secondary signal: <span className="text-(--color-ink)">{LEVEL_LABEL[rec.secondarySignalLeverageLevel]}</span>
-          </p>
-        ) : null}
-
-        {rec && rec.supportingSignals.length > 0 ? (
-          <div className="mt-5">
-            <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
-              Based on the opportunities you selected
-            </p>
-            <ul className="mt-2 space-y-1.5">
-              {rec.supportingSignals.map((s) => (
-                <li key={s.selectionOrder} className="flex items-center justify-between text-sm">
-                  <span className="text-(--color-ink)">{s.responsibilityLabel}</span>
-                  <span className="text-(--color-ink-muted)">
-                    {LEVEL_LABEL[s.leverageLevelSnapshot] ?? s.leverageLevelSnapshot}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </Card>
+      <ArchitectureResult rec={rec} config={config} />
 
       <Card>
         <p className="text-sm text-(--color-ink)">
-          Does this architecture reflect the support required to take meaningful ownership of the
-          work you most want to transfer?
+          Does this architecture reflect the level of support required to take meaningful ownership of
+          the work you most want to transfer?
         </p>
 
-        {rec?.reaction ? (
+        {rec.reaction ? (
           <p className="mt-4 text-sm text-(--color-ink-muted)">
             You responded: <span className="text-(--color-ink)">{REACTIONS.find((r) => r.value === rec.reaction)?.label}</span>
           </p>
@@ -182,10 +146,7 @@ export function ArchitectureFlow({
                   type="button"
                   onClick={() => handleReaction(r.value)}
                   disabled={isPending}
-                  className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-sm transition-colors",
-                    "border-(--color-hairline) hover:border-(--color-accent)",
-                  )}
+                  className="flex-1 rounded-lg border border-(--color-hairline) px-3 py-2 text-sm transition-colors hover:border-(--color-accent)"
                 >
                   {r.label}
                 </button>
@@ -203,9 +164,171 @@ export function ArchitectureFlow({
         {errorMessage ? <p className="mt-3 text-sm text-[#8a3324]">{errorMessage}</p> : null}
       </Card>
 
-      <Button onClick={handleMarkComplete} disabled={!rec?.reaction || isPending || alreadyComplete}>
-        {alreadyComplete ? "Module complete" : "CONTINUE"}
+      <Button onClick={handleMarkComplete} disabled={!rec.reaction || isPending || alreadyComplete}>
+        {alreadyComplete ? "Module complete" : "GENERATE MY BLUEPRINT"}
       </Button>
     </div>
+  );
+}
+
+function ArchitectureResult({
+  rec,
+  config,
+}: {
+  rec: ArchitectureRecommendationView;
+  config: ExecutiveSupportArchitectureConfigInput;
+}) {
+  const highlighted = new Set<LeverageLevel>(
+    [rec.primaryLeverageNeed, rec.leadingLeverageNeed, ...rec.multiLayerLevels].filter(
+      (l): l is LeverageLevel => !!l,
+    ),
+  );
+  const secondaryHighlighted = new Set<LeverageLevel>(rec.secondaryLeverageNeeds);
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <p className="inline-block rounded-full bg-(--color-accent-soft) px-3 py-1 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
+          {config.resultsHeader}
+        </p>
+
+        {rec.signalType === "multi_layer" ? (
+          <div className="mt-4">
+            <p className="text-sm text-(--color-ink-muted)">{config.multiLayerIntro}</p>
+            <ul className="mt-4 space-y-1.5">
+              {rec.multiLayerLevels.map((level) => (
+                <li key={level} className="text-sm text-(--color-ink)">
+                  {LEVEL_LABEL[level]} Leverage
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : rec.signalType === "audit_only" && !rec.primaryLeverageNeed ? (
+          <div className="mt-4">
+            <p className="text-sm text-(--color-ink-muted)">{config.auditOnlyIntro}</p>
+            {rec.multiLayerLevels.length > 0 ? (
+              <ul className="mt-4 space-y-1.5">
+                {rec.multiLayerLevels.map((level) => (
+                  <li key={level} className="text-sm text-(--color-ink)">
+                    {LEVEL_LABEL[level]} Leverage
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-4">
+            {rec.signalType === "audit_only" ? <p className="text-sm text-(--color-ink-muted)">{config.auditOnlyIntro}</p> : null}
+            <p className="mt-3 text-xs text-(--color-ink-muted) uppercase tracking-wide">
+              {rec.primaryLeverageNeed ? "Primary Leverage Need" : "Leading Leverage Need"}
+            </p>
+            <p className="mt-1 text-(--color-ink)">{LEVEL_LABEL[(rec.primaryLeverageNeed ?? rec.leadingLeverageNeed)!]} Leverage</p>
+            <p className="mt-2 text-sm text-(--color-ink-muted)">
+              {whatThisMeansCopy((rec.primaryLeverageNeed ?? rec.leadingLeverageNeed)!, config)}
+            </p>
+          </div>
+        )}
+
+        {rec.leadingLeverageNeed ? (
+          <div className="mt-5 border-t border-(--color-hairline) pt-4">
+            <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">{config.leadingNeedHeader}</p>
+            <p className="mt-1 text-(--color-ink)">{LEVEL_LABEL[rec.leadingLeverageNeed]} Leverage</p>
+            <p className="mt-2 text-sm text-(--color-ink-muted)">{withLevel(config.leadingNeedBody, rec.leadingLeverageNeed)}</p>
+          </div>
+        ) : null}
+
+        {(rec.primaryLeverageNeed || rec.leadingLeverageNeed) && rec.primaryRecommendedAction ? (
+          <div className="mt-5 border-t border-(--color-hairline) pt-4">
+            <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Recommended Next Move</p>
+            <p className="mt-2 text-sm text-(--color-ink-muted)">{actionCopy(rec.primaryRecommendedAction, config)}</p>
+          </div>
+        ) : null}
+
+        {rec.auditCorroboration === "strong" && rec.primaryLeverageNeed ? (
+          <div className="mt-5 border-t border-(--color-hairline) pt-4">
+            <p className="text-sm font-medium text-(--color-ink)">{config.corroborationStrongHeader}</p>
+            <p className="mt-2 text-sm text-(--color-ink-muted)">{withLevel(config.corroborationStrongBody, rec.primaryLeverageNeed)}</p>
+          </div>
+        ) : null}
+
+        {rec.secondaryLeverageNeeds.length > 0 ? (
+          <div className="mt-5 border-t border-(--color-hairline) pt-4">
+            <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">{config.secondaryNeedHeader}</p>
+            {rec.secondaryLeverageNeeds.map((level, i) => (
+              <div key={level} className={i > 0 ? "mt-4" : "mt-2"}>
+                <p className="text-(--color-ink)">{LEVEL_LABEL[level]} Leverage</p>
+                {level === "systems" && rec.systemsAmplifierFlag ? (
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">{config.systemsAmplifierPrepend}</p>
+                ) : null}
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  {actionCopy(rec.secondaryRecommendedActions[i], config)}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </Card>
+
+      <ArchitectureVisual highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
+    </div>
+  );
+}
+
+const TIERS: { level: LeverageLevel; label: string; roles: string[] }[] = [
+  { level: "execution", label: "Execution", roles: ["Personal Assistant", "Administrative Assistant / Virtual Assistant"] },
+  { level: "orchestration", label: "Orchestration", roles: ["Executive Assistant", "Senior Executive Assistant"] },
+  { level: "strategic", label: "Strategic", roles: ["Chief of Staff", "Chief Integrator", "COO / Strategic Operating Leadership"] },
+];
+
+function ArchitectureVisual({
+  highlighted,
+  secondaryHighlighted,
+}: {
+  highlighted: Set<LeverageLevel>;
+  secondaryHighlighted: Set<LeverageLevel>;
+}) {
+  return (
+    <Card>
+      <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Executive Support Architecture</p>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {TIERS.map((tier) => (
+          <div
+            key={tier.level}
+            className={cn(
+              "rounded-lg border p-3",
+              highlighted.has(tier.level)
+                ? "border-(--color-accent) bg-(--color-accent-soft)"
+                : secondaryHighlighted.has(tier.level)
+                  ? "border-(--color-accent)"
+                  : "border-(--color-hairline)",
+            )}
+          >
+            <p className="text-sm font-medium text-(--color-ink)">{tier.label}</p>
+            <ul className="mt-1.5 space-y-0.5">
+              {tier.roles.map((role) => (
+                <li key={role} className="text-xs text-(--color-ink-muted)">
+                  {role}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div
+        className={cn(
+          "mt-3 rounded-lg border p-3",
+          highlighted.has("systems")
+            ? "border-(--color-accent) bg-(--color-accent-soft)"
+            : secondaryHighlighted.has("systems")
+              ? "border-(--color-accent)"
+              : "border-(--color-hairline)",
+        )}
+      >
+        <p className="text-sm font-medium text-(--color-ink)">Systems -- operating across the architecture</p>
+        <p className="mt-1 text-xs text-(--color-ink-muted)">
+          AI agents · Automated workflows · Supporting technology infrastructure
+        </p>
+      </div>
+    </Card>
   );
 }

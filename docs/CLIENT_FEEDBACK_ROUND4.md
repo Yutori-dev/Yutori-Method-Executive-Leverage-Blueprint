@@ -340,7 +340,65 @@ tables, fixed pixel widths without a scroll container).
       no changes needed.
 - [x] `typecheck`/`lint`/clean `build` all pass after the fix.
 
+## Menu update, Priority Leverage Opportunities Reveal, Executive Support Architecture rework (Nicole, 2026-08-30)
+
+Three items in one message: two module renames plus a "new tab" note, a
+full spec for a brand-new "Priority Leverage Opportunities Reveal"
+activity, and a full spec for a wholesale rework of the Executive Support
+Architecture recommendation engine (the existing one was a simple
+majority/tie calculator against a `recommendation_rules` table that was
+never seeded — every real participant got a fixed "mixed profile"
+fallback).
+
+- [x] Menu renames: "Current Structure" → "Investment", "Character — Live
+      Workshop" → "Fit (Live Workshop)". Updated the `modules` table plus
+      every hardcoded copy of both words in the Blueprint (web + PDF) and
+      Operating Altitude flow — confirmed zero leftover instances.
+- [x] **Priority Leverage Opportunities Reveal** — built as a second phase
+      of the existing "leverage" module (its own seed description already
+      said "leverage mapping reveal"), facilitator-gated separately from
+      the Executive Support Audit itself: combines confirmed Priority
+      Delegation Opportunities with their hidden leverage level and the
+      Executive Support Audit results for reference, admin-configurable
+      copy, facilitator dashboard additions, Blueprint integration.
+- [x] **Executive Support Architecture engine rework** — full replacement
+      implementing the spec's deterministic logic directly (majority/
+      multi-layer/audit-only determination, audit tie-break for a Leading
+      Leverage Need, audit corroboration, secondary-need computation with
+      the Orchestration-absorbs-Execution rule, current-support
+      classification from intake, per-layer Recommended Next Move). Admin
+      config screen for all participant-facing copy; the branching logic
+      itself is hardcoded per the spec, not database-editable.
+- [x] Found and fixed a real gap while building this: intake never had an
+      "AI / automation systems" current-support option, which this spec's
+      Current-Support Classification table requires. Added it end-to-end
+      (schema, both intake RPCs, both intake forms, CSV export, Blueprint).
+- [x] Live verification: 12 scripted scenarios against the new engine
+      (PLO majority/tie/multi-layer, audit tie-break match vs. ambiguous
+      match, absorption vs. non-absorption, all four next-move branches,
+      audit-only single vs. tied gap, the content-gap pending fallback) —
+      26/26 checks passed. Reveal gate and seeded config content verified
+      separately.
+- [x] `typecheck` / `lint` / clean `build` all pass.
+- [ ] **Not built — needs clarification, not a guess**: "NEW TAB ADDED FOR
+      PARTICIPANT INTAKE QUESTIONS." No tab-bar UI exists anywhere in this
+      app, and nothing in the intake rebuild (already shipped earlier this
+      engagement) matches this phrase. Likely refers to Nicole's own
+      internal tracking sheet rather than the app itself — please clarify
+      what this should point to before we build anything tab-shaped.
+- [ ] **Still content-blocked** (carried forward from `docs/CLIENT_QUESTIONS.md`
+      item 6): `responsibilities.leverage_level` is null for all 21 real
+      responsibilities — the mapping was deferred in an earlier spec and
+      has never been supplied. Both the Reveal and the Architecture engine
+      are fully built and tested against controlled data, but every real
+      participant will see a "pending classification" state until this
+      mapping arrives.
+
 ## Genuinely still open (not something to silently resolve)
 
 - [ ] **Live support during the Sept 3, 9-11am EST session** — a staffing
       commitment, not a build item.
+- [ ] **NEW TAB ADDED FOR PARTICIPANT INTAKE QUESTIONS** — see above.
+- [ ] **Responsibility → Executive Leverage Level mapping** — see above,
+      blocks real results for both the Priority Leverage Opportunities
+      Reveal and the Executive Support Architecture recommendation.

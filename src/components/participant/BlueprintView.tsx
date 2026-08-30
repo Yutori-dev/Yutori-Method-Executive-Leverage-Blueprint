@@ -3,7 +3,10 @@ import { ZoneMatrix } from "@/components/participant/ZoneMatrix";
 import { CharacterPreview } from "@/components/participant/CharacterPreview";
 import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
+import { whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
 import type { BlueprintData } from "@/lib/data/blueprint";
+import type { ArchitectureRecommendationView } from "@/lib/data/architecture";
+import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
 
 const LEVEL_LABEL: Record<string, string> = {
   execution: "Execution",
@@ -43,7 +46,7 @@ export function BlueprintView({
       </div>
 
       <section>
-        <h2 className="font-serif text-xl">Character</h2>
+        <h2 className="font-serif text-xl">Fit</h2>
         <p className="mt-1 text-sm text-(--color-ink-muted)">
           Unlocked in the live workshop.
         </p>
@@ -81,7 +84,7 @@ export function BlueprintView({
 
       {data.zone.personalizedPlacements.length > 0 ? (
         <section>
-          <h2 className="font-serif text-xl">Current Structure</h2>
+          <h2 className="font-serif text-xl">Investment</h2>
           <p className="mt-1 text-sm text-(--color-ink-muted)">
             Being outside your Zone of Investment does not mean something must be delegated -- it
             identifies a candidate worth examining further.
@@ -144,6 +147,12 @@ export function BlueprintView({
                     </li>
                   ))}
               </ol>
+              {data.priorityLeverage.revealed && data.priorityLeverage.pattern.length > 0 ? (
+                <p className="mt-3 border-t border-(--color-hairline) pt-3 text-xs text-(--color-ink-muted)">
+                  Leverage pattern:{" "}
+                  {data.priorityLeverage.pattern.map((p) => `${p.count} ${LEVEL_LABEL[p.level]}`).join(" · ")}
+                </p>
+              ) : null}
             </Card>
           ) : null}
         </section>
@@ -190,15 +199,8 @@ export function BlueprintView({
       <section>
         <h2 className="font-serif text-xl">Executive Support Architecture</h2>
         <Card className="mt-3">
-          {data.architecture.revealed && data.architecture.recommendation ? (
-            <>
-              <p className="text-sm text-(--color-ink)">
-                {data.architecture.recommendation.primaryResult ?? "Mixed leverage profile"}
-              </p>
-              <p className="mt-2 text-sm text-(--color-ink-muted)">
-                {data.architecture.recommendation.rationale}
-              </p>
-            </>
+          {data.architecture.revealed && data.architecture.recommendation && data.architectureConfig ? (
+            <ArchitectureSummary rec={data.architecture.recommendation} config={data.architectureConfig} />
           ) : (
             <p className="text-sm text-(--color-ink-muted)">
               Awaiting facilitator reveal.
@@ -236,6 +238,51 @@ export function BlueprintView({
           alreadyRequested={data.followUpRequested}
         />
       </section>
+    </div>
+  );
+}
+
+function ArchitectureSummary({
+  rec,
+  config,
+}: {
+  rec: ArchitectureRecommendationView;
+  config: ExecutiveSupportArchitectureConfigInput;
+}) {
+  const headlineLevel = rec.primaryLeverageNeed ?? rec.leadingLeverageNeed;
+
+  if (rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel)) {
+    return (
+      <div>
+        <p className="text-sm text-(--color-ink)">
+          {rec.multiLayerLevels.map((l) => LEVEL_LABEL[l]).join(" · ")} Leverage
+        </p>
+        {rec.leadingLeverageNeed ? (
+          <p className="mt-2 text-sm text-(--color-ink-muted)">
+            {withLevel(config.leadingNeedBody, rec.leadingLeverageNeed)}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-sm text-(--color-ink)">{LEVEL_LABEL[headlineLevel!]} Leverage</p>
+      <p className="mt-2 text-sm text-(--color-ink-muted)">{whatThisMeansCopy(headlineLevel!, config)}</p>
+      {rec.primaryRecommendedAction ? (
+        <p className="mt-3 text-sm text-(--color-ink-muted)">{actionCopy(rec.primaryRecommendedAction, config)}</p>
+      ) : null}
+      {rec.auditCorroboration === "strong" && rec.primaryLeverageNeed ? (
+        <p className="mt-3 text-sm text-(--color-ink-muted)">
+          {withLevel(config.corroborationStrongBody, rec.primaryLeverageNeed)}
+        </p>
+      ) : null}
+      {rec.secondaryLeverageNeeds.length > 0 ? (
+        <p className="mt-3 text-sm text-(--color-ink-muted)">
+          Secondary: {rec.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(" · ")}
+        </p>
+      ) : null}
     </div>
   );
 }

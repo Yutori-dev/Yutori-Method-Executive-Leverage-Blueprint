@@ -8,6 +8,8 @@ import {
 } from "@/lib/actions/executiveSupportAudit";
 import { markModuleComplete } from "@/lib/actions/participant";
 import type { ExecutiveSupportAuditData } from "@/lib/data/executiveSupportAudit";
+import type { PriorityLeverageRevealData } from "@/lib/data/priorityLeverageReveal";
+import { PriorityLeverageReveal } from "@/components/participant/PriorityLeverageReveal";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -22,12 +24,14 @@ const LEVEL_LABEL: Record<LeverageLevel, string> = {
 
 export function ExecutiveSupportAuditFlow({
   data,
+  priorityLeverageData,
   participantSessionId,
   moduleId,
   sessionPath,
   alreadyComplete,
 }: {
   data: ExecutiveSupportAuditData;
+  priorityLeverageData: PriorityLeverageRevealData | null;
   participantSessionId: string;
   moduleId: string;
   sessionPath: string;
@@ -55,6 +59,7 @@ export function ExecutiveSupportAuditFlow({
     return (
       <div className="space-y-6">
         <ExecutiveSupportAuditResults data={data} />
+        {priorityLeverageData ? <PriorityLeverageReveal data={priorityLeverageData} /> : null}
         <Button onClick={handleMarkComplete} disabled={isPending || alreadyComplete}>
           {alreadyComplete ? "Module complete" : isPending ? "Saving..." : "CONTINUE"}
         </Button>

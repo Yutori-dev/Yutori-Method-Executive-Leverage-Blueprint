@@ -12,14 +12,16 @@ import {
   type DelegationBarrier,
 } from "@/lib/data/delegationBeliefs";
 import { getExecutiveSupportAuditData, getExecutiveSupportAuditSummary } from "@/lib/data/executiveSupportAudit";
+import { getExecutiveSupportArchitectureConfig } from "@/lib/data/executiveSupportArchitectureConfig";
+import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
 import type { LeverageLevel, SelfIdentification } from "@/types/database";
 
 export interface BlueprintDelegationOpportunity {
   label: string;
   selectionOrder: number;
-  /** Only present once architecture has been revealed for this session --
-   * hidden before then, same as everywhere else this classification appears
-   * (brief section 9's leverage-mapping reveal). */
+  /** Only present once the Priority Leverage Opportunities Reveal has
+   * fired for this session -- hidden before then, same as everywhere else
+   * this classification appears. */
   leverageLevel: LeverageLevel | null;
 }
 
@@ -41,12 +43,17 @@ export interface BlueprintData {
     priorityOwnershipTransferOpportunity: { label: string; interpretation: string } | null;
     priorityOpportunities: BlueprintDelegationOpportunity[];
   };
+  priorityLeverage: {
+    revealed: boolean;
+    pattern: { level: LeverageLevel; count: number }[];
+  };
   executiveSupportAudit: {
     primary: { layer: LeverageLevel; interpretation: string }[];
     secondary: { layer: LeverageLevel; interpretation: string }[];
     noSecondaryCopy: string | null;
   } | null;
   architecture: ArchitectureData;
+  architectureConfig: ExecutiveSupportArchitectureConfigInput | null;
   followUpRequested: boolean;
   reflections: { whiteWhale: string | null; successVision: string | null; successVisionFollowup: string | null };
 }
@@ -68,7 +75,11 @@ export async function getBlueprintData(
 
   const [{ data: session }, { data: modules }, { data: progress }, { data: followUp }, { data: reflectionRow }, { data: participantSession }] =
     await Promise.all([
-    supabase.from("sessions").select("name, organization, architecture_revealed").eq("id", sessionId).maybeSingle(),
+    supabase
+      .from("sessions")
+      .select("name, organization, architecture_revealed, priority_leverage_reveal_unlocked")
+      .eq("id", sessionId)
+      .maybeSingle(),
     supabase.from("modules").select("id, key, name, sort_order, requires_live_workshop").eq("active", true).order("sort_order", { ascending: true }),
     supabase.from("participant_module_progress").select("module_id, status").eq("participant_session_id", participantSessionId),
     supabase.from("follow_up_interests").select("id").eq("participant_session_id", participantSessionId).maybeSingle(),
@@ -80,7 +91,7 @@ export async function getBlueprintData(
     supabase
       .from("participant_sessions")
       .select(
-        "self_identification, participants(first_name, last_name, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none)",
+        "self_identification, participants(first_name, last_name, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none)",
       )
       .eq("id", participantSessionId)
       .maybeSingle(),
@@ -101,6 +112,7 @@ export async function getBlueprintData(
     current_support_chief_of_staff: boolean;
     current_support_chief_integrator: boolean;
     current_support_coo: boolean;
+    current_support_ai_automation: boolean;
     current_support_other: boolean;
     current_support_other_text: string | null;
     current_support_none: boolean;
@@ -108,15 +120,23 @@ export async function getBlueprintData(
 
   const statusByModule = new Map((progress ?? []).map((p) => [p.module_id, p.status]));
 
-  const [diagnostic, zone, delegationCandidates, architecture, delegationBeliefsData, executiveSupportAuditData] =
-    await Promise.all([
-      getExecutiveLeverageDiagnosticData(participantSessionId),
-      getZoneOfInvestmentData(sessionId, participantSessionId),
-      getDelegationCandidates(participantSessionId),
-      getArchitectureData(sessionId, participantSessionId),
-      getDelegationBeliefsData(participantSessionId),
-      getExecutiveSupportAuditData(participantSessionId),
-    ]);
+  const [
+    diagnostic,
+    zone,
+    delegationCandidates,
+    architecture,
+    delegationBeliefsData,
+    executiveSupportAuditData,
+    architectureConfig,
+  ] = await Promise.all([
+    getExecutiveLeverageDiagnosticData(participantSessionId),
+    getZoneOfInvestmentData(sessionId, participantSessionId),
+    getDelegationCandidates(participantSessionId),
+    getArchitectureData(sessionId, participantSessionId),
+    getDelegationBeliefsData(participantSessionId),
+    getExecutiveSupportAuditData(participantSessionId),
+    getExecutiveSupportArchitectureConfig(),
+  ]);
 
   const priorityOwnershipTransferOpportunity = delegationBeliefsData
     ? getPriorityOwnershipTransferOpportunity(delegationBeliefsData)
@@ -131,8 +151,17 @@ export async function getBlueprintData(
   const priorityOpportunities: BlueprintDelegationOpportunity[] = delegationCandidates.currentSelections.map((s) => ({
     label: s.label,
     selectionOrder: s.selectionOrder,
-    leverageLevel: session.architecture_revealed ? s.leverageLevelSnapshot : null,
+    leverageLevel: session.priority_leverage_reveal_unlocked ? s.leverageLevelSnapshot : null,
   }));
+
+  const priorityLeverageCounts = new Map<LeverageLevel, number>();
+  for (const o of priorityOpportunities) {
+    if (!o.leverageLevel) continue;
+    priorityLeverageCounts.set(o.leverageLevel, (priorityLeverageCounts.get(o.leverageLevel) ?? 0) + 1);
+  }
+  const priorityLeveragePattern = (["execution", "orchestration", "strategic", "systems"] as LeverageLevel[])
+    .filter((level) => priorityLeverageCounts.has(level))
+    .map((level) => ({ level, count: priorityLeverageCounts.get(level)! }));
 
   return {
     session: { name: session.name, organization: session.organization },
@@ -150,6 +179,7 @@ export async function getBlueprintData(
         currentSupportChiefOfStaff: participantRow?.current_support_chief_of_staff ?? false,
         currentSupportChiefIntegrator: participantRow?.current_support_chief_integrator ?? false,
         currentSupportCoo: participantRow?.current_support_coo ?? false,
+        currentSupportAiAutomation: participantRow?.current_support_ai_automation ?? false,
         currentSupportOther: participantRow?.current_support_other ?? false,
         currentSupportOtherText: participantRow?.current_support_other_text ?? null,
         currentSupportNone: participantRow?.current_support_none ?? false,
@@ -171,8 +201,13 @@ export async function getBlueprintData(
         : null,
       priorityOpportunities,
     },
+    priorityLeverage: {
+      revealed: session.priority_leverage_reveal_unlocked,
+      pattern: priorityLeveragePattern,
+    },
     executiveSupportAudit,
     architecture,
+    architectureConfig,
     followUpRequested: !!followUp,
     reflections: {
       whiteWhale: reflectionRow?.white_whale ?? null,

@@ -15,6 +15,7 @@ export interface ParticipantIntakeData {
   currentSupportChiefOfStaff: boolean;
   currentSupportChiefIntegrator: boolean;
   currentSupportCoo: boolean;
+  currentSupportAiAutomation: boolean;
   currentSupportOther: boolean;
   currentSupportOtherText: string;
   currentSupportNone: boolean;
@@ -36,7 +37,7 @@ export async function getParticipantIntake(): Promise<ParticipantIntakeData | nu
   const { data } = await supabase
     .from("participants")
     .select(
-      "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
+      "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -57,6 +58,7 @@ export async function getParticipantIntake(): Promise<ParticipantIntakeData | nu
     currentSupportChiefOfStaff: data.current_support_chief_of_staff,
     currentSupportChiefIntegrator: data.current_support_chief_integrator,
     currentSupportCoo: data.current_support_coo,
+    currentSupportAiAutomation: data.current_support_ai_automation,
     currentSupportOther: data.current_support_other,
     currentSupportOtherText: data.current_support_other_text ?? "",
     currentSupportNone: data.current_support_none,

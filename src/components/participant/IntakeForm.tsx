@@ -21,6 +21,7 @@ const SUPPORT_OPTIONS: { key: SupportKey; label: string }[] = [
   { key: "currentSupportChiefOfStaff", label: "Chief of Staff" },
   { key: "currentSupportChiefIntegrator", label: "Chief Integrator" },
   { key: "currentSupportCoo", label: "COO" },
+  { key: "currentSupportAiAutomation", label: "AI / automation systems that meaningfully absorb recurring work" },
   { key: "currentSupportOther", label: "Other executive support" },
 ];
 
@@ -38,6 +39,7 @@ const EMPTY: ParticipantIntakeData = {
   currentSupportChiefOfStaff: false,
   currentSupportChiefIntegrator: false,
   currentSupportCoo: false,
+  currentSupportAiAutomation: false,
   currentSupportOther: false,
   currentSupportOtherText: "",
   currentSupportNone: false,

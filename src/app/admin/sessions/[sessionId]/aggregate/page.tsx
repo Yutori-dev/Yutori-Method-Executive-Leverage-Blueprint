@@ -130,10 +130,32 @@ export default async function SessionAggregatePage({
           </Card>
 
           <Card>
+            <h2 className="font-serif text-lg">Priority Leverage Opportunities</h2>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">
+              {aggregates.priorityLeverage.confirmedCount} of {aggregates.registeredCount} confirmed /{" "}
+              {aggregates.priorityLeverage.confirmedRate}%
+            </p>
+            <p className="mt-3 text-xs tracking-wide text-(--color-ink-muted) uppercase">Leverage-level frequency</p>
+            <div className="mt-2">
+              <CountBarList rows={aggregates.priorityLeverageDistribution} emptyLabel="No confirmed opportunities yet." />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-(--color-hairline) pt-4 text-sm">
+              <div>
+                <p className="text-(--color-ink)">{aggregates.priorityLeverage.singleLevelClusterCount}</p>
+                <p className="text-xs text-(--color-ink-muted)">Cluster at a single level</p>
+              </div>
+              <div>
+                <p className="text-(--color-ink)">{aggregates.priorityLeverage.multiLevelSpanCount}</p>
+                <p className="text-xs text-(--color-ink-muted)">Span multiple levels</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
             <h2 className="font-serif text-lg">Primary recommendation signal</h2>
             <p className="mt-1 text-xs text-(--color-ink-muted)">
-              &quot;Mixed&quot; means the participant&apos;s three priorities didn&apos;t share a
-              majority leverage level.
+              A leverage level when a Primary or Leading Leverage Need was identified; otherwise
+              multi-layer, audit-only, or pending (content-dependent) classification.
             </p>
             <div className="mt-4">
               <CountBarList rows={aggregates.primarySignalDistribution} emptyLabel="No recommendations calculated yet." />

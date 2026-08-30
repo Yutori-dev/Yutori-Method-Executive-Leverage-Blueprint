@@ -8,7 +8,9 @@ import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates, getPriorityDelegationConfig } from "@/lib/data/delegation";
 import { getDelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 import { getArchitectureData } from "@/lib/data/architecture";
+import { getExecutiveSupportArchitectureConfig } from "@/lib/data/executiveSupportArchitectureConfig";
 import { getExecutiveSupportAuditData } from "@/lib/data/executiveSupportAudit";
+import { getPriorityLeverageRevealData } from "@/lib/data/priorityLeverageReveal";
 import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
 import { getExecutiveLeverageDiagnosticData } from "@/lib/data/executiveLeverageDiagnostic";
 import { getSuccessVisionData } from "@/lib/data/successVision";
@@ -121,10 +123,14 @@ export default async function ModulePage({
       />
     );
   } else if (moduleKey === "leverage") {
-    const auditData = await getExecutiveSupportAuditData(dashboard.participantSessionId);
+    const [auditData, priorityLeverageData] = await Promise.all([
+      getExecutiveSupportAuditData(dashboard.participantSessionId),
+      getPriorityLeverageRevealData(sessionId, dashboard.participantSessionId),
+    ]);
     content = auditData ? (
       <ExecutiveSupportAuditFlow
         data={auditData}
+        priorityLeverageData={priorityLeverageData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
         sessionPath={sessionPath}
@@ -141,10 +147,14 @@ export default async function ModulePage({
       />
     );
   } else if (moduleKey === "architecture") {
-    const architectureData = await getArchitectureData(sessionId, dashboard.participantSessionId);
+    const [architectureData, architectureConfig] = await Promise.all([
+      getArchitectureData(sessionId, dashboard.participantSessionId),
+      getExecutiveSupportArchitectureConfig(),
+    ]);
     content = (
       <ArchitectureFlow
         data={architectureData}
+        config={architectureConfig}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
         sessionId={sessionId}

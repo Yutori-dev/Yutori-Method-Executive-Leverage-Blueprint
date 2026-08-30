@@ -7,6 +7,7 @@ import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import { RevealArchitectureControl } from "@/components/admin/RevealArchitectureControl";
+import { RevealPriorityLeverageControl } from "@/components/admin/RevealPriorityLeverageControl";
 import { RevealZoneOfInvestmentControl } from "@/components/admin/RevealZoneOfInvestmentControl";
 import { UnlockWhiteWhaleControl } from "@/components/admin/UnlockWhiteWhaleControl";
 import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadershipWiringControl";
@@ -81,6 +82,10 @@ export default async function SessionControlPanelPage({
   const operatingAltitudeModule = modules.find((m) => m.key === "operating_altitude");
   const operatingAltitudeUnlocked = Boolean(
     operatingAltitudeModule && activeModule && operatingAltitudeModule.sort_order <= activeModule.sort_order,
+  );
+  const leverageModule = modules.find((m) => m.key === "leverage");
+  const leverageUnlocked = Boolean(
+    leverageModule && activeModule && leverageModule.sort_order <= activeModule.sort_order,
   );
 
   const joinUrl =
@@ -223,6 +228,22 @@ export default async function SessionControlPanelPage({
                   <RevealZoneOfInvestmentControl
                     sessionId={sessionId}
                     alreadyRevealed={session.zone_of_investment_revealed}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {leverageUnlocked || session.priority_leverage_reveal_unlocked ? (
+              <div className="mt-6 border-t border-(--color-hairline) pt-6">
+                <h3 className="text-sm font-medium">Priority Leverage Opportunities reveal</h3>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
+                  Separate from module unlocking -- reveals each participant&apos;s Priority Leverage
+                  Opportunities and Executive Support Audit context.
+                </p>
+                <div className="mt-3">
+                  <RevealPriorityLeverageControl
+                    sessionId={sessionId}
+                    alreadyRevealed={session.priority_leverage_reveal_unlocked}
                   />
                 </div>
               </div>

@@ -11,6 +11,7 @@ export interface CurrentSupportFlags {
   currentSupportChiefOfStaff: boolean;
   currentSupportChiefIntegrator: boolean;
   currentSupportCoo: boolean;
+  currentSupportAiAutomation: boolean;
   currentSupportOther: boolean;
   currentSupportOtherText: string | null;
   currentSupportNone: boolean;
@@ -25,6 +26,7 @@ const LABELS: { key: keyof CurrentSupportFlags; label: string }[] = [
   { key: "currentSupportChiefOfStaff", label: "Chief of Staff" },
   { key: "currentSupportChiefIntegrator", label: "Chief Integrator" },
   { key: "currentSupportCoo", label: "COO" },
+  { key: "currentSupportAiAutomation", label: "AI / automation systems" },
 ];
 
 export function currentSupportRoleLabels(flags: CurrentSupportFlags): string[] {

@@ -16,6 +16,7 @@ export interface IntakeInput {
   currentSupportChiefOfStaff: boolean;
   currentSupportChiefIntegrator: boolean;
   currentSupportCoo: boolean;
+  currentSupportAiAutomation: boolean;
   currentSupportOther: boolean;
   currentSupportOtherText: string;
   currentSupportNone: boolean;
@@ -38,6 +39,7 @@ export async function saveParticipantIntake(input: IntakeInput) {
     p_current_support_chief_of_staff: input.currentSupportChiefOfStaff,
     p_current_support_chief_integrator: input.currentSupportChiefIntegrator,
     p_current_support_coo: input.currentSupportCoo,
+    p_current_support_ai_automation: input.currentSupportAiAutomation,
     p_current_support_other: input.currentSupportOther,
     p_current_support_other_text: input.currentSupportOtherText,
     p_current_support_none: input.currentSupportNone,
@@ -76,6 +78,7 @@ export async function adminUpdateParticipantIntake(input: AdminIntakeInput) {
     p_current_support_chief_of_staff: input.currentSupportChiefOfStaff,
     p_current_support_chief_integrator: input.currentSupportChiefIntegrator,
     p_current_support_coo: input.currentSupportCoo,
+    p_current_support_ai_automation: input.currentSupportAiAutomation,
     p_current_support_other: input.currentSupportOther,
     p_current_support_other_text: input.currentSupportOtherText,
     p_current_support_none: input.currentSupportNone,
