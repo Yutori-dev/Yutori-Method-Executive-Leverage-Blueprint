@@ -7,12 +7,13 @@ import { PriorityDelegationFlow } from "./PriorityDelegationFlow";
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import type { DelegationCandidatesData } from "@/lib/data/delegation";
+import type { DelegationCandidatesData, PriorityDelegationConfig } from "@/lib/data/delegation";
 import type { DelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 
 export function DelegationFlow({
   delegationBeliefsData,
   candidates,
+  priorityDelegationConfig,
   participantSessionId,
   moduleId,
   sessionPath,
@@ -20,6 +21,7 @@ export function DelegationFlow({
 }: {
   delegationBeliefsData: DelegationBeliefsData | null;
   candidates: DelegationCandidatesData;
+  priorityDelegationConfig: PriorityDelegationConfig;
   participantSessionId: string;
   moduleId: string;
   sessionId: string;
@@ -71,6 +73,7 @@ export function DelegationFlow({
         <section>
           <PriorityDelegationFlow
             candidates={candidates}
+            config={priorityDelegationConfig}
             participantSessionId={participantSessionId}
             sessionPath={sessionPath}
             onComplete={() => {

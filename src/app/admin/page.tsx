@@ -66,6 +66,12 @@ export default async function AdminSessionsPage() {
             >
               Workshop feedback settings
             </Link>
+            <Link
+              href="/admin/priority-delegation-config"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Priority Delegation config
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>

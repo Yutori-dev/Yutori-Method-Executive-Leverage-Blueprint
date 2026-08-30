@@ -899,6 +899,51 @@ export type Database = {
         }
         Relationships: []
       }
+      priority_delegation_config: {
+        Row: {
+          active: boolean
+          confirmation_copy: string
+          created_at: string
+          fewer_than_three_copy: string
+          id: string
+          intro_copy: string
+          pressure_test_question: string
+          somewhat_no_followup_copy: string
+          version: number
+          zero_eligible_copy: string
+          zone_ambiguity_description: string
+          zone_vulnerability_description: string
+        }
+        Insert: {
+          active?: boolean
+          confirmation_copy: string
+          created_at?: string
+          fewer_than_three_copy: string
+          id?: string
+          intro_copy: string
+          pressure_test_question: string
+          somewhat_no_followup_copy: string
+          version?: number
+          zero_eligible_copy: string
+          zone_ambiguity_description: string
+          zone_vulnerability_description: string
+        }
+        Update: {
+          active?: boolean
+          confirmation_copy?: string
+          created_at?: string
+          fewer_than_three_copy?: string
+          id?: string
+          intro_copy?: string
+          pressure_test_question?: string
+          somewhat_no_followup_copy?: string
+          version?: number
+          zero_eligible_copy?: string
+          zone_ambiguity_description?: string
+          zone_vulnerability_description?: string
+        }
+        Relationships: []
+      }
       priority_delegation_opportunities: {
         Row: {
           created_at: string

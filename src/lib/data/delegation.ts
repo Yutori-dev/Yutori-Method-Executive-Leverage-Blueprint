@@ -14,6 +14,59 @@ export interface PressureTestState {
   revisited: boolean;
 }
 
+export interface PriorityDelegationConfig {
+  introCopy: string;
+  fewerThanThreeCopy: string;
+  zeroEligibleCopy: string;
+  zoneAmbiguityDescription: string;
+  zoneVulnerabilityDescription: string;
+  pressureTestQuestion: string;
+  somewhatNoFollowupCopy: string;
+  confirmationCopy: string;
+}
+
+const FALLBACK_PRIORITY_DELEGATION_CONFIG: PriorityDelegationConfig = {
+  introCopy:
+    "You identified the responsibilities below as sitting outside your Zone of Investment. Select the responsibilities where transferring ownership would create the greatest value for you.",
+  fewerThanThreeCopy: "Select the responsibilities you would most value transferring from those shown below.",
+  zeroEligibleCopy:
+    "You did not identify any responsibilities outside your Zone of Investment. No Priority Delegation Opportunities are assigned.",
+  zoneAmbiguityDescription: "Your capability or interest makes your continued ownership worth examining.",
+  zoneVulnerabilityDescription: "Work where your current investment is less likely to represent your highest and best use.",
+  pressureTestQuestion:
+    "If you no longer owned these responsibilities, would you experience a meaningful increase in available capacity?",
+  somewhatNoFollowupCopy:
+    "Consider whether there are other responsibilities on your list where transferring ownership would create greater capacity or leverage.",
+  confirmationCopy:
+    "These are the responsibilities we'll use next to explore the kind of executive leverage that could create greater capacity around you.",
+};
+
+export async function getPriorityDelegationConfig(): Promise<PriorityDelegationConfig> {
+  const supabase = await createServerSupabaseClient();
+  const { data } = await supabase
+    .from("priority_delegation_config")
+    .select(
+      "intro_copy, fewer_than_three_copy, zero_eligible_copy, zone_ambiguity_description, zone_vulnerability_description, pressure_test_question, somewhat_no_followup_copy, confirmation_copy",
+    )
+    .eq("active", true)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return FALLBACK_PRIORITY_DELEGATION_CONFIG;
+
+  return {
+    introCopy: data.intro_copy,
+    fewerThanThreeCopy: data.fewer_than_three_copy,
+    zeroEligibleCopy: data.zero_eligible_copy,
+    zoneAmbiguityDescription: data.zone_ambiguity_description,
+    zoneVulnerabilityDescription: data.zone_vulnerability_description,
+    pressureTestQuestion: data.pressure_test_question,
+    somewhatNoFollowupCopy: data.somewhat_no_followup_copy,
+    confirmationCopy: data.confirmation_copy,
+  };
+}
+
 export interface PrioritySelection {
   responsibilityId: string;
   label: string;

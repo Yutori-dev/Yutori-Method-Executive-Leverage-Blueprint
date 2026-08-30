@@ -9,18 +9,20 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import type { DelegationCandidatesData } from "@/lib/data/delegation";
+import type { DelegationCandidatesData, PriorityDelegationConfig } from "@/lib/data/delegation";
 
 type Phase = "select" | "pressure_test" | "revisit_prompt" | "confirmed";
 type PressureResponse = "yes" | "somewhat" | "no";
 
 export function PriorityDelegationFlow({
   candidates,
+  config,
   participantSessionId,
   sessionPath,
   onComplete,
 }: {
   candidates: DelegationCandidatesData;
+  config: PriorityDelegationConfig;
   participantSessionId: string;
   sessionPath: string;
   onComplete: () => void;
@@ -44,10 +46,7 @@ export function PriorityDelegationFlow({
     return (
       <Card>
         <h2 className="font-serif text-xl">Your Priority Delegation Opportunities</h2>
-        <p className="mt-3 text-sm text-(--color-ink)">
-          You did not identify any responsibilities outside your Zone of Investment. No Priority
-          Delegation Opportunities are assigned.
-        </p>
+        <p className="mt-3 text-sm text-(--color-ink)">{config.zeroEligibleCopy}</p>
       </Card>
     );
   }
@@ -112,17 +111,13 @@ export function PriorityDelegationFlow({
       <Card>
         <h2 className="font-serif text-xl">Your Priority Delegation Opportunities</h2>
         <p className="mt-3 text-sm text-(--color-ink)">
-          {fewerThanThree
-            ? "You've identified fewer than three responsibilities outside your Zone of Investment. Select the responsibilities you would most value transferring from those shown below."
-            : "You identified the responsibilities below as sitting outside your Zone of Investment. Now consider them through the lens of what you just learned about delegation. If the right person, capability and delegation conditions existed, would it still make sense for me to own this? Select the three responsibilities where transferring ownership would create the greatest value for you."}
+          {fewerThanThree ? config.fewerThanThreeCopy : config.introCopy}
         </p>
 
         {ambiguity.length > 0 ? (
           <div className="mt-5">
             <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Zone of Ambiguity</p>
-            <p className="mt-1 text-xs text-(--color-ink-muted)">
-              Your capability or interest makes your continued ownership worth examining.
-            </p>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">{config.zoneAmbiguityDescription}</p>
             <div className="mt-2 space-y-2">
               {ambiguity.map((c) => (
                 <CandidateOption key={c.responsibilityId} candidate={c} selected={selectedIds.has(c.responsibilityId)} requiredCount={requiredCount} selectedCount={selectedIds.size} onToggle={toggleCandidate} />
@@ -134,9 +129,7 @@ export function PriorityDelegationFlow({
         {vulnerability.length > 0 ? (
           <div className="mt-5">
             <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Zone of Vulnerability</p>
-            <p className="mt-1 text-xs text-(--color-ink-muted)">
-              Work where your current investment is less likely to represent your highest and best use.
-            </p>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">{config.zoneVulnerabilityDescription}</p>
             <div className="mt-2 space-y-2">
               {vulnerability.map((c) => (
                 <CandidateOption key={c.responsibilityId} candidate={c} selected={selectedIds.has(c.responsibilityId)} requiredCount={requiredCount} selectedCount={selectedIds.size} onToggle={toggleCandidate} />
@@ -170,10 +163,7 @@ export function PriorityDelegationFlow({
             <li key={label}>{label}</li>
           ))}
         </ul>
-        <p className="mt-4 text-sm text-(--color-ink)">
-          If you no longer owned these responsibilities, would you experience a meaningful
-          increase in available capacity?
-        </p>
+        <p className="mt-4 text-sm text-(--color-ink)">{config.pressureTestQuestion}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {(["yes", "somewhat", "no"] as PressureResponse[]).map((option) => (
             <button
@@ -196,10 +186,7 @@ export function PriorityDelegationFlow({
     return (
       <Card>
         <h2 className="font-serif text-xl">Your Priority Delegation Opportunities</h2>
-        <p className="mt-3 text-sm text-(--color-ink)">
-          Consider whether there are other responsibilities on your list where transferring
-          ownership would create greater capacity or leverage.
-        </p>
+        <p className="mt-3 text-sm text-(--color-ink)">{config.somewhatNoFollowupCopy}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button variant="ghost" onClick={handleRevisit} disabled={isPending}>
             Revisit my selections
@@ -220,10 +207,7 @@ export function PriorityDelegationFlow({
           <li key={label}>{label}</li>
         ))}
       </ul>
-      <p className="mt-4 text-sm text-(--color-ink-muted)">
-        These are the responsibilities we&apos;ll use next to explore the kind of executive
-        leverage that could create greater capacity around you.
-      </p>
+      <p className="mt-4 text-sm text-(--color-ink-muted)">{config.confirmationCopy}</p>
       <PriorityDelegationCompleteSignal onComplete={onComplete} />
     </Card>
   );

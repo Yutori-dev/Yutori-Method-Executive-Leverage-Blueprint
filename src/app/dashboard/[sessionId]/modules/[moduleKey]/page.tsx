@@ -5,7 +5,7 @@ import { hasCompletedIntake } from "@/lib/data/moduleZeroStatus";
 import { resolveParticipantDestination } from "@/lib/moduleState";
 import { getDemoAssessment } from "@/lib/data/moduleContent";
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
-import { getDelegationCandidates } from "@/lib/data/delegation";
+import { getDelegationCandidates, getPriorityDelegationConfig } from "@/lib/data/delegation";
 import { getDelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 import { getArchitectureData } from "@/lib/data/architecture";
 import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
@@ -101,14 +101,16 @@ export default async function ModulePage({
       />
     );
   } else if (moduleKey === "delegation") {
-    const [delegationBeliefsData, candidates] = await Promise.all([
+    const [delegationBeliefsData, candidates, priorityDelegationConfig] = await Promise.all([
       getDelegationBeliefsData(dashboard.participantSessionId),
       getDelegationCandidates(dashboard.participantSessionId),
+      getPriorityDelegationConfig(),
     ]);
     content = (
       <DelegationFlow
         delegationBeliefsData={delegationBeliefsData}
         candidates={candidates}
+        priorityDelegationConfig={priorityDelegationConfig}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
         sessionId={sessionId}
