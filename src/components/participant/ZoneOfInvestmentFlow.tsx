@@ -15,7 +15,7 @@ import { ZONE_OF_INVESTMENT_MIN_MAPPED, ZONE_OF_INVESTMENT_MAX_MAPPED } from "@/
 import type { RatingLevel } from "@/types/database";
 import { cn } from "@/lib/cn";
 
-type Phase = "selection" | "mapping" | "result";
+type Phase = "mapping" | "result";
 
 interface Rating {
   competency: RatingLevel | null;
@@ -38,33 +38,14 @@ export function ZoneOfInvestmentFlow({
   alreadyComplete: boolean;
 }) {
   const router = useRouter();
-  const alreadyRatedIds = data.ratings.map((r) => r.responsibilityId);
-  const [phase, setPhase] = useState<Phase>(() => {
-    if (data.mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED) return "result";
-    // A participant with existing ratings (rated under the previous flow,
-    // or a partial pass through the new one) skips straight to grading --
-    // the selection step is only needed to build that set from scratch.
-    return alreadyRatedIds.length > 0 ? "mapping" : "selection";
-  });
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(alreadyRatedIds));
+  const [phase, setPhase] = useState<Phase>(() =>
+    data.mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED ? "result" : "mapping",
+  );
   const [ratings, setRatings] = useState<Record<string, Rating>>(() =>
     Object.fromEntries(data.ratings.map((r) => [r.responsibilityId, { competency: r.competency, passion: r.passion }])),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  function toggleSelected(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        if (next.size >= ZONE_OF_INVESTMENT_MAX_MAPPED) return prev;
-        next.add(id);
-      }
-      return next;
-    });
-  }
 
   const mappedIds = Object.entries(ratings)
     .filter(([, r]) => r.competency !== null && r.passion !== null)
@@ -119,80 +100,20 @@ export function ZoneOfInvestmentFlow({
     });
   }
 
-  if (phase === "selection") {
-    const canContinueSelection =
-      selectedIds.size >= ZONE_OF_INVESTMENT_MIN_MAPPED && selectedIds.size <= ZONE_OF_INVESTMENT_MAX_MAPPED;
+  if (phase === "mapping") {
     return (
       <div className="space-y-4">
         <Card>
           <h2 className="font-serif text-xl">Map Your Current Responsibilities</h2>
           <p className="mt-3 text-sm text-(--color-ink)">
             Identify 10 to 12 responsibilities that represent a significant investment of your
-            time and energy in a representative week.
+            time and energy in a representative week. For each one, rate your Competency and
+            Passion as Low, Medium or High. Leave the remaining responsibilities blank.
           </p>
           <RatingReference config={data.config} />
         </Card>
 
-        <Card>
-          <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Select 10–12 activities</p>
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {data.library.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => toggleSelected(r.id)}
-                className={cn(
-                  "rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-                  selectedIds.has(r.id)
-                    ? "border-(--color-accent) bg-(--color-accent-soft)"
-                    : "border-(--color-hairline) hover:border-(--color-accent)",
-                )}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </Card>
-
-        <div className="sticky bottom-4 flex items-center gap-4 rounded-xl border border-(--color-hairline) bg-(--color-paper) px-4 py-3 shadow-sm">
-          <Button onClick={() => setPhase("mapping")} disabled={!canContinueSelection}>
-            CONTINUE
-          </Button>
-          <p
-            className={cn(
-              "text-sm",
-              canContinueSelection ? "text-(--color-ink-muted)" : "text-(--color-accent)",
-            )}
-          >
-            {selectedIds.size} of 10–12 selected
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "mapping") {
-    const selectedLibrary = data.library.filter((r) => selectedIds.has(r.id));
-    return (
-      <div className="space-y-4">
-        <Card>
-          <h2 className="font-serif text-xl">Map Your Current Responsibilities</h2>
-          <p className="mt-3 text-sm text-(--color-ink)">
-            For each of your selected responsibilities, rate your Competency and Passion as Low,
-            Medium or High.
-          </p>
-          <RatingReference config={data.config} />
-        </Card>
-
-        <button
-          type="button"
-          onClick={() => setPhase("selection")}
-          className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-        >
-          ← Change selection
-        </button>
-
-        {selectedLibrary.map((r) => {
+        {data.library.map((r) => {
           const rating = ratings[r.id] ?? { competency: null, passion: null };
           return (
             <Card key={r.id}>
