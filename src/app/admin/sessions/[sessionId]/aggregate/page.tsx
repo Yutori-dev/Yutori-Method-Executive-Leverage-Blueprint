@@ -104,6 +104,32 @@ export default async function SessionAggregatePage({
           </Card>
 
           <Card>
+            <h2 className="font-serif text-lg">Executive Support Audit</h2>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">
+              {aggregates.executiveSupportAudit.completedCount} of {aggregates.registeredCount} complete /{" "}
+              {aggregates.executiveSupportAudit.completionRate}%
+            </p>
+            <p className="mt-3 text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary leverage gap frequency</p>
+            <div className="mt-2">
+              <CountBarList rows={aggregates.executiveSupportAudit.primaryFrequency} emptyLabel="No completed audits yet." />
+            </div>
+            <p className="mt-4 text-xs tracking-wide text-(--color-ink-muted) uppercase">Secondary leverage gap frequency</p>
+            <div className="mt-2">
+              <CountBarList rows={aggregates.executiveSupportAudit.secondaryFrequency} emptyLabel="No completed audits yet." />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-(--color-hairline) pt-4 text-sm">
+              <div>
+                <p className="text-(--color-ink)">{aggregates.executiveSupportAudit.tiedPrimaryCount}</p>
+                <p className="text-xs text-(--color-ink-muted)">Tied primary results</p>
+              </div>
+              <div>
+                <p className="text-(--color-ink)">{aggregates.executiveSupportAudit.noSecondaryCount}</p>
+                <p className="text-xs text-(--color-ink-muted)">No clear secondary</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
             <h2 className="font-serif text-lg">Primary recommendation signal</h2>
             <p className="mt-1 text-xs text-(--color-ink-muted)">
               &quot;Mixed&quot; means the participant&apos;s three priorities didn&apos;t share a

@@ -46,6 +46,24 @@ export interface ZoneOfInvestmentAggregates {
   perParticipant: ZoneOfInvestmentParticipantRow[];
 }
 
+export interface ExecutiveSupportAuditAggregates {
+  completedCount: number;
+  completionRate: number;
+  primaryFrequency: CountRow[];
+  secondaryFrequency: CountRow[];
+  tiedPrimaryCount: number;
+  noSecondaryCount: number;
+}
+
+const EMPTY_EXECUTIVE_SUPPORT_AUDIT_AGGREGATES: ExecutiveSupportAuditAggregates = {
+  completedCount: 0,
+  completionRate: 0,
+  primaryFrequency: [],
+  secondaryFrequency: [],
+  tiedPrimaryCount: 0,
+  noSecondaryCount: 0,
+};
+
 export interface SessionAggregates {
   registeredCount: number;
   fullyCompletedCount: number;
@@ -65,6 +83,7 @@ export interface SessionAggregates {
   leadershipWiringCompletionCount: number;
   leadershipWiringCompletionRate: number;
   leadershipWiringDashboardNote: string | null;
+  executiveSupportAudit: ExecutiveSupportAuditAggregates;
 }
 
 const EMPTY_ZONE_OF_INVESTMENT_AGGREGATES: ZoneOfInvestmentAggregates = {
@@ -201,6 +220,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       leadershipWiringCompletionCount: 0,
       leadershipWiringCompletionRate: 0,
       leadershipWiringDashboardNote,
+      executiveSupportAudit: EMPTY_EXECUTIVE_SUPPORT_AUDIT_AGGREGATES,
     };
   }
 
@@ -211,6 +231,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     { data: responsibilityRows },
     { data: priorityRows },
     { data: pressureTestRows },
+    { data: executiveSupportAuditResultRows },
     { data: recommendationRows },
     { data: diagnosticQuestions },
     { data: diagnosticResponses },
@@ -232,6 +253,10 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     supabase
       .from("priority_delegation_pressure_test")
       .select("response")
+      .in("participant_session_id", participantSessionIds),
+    supabase
+      .from("executive_support_audit_results")
+      .select("primary_layers, secondary_layers")
       .in("participant_session_id", participantSessionIds),
     supabase
       .from("architecture_recommendations")
@@ -300,6 +325,28 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     responsibilityRows: responsibilityRows ?? [],
   });
 
+  const auditRows = executiveSupportAuditResultRows ?? [];
+  const primaryFrequencyMap = new Map<string, number>();
+  const secondaryFrequencyMap = new Map<string, number>();
+  let tiedPrimaryCount = 0;
+  let noSecondaryCount = 0;
+  for (const row of auditRows) {
+    const primary = (row.primary_layers ?? []) as string[];
+    const secondary = (row.secondary_layers ?? []) as string[];
+    for (const layer of primary) primaryFrequencyMap.set(layer, (primaryFrequencyMap.get(layer) ?? 0) + 1);
+    for (const layer of secondary) secondaryFrequencyMap.set(layer, (secondaryFrequencyMap.get(layer) ?? 0) + 1);
+    if (primary.length > 1) tiedPrimaryCount++;
+    if (primary.length === 1 && secondary.length === 0) noSecondaryCount++;
+  }
+  const executiveSupportAudit: ExecutiveSupportAuditAggregates = {
+    completedCount: auditRows.length,
+    completionRate: registeredCount > 0 ? Math.round((auditRows.length / registeredCount) * 1000) / 10 : 0,
+    primaryFrequency: [...primaryFrequencyMap.entries()].map(([label, count]) => ({ label: LEVEL_LABEL[label] ?? label, count })),
+    secondaryFrequency: [...secondaryFrequencyMap.entries()].map(([label, count]) => ({ label: LEVEL_LABEL[label] ?? label, count })),
+    tiedPrimaryCount,
+    noSecondaryCount,
+  };
+
   return {
     registeredCount,
     fullyCompletedCount,
@@ -352,6 +399,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     leadershipWiringCompletionRate:
       registeredCount > 0 ? Math.round((leadershipWiringCompletedCount / registeredCount) * 1000) / 10 : 0,
     leadershipWiringDashboardNote,
+    executiveSupportAudit,
   };
 }
 

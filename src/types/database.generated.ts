@@ -525,6 +525,206 @@ export type Database = {
           },
         ]
       }
+      executive_support_audit_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          execution_primary_copy: string
+          execution_secondary_copy: string
+          id: string
+          intro_body: string
+          intro_header: string
+          intro_subheader: string
+          no_secondary_copy: string
+          orchestration_primary_copy: string
+          orchestration_secondary_copy: string
+          results_intro_copy: string
+          secondary_threshold: number
+          strategic_primary_copy: string
+          strategic_secondary_copy: string
+          systems_primary_copy: string
+          systems_secondary_copy: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          execution_primary_copy: string
+          execution_secondary_copy: string
+          id?: string
+          intro_body: string
+          intro_header: string
+          intro_subheader: string
+          no_secondary_copy: string
+          orchestration_primary_copy: string
+          orchestration_secondary_copy: string
+          results_intro_copy: string
+          secondary_threshold?: number
+          strategic_primary_copy: string
+          strategic_secondary_copy: string
+          systems_primary_copy: string
+          systems_secondary_copy: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          execution_primary_copy?: string
+          execution_secondary_copy?: string
+          id?: string
+          intro_body?: string
+          intro_header?: string
+          intro_subheader?: string
+          no_secondary_copy?: string
+          orchestration_primary_copy?: string
+          orchestration_secondary_copy?: string
+          results_intro_copy?: string
+          secondary_threshold?: number
+          strategic_primary_copy?: string
+          strategic_secondary_copy?: string
+          systems_primary_copy?: string
+          systems_secondary_copy?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      executive_support_audit_questions: {
+        Row: {
+          active: boolean
+          config_id: string
+          id: string
+          option_execution: string
+          option_orchestration: string
+          option_strategic: string
+          option_systems: string
+          prompt: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          config_id: string
+          id?: string
+          option_execution: string
+          option_orchestration: string
+          option_strategic: string
+          option_systems: string
+          prompt: string
+          sort_order: number
+        }
+        Update: {
+          active?: boolean
+          config_id?: string
+          id?: string
+          option_execution?: string
+          option_orchestration?: string
+          option_strategic?: string
+          option_systems?: string
+          prompt?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_support_audit_questions_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "executive_support_audit_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_support_audit_responses: {
+        Row: {
+          created_at: string
+          id: string
+          participant_session_id: string
+          question_id: string
+          selected_layer: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_session_id: string
+          question_id: string
+          selected_layer: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_session_id?: string
+          question_id?: string
+          selected_layer?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_support_audit_responses_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: false
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_support_audit_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "executive_support_audit_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_support_audit_results: {
+        Row: {
+          calculated_at: string
+          config_id: string
+          execution_score: number
+          id: string
+          orchestration_score: number
+          participant_session_id: string
+          primary_layers: string[]
+          secondary_layers: string[]
+          strategic_score: number
+          systems_score: number
+        }
+        Insert: {
+          calculated_at?: string
+          config_id: string
+          execution_score: number
+          id?: string
+          orchestration_score: number
+          participant_session_id: string
+          primary_layers: string[]
+          secondary_layers?: string[]
+          strategic_score: number
+          systems_score: number
+        }
+        Update: {
+          calculated_at?: string
+          config_id?: string
+          execution_score?: number
+          id?: string
+          orchestration_score?: number
+          participant_session_id?: string
+          primary_layers?: string[]
+          secondary_layers?: string[]
+          strategic_score?: number
+          systems_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_support_audit_results_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "executive_support_audit_config"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_support_audit_results_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follow_up_interests: {
         Row: {
           id: string
@@ -1746,6 +1946,27 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      calculate_executive_support_audit_results: {
+        Args: { p_participant_session_id: string }
+        Returns: {
+          calculated_at: string
+          config_id: string
+          execution_score: number
+          id: string
+          orchestration_score: number
+          participant_session_id: string
+          primary_layers: string[]
+          secondary_layers: string[]
+          strategic_score: number
+          systems_score: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "executive_support_audit_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       ensure_participant: {
         Args: {
           p_first_name: string
@@ -1860,6 +2081,14 @@ export type Database = {
           p_participant_session_id: string
           p_question_id: string
           p_score: number
+        }
+        Returns: undefined
+      }
+      save_executive_support_audit_response: {
+        Args: {
+          p_participant_session_id: string
+          p_question_id: string
+          p_selected_layer: string
         }
         Returns: undefined
       }

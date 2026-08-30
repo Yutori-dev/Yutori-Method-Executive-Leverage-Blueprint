@@ -11,6 +11,7 @@ import {
   getPriorityOwnershipTransferOpportunity,
   type DelegationBarrier,
 } from "@/lib/data/delegationBeliefs";
+import { getExecutiveSupportAuditData, getExecutiveSupportAuditSummary } from "@/lib/data/executiveSupportAudit";
 import type { LeverageLevel, SelfIdentification } from "@/types/database";
 
 export interface BlueprintDelegationOpportunity {
@@ -40,6 +41,11 @@ export interface BlueprintData {
     priorityOwnershipTransferOpportunity: { label: string; interpretation: string } | null;
     priorityOpportunities: BlueprintDelegationOpportunity[];
   };
+  executiveSupportAudit: {
+    primary: { layer: LeverageLevel; interpretation: string }[];
+    secondary: { layer: LeverageLevel; interpretation: string }[];
+    noSecondaryCopy: string | null;
+  } | null;
   architecture: ArchitectureData;
   followUpRequested: boolean;
   reflections: { whiteWhale: string | null; successVision: string | null; successVisionFollowup: string | null };
@@ -102,17 +108,21 @@ export async function getBlueprintData(
 
   const statusByModule = new Map((progress ?? []).map((p) => [p.module_id, p.status]));
 
-  const [diagnostic, zone, delegationCandidates, architecture, delegationBeliefsData] = await Promise.all([
-    getExecutiveLeverageDiagnosticData(participantSessionId),
-    getZoneOfInvestmentData(sessionId, participantSessionId),
-    getDelegationCandidates(participantSessionId),
-    getArchitectureData(sessionId, participantSessionId),
-    getDelegationBeliefsData(participantSessionId),
-  ]);
+  const [diagnostic, zone, delegationCandidates, architecture, delegationBeliefsData, executiveSupportAuditData] =
+    await Promise.all([
+      getExecutiveLeverageDiagnosticData(participantSessionId),
+      getZoneOfInvestmentData(sessionId, participantSessionId),
+      getDelegationCandidates(participantSessionId),
+      getArchitectureData(sessionId, participantSessionId),
+      getDelegationBeliefsData(participantSessionId),
+      getExecutiveSupportAuditData(participantSessionId),
+    ]);
 
   const priorityOwnershipTransferOpportunity = delegationBeliefsData
     ? getPriorityOwnershipTransferOpportunity(delegationBeliefsData)
     : null;
+
+  const executiveSupportAudit = executiveSupportAuditData ? getExecutiveSupportAuditSummary(executiveSupportAuditData) : null;
 
   // leverage_level_snapshot is already in delegationCandidates.currentSelections
   // (getDelegationCandidates fetches it unconditionally, it's cheap) -- no
@@ -161,6 +171,7 @@ export async function getBlueprintData(
         : null,
       priorityOpportunities,
     },
+    executiveSupportAudit,
     architecture,
     followUpRequested: !!followUp,
     reflections: {

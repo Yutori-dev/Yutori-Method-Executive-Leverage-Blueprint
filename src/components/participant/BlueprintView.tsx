@@ -149,6 +149,44 @@ export function BlueprintView({
         </section>
       ) : null}
 
+      {data.executiveSupportAudit ? (
+        <section>
+          <h2 className="font-serif text-xl">Executive Support Audit</h2>
+          <Card className="mt-3">
+            <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+              {data.executiveSupportAudit.primary.length > 1 ? "Your most prominent leverage gaps" : "Primary leverage gap"}
+            </p>
+            <div className="mt-2 space-y-3">
+              {data.executiveSupportAudit.primary.map((p) => (
+                <div key={p.layer}>
+                  <p className="text-sm text-(--color-ink)">{LEVEL_LABEL[p.layer]}</p>
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">{p.interpretation}</p>
+                </div>
+              ))}
+            </div>
+            {data.executiveSupportAudit.primary.length === 1 ? (
+              <div className="mt-4 border-t border-(--color-hairline) pt-4">
+                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+                  {data.executiveSupportAudit.secondary.length > 1 ? "Secondary leverage gaps" : "Secondary leverage gap"}
+                </p>
+                {data.executiveSupportAudit.secondary.length > 0 ? (
+                  <div className="mt-2 space-y-3">
+                    {data.executiveSupportAudit.secondary.map((s) => (
+                      <div key={s.layer}>
+                        <p className="text-sm text-(--color-ink)">{LEVEL_LABEL[s.layer]}</p>
+                        <p className="mt-1 text-sm text-(--color-ink-muted)">{s.interpretation}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-(--color-ink-muted)">{data.executiveSupportAudit.noSecondaryCopy}</p>
+                )}
+              </div>
+            ) : null}
+          </Card>
+        </section>
+      ) : null}
+
       <section>
         <h2 className="font-serif text-xl">Executive Support Architecture</h2>
         <Card className="mt-3">

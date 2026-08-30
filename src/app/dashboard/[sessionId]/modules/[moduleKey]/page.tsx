@@ -8,6 +8,7 @@ import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates, getPriorityDelegationConfig } from "@/lib/data/delegation";
 import { getDelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 import { getArchitectureData } from "@/lib/data/architecture";
+import { getExecutiveSupportAuditData } from "@/lib/data/executiveSupportAudit";
 import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
 import { getExecutiveLeverageDiagnosticData } from "@/lib/data/executiveLeverageDiagnostic";
 import { getSuccessVisionData } from "@/lib/data/successVision";
@@ -18,6 +19,7 @@ import { GenericPlaceholderModule } from "@/components/participant/GenericPlaceh
 import { ZoneOfInvestmentFlow } from "@/components/participant/ZoneOfInvestmentFlow";
 import { DelegationFlow } from "@/components/participant/DelegationFlow";
 import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
+import { ExecutiveSupportAuditFlow } from "@/components/participant/ExecutiveSupportAuditFlow";
 import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitudeFlow";
 import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
@@ -114,6 +116,26 @@ export default async function ModulePage({
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
         sessionId={sessionId}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "leverage") {
+    const auditData = await getExecutiveSupportAuditData(dashboard.participantSessionId);
+    content = auditData ? (
+      <ExecutiveSupportAuditFlow
+        data={auditData}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
       />

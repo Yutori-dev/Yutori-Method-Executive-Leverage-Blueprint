@@ -160,6 +160,40 @@ export function BlueprintPdfDocument({
           </>
         ) : null}
 
+        {data.executiveSupportAudit ? (
+          <>
+            <Text style={styles.sectionTitle}>Executive Support Audit</Text>
+            <View style={styles.card}>
+              <Text style={{ ...styles.label, marginBottom: 6 }}>
+                {data.executiveSupportAudit.primary.length > 1 ? "Your most prominent leverage gaps" : "Primary leverage gap"}
+              </Text>
+              {data.executiveSupportAudit.primary.map((p) => (
+                <View key={p.layer} style={{ marginBottom: 6 }}>
+                  <Text style={styles.value}>{LEVEL_LABEL[p.layer]}</Text>
+                  <Text style={styles.label}>{p.interpretation}</Text>
+                </View>
+              ))}
+              {data.executiveSupportAudit.primary.length === 1 ? (
+                <>
+                  <Text style={{ ...styles.label, marginTop: 8, marginBottom: 6 }}>
+                    {data.executiveSupportAudit.secondary.length > 1 ? "Secondary leverage gaps" : "Secondary leverage gap"}
+                  </Text>
+                  {data.executiveSupportAudit.secondary.length > 0 ? (
+                    data.executiveSupportAudit.secondary.map((s) => (
+                      <View key={s.layer} style={{ marginBottom: 6 }}>
+                        <Text style={styles.value}>{LEVEL_LABEL[s.layer]}</Text>
+                        <Text style={styles.label}>{s.interpretation}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.label}>{data.executiveSupportAudit.noSecondaryCopy}</Text>
+                  )}
+                </>
+              ) : null}
+            </View>
+          </>
+        ) : null}
+
         <Text style={styles.sectionTitle}>Executive Support Architecture</Text>
         <View style={styles.card}>
           {data.architecture.revealed && data.architecture.recommendation ? (

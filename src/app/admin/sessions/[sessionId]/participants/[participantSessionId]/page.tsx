@@ -193,6 +193,39 @@ export default async function AdminParticipantProfilePage({
               ) : null}
             </Card>
           ) : null}
+
+          {profile.executiveSupportAudit ? (
+            <Card>
+              <h2 className="font-serif text-lg">Executive Support Audit</h2>
+              <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div>
+                  <dt className="text-xs text-(--color-ink-muted)">Execution</dt>
+                  <dd className="mt-0.5">{profile.executiveSupportAudit.scores.execution}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-(--color-ink-muted)">Orchestration</dt>
+                  <dd className="mt-0.5">{profile.executiveSupportAudit.scores.orchestration}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-(--color-ink-muted)">Strategic</dt>
+                  <dd className="mt-0.5">{profile.executiveSupportAudit.scores.strategic}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-(--color-ink-muted)">Systems</dt>
+                  <dd className="mt-0.5">{profile.executiveSupportAudit.scores.systems}</dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-sm text-(--color-ink-muted)">
+                Primary: {profile.executiveSupportAudit.primaryLayers.map((l) => LEVEL_LABEL[l]).join(", ")}
+              </p>
+              <p className="mt-1 text-sm text-(--color-ink-muted)">
+                Secondary:{" "}
+                {profile.executiveSupportAudit.secondaryLayers.length > 0
+                  ? profile.executiveSupportAudit.secondaryLayers.map((l) => LEVEL_LABEL[l]).join(", ")
+                  : "None"}
+              </p>
+            </Card>
+          ) : null}
         </div>
       </Container>
     </main>

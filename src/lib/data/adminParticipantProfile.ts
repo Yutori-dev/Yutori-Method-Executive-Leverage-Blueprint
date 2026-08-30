@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { LeverageLevel, MacroZone, RatingLevel, ArchitectureReaction } from "@/types/database";
 import type { CurrentSupportFlags } from "@/lib/currentSupportLabels";
 import { getDelegationBeliefsData, getPrimaryDelegationBarriers, type DelegationBarrier } from "@/lib/data/delegationBeliefs";
+import { getExecutiveSupportAuditData } from "@/lib/data/executiveSupportAudit";
 
 export interface AdminProfileAnswer {
   prompt: string;
@@ -53,6 +54,11 @@ export interface AdminParticipantProfile {
     } | null;
     priorities: AdminProfilePriority[];
   };
+  executiveSupportAudit: {
+    scores: Record<LeverageLevel, number>;
+    primaryLayers: LeverageLevel[];
+    secondaryLayers: LeverageLevel[];
+  } | null;
   architecture: {
     revealed: boolean;
     primarySignalLeverageLevel: LeverageLevel | null;
@@ -148,6 +154,8 @@ export async function getAdminParticipantProfile(
   const delegationBeliefsResult = delegationBeliefsData?.result ?? null;
   const primaryBarriers = delegationBeliefsData ? getPrimaryDelegationBarriers(delegationBeliefsData) : [];
 
+  const executiveSupportAuditData = await getExecutiveSupportAuditData(participantSessionId);
+
   return {
     participant: {
       firstName: participant.first_name,
@@ -210,6 +218,13 @@ export async function getAdminParticipantProfile(
         };
       }),
     },
+    executiveSupportAudit: executiveSupportAuditData?.result
+      ? {
+          scores: executiveSupportAuditData.result.scores,
+          primaryLayers: executiveSupportAuditData.result.primaryLayers,
+          secondaryLayers: executiveSupportAuditData.result.secondaryLayers,
+        }
+      : null,
     architecture: recommendation
       ? {
           revealed: session.architecture_revealed,
