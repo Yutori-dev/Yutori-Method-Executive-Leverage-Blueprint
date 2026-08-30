@@ -27,6 +27,16 @@ export async function createSession(input: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated.");
 
+  // Module 1 unlocks automatically for every new session -- only module 2
+  // onward requires an explicit admin unlock (client feedback round 4).
+  const { data: firstModule } = await supabase
+    .from("modules")
+    .select("id")
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("sessions")
     .insert({
@@ -37,6 +47,7 @@ export async function createSession(input: {
       status: "draft",
       join_code: slugifyJoinCode(input.name),
       created_by: user.id,
+      active_module_id: firstModule?.id ?? null,
     })
     .select("id")
     .single();

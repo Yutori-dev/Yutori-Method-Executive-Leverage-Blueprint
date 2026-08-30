@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toCsv } from "@/lib/csv";
+import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 import type { LeverageLevel } from "@/types/database";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -41,7 +42,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   for (const enrollment of enrollments ?? []) {
     const [{ data: participant }, { data: responsibilities }, { data: priorities }, { data: recommendation }] =
       await Promise.all([
-        supabase.from("participants").select("first_name, last_name, email").eq("id", enrollment.participant_id).maybeSingle(),
+        supabase
+          .from("participants")
+          .select(
+            "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
+          )
+          .eq("id", enrollment.participant_id)
+          .maybeSingle(),
         supabase
           .from("participant_responsibilities")
           .select("macro_zone")
@@ -77,6 +84,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       participant?.first_name ?? "",
       participant?.last_name ?? "",
       participant?.email ?? "",
+      participant?.company_name ?? "",
+      participant?.current_role_title ?? "",
+      participant ? formatCurrentSupport({
+        currentSupportPersonalAssistant: participant.current_support_personal_assistant,
+        currentSupportAdminOrVa: participant.current_support_admin_or_va,
+        currentSupportExecutiveAssistant: participant.current_support_executive_assistant,
+        currentSupportSeniorExecutiveAssistant: participant.current_support_senior_executive_assistant,
+        currentSupportHeadOfOperations: participant.current_support_head_of_operations,
+        currentSupportChiefOfStaff: participant.current_support_chief_of_staff,
+        currentSupportChiefIntegrator: participant.current_support_chief_integrator,
+        currentSupportCoo: participant.current_support_coo,
+        currentSupportOther: participant.current_support_other,
+        currentSupportOtherText: participant.current_support_other_text,
+        currentSupportNone: participant.current_support_none,
+      }) : "",
       enrollment.completion_state,
       enrollment.started_at,
       enrollment.completed_at,
@@ -102,6 +124,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       "First name",
       "Last name",
       "Email",
+      "Company",
+      "Role / title",
+      "Current executive support",
       "Completion state",
       "Started at",
       "Completed at",

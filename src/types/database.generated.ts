@@ -613,30 +613,75 @@ export type Database = {
       }
       participants: {
         Row: {
+          company_name: string | null
           created_at: string
+          current_role_title: string | null
+          current_support_admin_or_va: boolean
+          current_support_chief_integrator: boolean
+          current_support_chief_of_staff: boolean
+          current_support_coo: boolean
+          current_support_executive_assistant: boolean
+          current_support_head_of_operations: boolean
+          current_support_none: boolean
+          current_support_other: boolean
+          current_support_other_text: string | null
+          current_support_personal_assistant: boolean
+          current_support_senior_executive_assistant: boolean
           email: string
           first_name: string
           id: string
+          intake_completed_at: string | null
+          intake_started_at: string | null
           last_login: string | null
           last_name: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
         }
         Insert: {
+          company_name?: string | null
           created_at?: string
+          current_role_title?: string | null
+          current_support_admin_or_va?: boolean
+          current_support_chief_integrator?: boolean
+          current_support_chief_of_staff?: boolean
+          current_support_coo?: boolean
+          current_support_executive_assistant?: boolean
+          current_support_head_of_operations?: boolean
+          current_support_none?: boolean
+          current_support_other?: boolean
+          current_support_other_text?: string | null
+          current_support_personal_assistant?: boolean
+          current_support_senior_executive_assistant?: boolean
           email: string
           first_name: string
           id: string
+          intake_completed_at?: string | null
+          intake_started_at?: string | null
           last_login?: string | null
           last_name: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
         }
         Update: {
+          company_name?: string | null
           created_at?: string
+          current_role_title?: string | null
+          current_support_admin_or_va?: boolean
+          current_support_chief_integrator?: boolean
+          current_support_chief_of_staff?: boolean
+          current_support_coo?: boolean
+          current_support_executive_assistant?: boolean
+          current_support_head_of_operations?: boolean
+          current_support_none?: boolean
+          current_support_other?: boolean
+          current_support_other_text?: string | null
+          current_support_personal_assistant?: boolean
+          current_support_senior_executive_assistant?: boolean
           email?: string
           first_name?: string
           id?: string
+          intake_completed_at?: string | null
+          intake_started_at?: string | null
           last_login?: string | null
           last_name?: string
           privacy_consent_given_at?: string | null
@@ -1286,10 +1331,25 @@ export type Database = {
           p_privacy_consent?: boolean
         }
         Returns: {
+          company_name: string | null
           created_at: string
+          current_role_title: string | null
+          current_support_admin_or_va: boolean
+          current_support_chief_integrator: boolean
+          current_support_chief_of_staff: boolean
+          current_support_coo: boolean
+          current_support_executive_assistant: boolean
+          current_support_head_of_operations: boolean
+          current_support_none: boolean
+          current_support_other: boolean
+          current_support_other_text: string | null
+          current_support_personal_assistant: boolean
+          current_support_senior_executive_assistant: boolean
           email: string
           first_name: string
           id: string
+          intake_completed_at: string | null
+          intake_started_at: string | null
           last_login: string | null
           last_name: string
           privacy_consent_given_at: string | null
@@ -1343,6 +1403,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mark_intake_started: { Args: never; Returns: undefined }
       rate_responsibility: {
         Args: {
           p_competency: string
@@ -1364,6 +1425,54 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "participant_responsibilities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_participant_intake: {
+        Args: {
+          p_company_name: string
+          p_current_role_title: string
+          p_current_support_admin_or_va: boolean
+          p_current_support_chief_integrator: boolean
+          p_current_support_chief_of_staff: boolean
+          p_current_support_coo: boolean
+          p_current_support_executive_assistant: boolean
+          p_current_support_head_of_operations: boolean
+          p_current_support_none: boolean
+          p_current_support_other: boolean
+          p_current_support_other_text: string
+          p_current_support_personal_assistant: boolean
+          p_current_support_senior_executive_assistant: boolean
+        }
+        Returns: {
+          company_name: string | null
+          created_at: string
+          current_role_title: string | null
+          current_support_admin_or_va: boolean
+          current_support_chief_integrator: boolean
+          current_support_chief_of_staff: boolean
+          current_support_coo: boolean
+          current_support_executive_assistant: boolean
+          current_support_head_of_operations: boolean
+          current_support_none: boolean
+          current_support_other: boolean
+          current_support_other_text: string | null
+          current_support_personal_assistant: boolean
+          current_support_senior_executive_assistant: boolean
+          email: string
+          first_name: string
+          id: string
+          intake_completed_at: string | null
+          intake_started_at: string | null
+          last_login: string | null
+          last_name: string
+          privacy_consent_given_at: string | null
+          privacy_consent_version: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "participants"
           isOneToOne: true
           isSetofReturn: false
         }

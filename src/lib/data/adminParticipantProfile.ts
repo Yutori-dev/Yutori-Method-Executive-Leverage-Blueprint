@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { LeverageLevel, MacroZone, RatingLevel, ArchitectureReaction } from "@/types/database";
+import type { CurrentSupportFlags } from "@/lib/currentSupportLabels";
 
 export interface AdminProfileAnswer {
   prompt: string;
@@ -29,7 +30,14 @@ export interface AdminProfilePriority {
 }
 
 export interface AdminParticipantProfile {
-  participant: { firstName: string; lastName: string; email: string };
+  participant: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    companyName: string | null;
+    currentRoleTitle: string | null;
+    currentSupport: CurrentSupportFlags;
+  };
   enrollment: { completionState: string; startedAt: string | null; lastActiveAt: string };
   modules: { key: string; name: string; status: string }[];
   operatingAltitude: AdminProfileAnswer[];
@@ -62,7 +70,13 @@ export async function getAdminParticipantProfile(
   if (!enrollment) return null;
 
   const [{ data: participant }, { data: session }, { data: modules }, { data: progress }] = await Promise.all([
-    supabase.from("participants").select("first_name, last_name, email").eq("id", enrollment.participant_id).maybeSingle(),
+    supabase
+      .from("participants")
+      .select(
+        "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
+      )
+      .eq("id", enrollment.participant_id)
+      .maybeSingle(),
     supabase.from("sessions").select("architecture_revealed").eq("id", enrollment.session_id).maybeSingle(),
     supabase.from("modules").select("id, key, name").eq("active", true).order("sort_order", { ascending: true }),
     supabase.from("participant_module_progress").select("module_id, status").eq("participant_session_id", participantSessionId),
@@ -141,7 +155,26 @@ export async function getAdminParticipantProfile(
   }
 
   return {
-    participant: { firstName: participant.first_name, lastName: participant.last_name, email: participant.email },
+    participant: {
+      firstName: participant.first_name,
+      lastName: participant.last_name,
+      email: participant.email,
+      companyName: participant.company_name,
+      currentRoleTitle: participant.current_role_title,
+      currentSupport: {
+        currentSupportPersonalAssistant: participant.current_support_personal_assistant,
+        currentSupportAdminOrVa: participant.current_support_admin_or_va,
+        currentSupportExecutiveAssistant: participant.current_support_executive_assistant,
+        currentSupportSeniorExecutiveAssistant: participant.current_support_senior_executive_assistant,
+        currentSupportHeadOfOperations: participant.current_support_head_of_operations,
+        currentSupportChiefOfStaff: participant.current_support_chief_of_staff,
+        currentSupportChiefIntegrator: participant.current_support_chief_integrator,
+        currentSupportCoo: participant.current_support_coo,
+        currentSupportOther: participant.current_support_other,
+        currentSupportOtherText: participant.current_support_other_text,
+        currentSupportNone: participant.current_support_none,
+      },
+    },
     enrollment: {
       completionState: enrollment.completion_state,
       startedAt: enrollment.started_at,

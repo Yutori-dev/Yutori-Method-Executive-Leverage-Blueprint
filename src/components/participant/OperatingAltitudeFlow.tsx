@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ExecutiveLeverageDiagnosticFlow } from "./ExecutiveLeverageDiagnosticFlow";
 import { CharacterPreview } from "./CharacterPreview";
 import { HoldingState } from "./HoldingState";
+import { SessionGateWatcher } from "./SessionGateWatcher";
 import { setSelfIdentification, saveReflection } from "@/lib/actions/reflections";
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
@@ -25,6 +26,7 @@ export function OperatingAltitudeFlow({
   data,
   participantSessionId,
   moduleId,
+  sessionId,
   sessionPath,
   alreadyComplete,
 }: {
@@ -33,6 +35,7 @@ export function OperatingAltitudeFlow({
   data: OperatingAltitudeData;
   participantSessionId: string;
   moduleId: string;
+  sessionId: string;
   sessionPath: string;
   alreadyComplete: boolean;
 }) {
@@ -117,7 +120,14 @@ export function OperatingAltitudeFlow({
   }
 
   if (phase === "white_whale") {
-    if (!data.whiteWhaleUnlocked) return <HoldingState sessionPath={sessionPath} />;
+    if (!data.whiteWhaleUnlocked) {
+      return (
+        <>
+          <SessionGateWatcher sessionId={sessionId} />
+          <HoldingState sessionPath={sessionPath} />
+        </>
+      );
+    }
 
     return (
       <div className="space-y-6">
@@ -157,7 +167,14 @@ export function OperatingAltitudeFlow({
     );
   }
 
-  if (!data.leadershipWiringUnlocked) return <HoldingState sessionPath={sessionPath} />;
+  if (!data.leadershipWiringUnlocked) {
+    return (
+      <>
+        <SessionGateWatcher sessionId={sessionId} />
+        <HoldingState sessionPath={sessionPath} />
+      </>
+    );
+  }
 
   const canComplete = selfId !== null;
 

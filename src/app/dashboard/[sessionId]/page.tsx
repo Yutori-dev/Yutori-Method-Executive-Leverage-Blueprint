@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
-import { hasCompletedExecutiveContext } from "@/lib/data/moduleZeroStatus";
+import { hasCompletedIntake } from "@/lib/data/moduleZeroStatus";
 import { resolveParticipantDestination } from "@/lib/moduleState";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ModuleRow } from "@/components/participant/ModuleRow";
 import { HoldingState } from "@/components/participant/HoldingState";
+import { SessionGateWatcher } from "@/components/participant/SessionGateWatcher";
 
 export default async function ParticipantDashboardPage({
   params,
@@ -22,7 +23,7 @@ export default async function ParticipantDashboardPage({
 
   const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
   const completedCount = trackedModules.filter((m) => m.state === "COMPLETE").length;
-  const contextDone = await hasCompletedExecutiveContext(dashboard.participantSessionId);
+  const contextDone = await hasCompletedIntake();
   const destination = resolveParticipantDestination(contextDone, trackedModules);
 
   const currentModuleKey = destination.type === "module" ? destination.moduleKey : null;
@@ -30,6 +31,11 @@ export default async function ParticipantDashboardPage({
   return (
     <main className="flex-1 py-16">
       <Container narrow>
+        <SessionGateWatcher
+          sessionId={sessionId}
+          isHolding={destination.type === "holding"}
+          advanceHref={destination.type === "module" ? `/dashboard/${sessionId}/modules/${destination.moduleKey}` : null}
+        />
         <p className="font-serif text-sm italic text-(--color-ink-muted)">
           Yutori Method™ Executive Leverage Blueprint
         </p>
@@ -51,12 +57,12 @@ export default async function ParticipantDashboardPage({
           <Card className="mt-6 border-(--color-accent)">
             {destination.type === "context" ? (
               <>
-                <p className="text-sm text-(--color-ink)">Complete your executive context</p>
+                <p className="text-sm text-(--color-ink)">A few details before we begin</p>
                 <p className="mt-1 text-sm text-(--color-ink-muted)">
                   A couple of quick questions to help your facilitator understand your starting
                   point.
                 </p>
-                <Link href={`/dashboard/${sessionId}/context`} className="mt-3 inline-block">
+                <Link href={`/dashboard/${sessionId}/intake`} className="mt-3 inline-block">
                   <Button>CONTINUE</Button>
                 </Link>
               </>

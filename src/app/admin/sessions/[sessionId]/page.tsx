@@ -40,7 +40,7 @@ export default async function SessionControlPanelPage({
 
   const [{ data: participants }, { data: recommendations }, { data: followUps }] = await Promise.all([
     participantIds.length > 0
-      ? supabase.from("participants").select("id, first_name, last_name, email").in("id", participantIds)
+      ? supabase.from("participants").select("id, first_name, last_name, email, company_name").in("id", participantIds)
       : Promise.resolve({ data: [] }),
     participantSessionIds.length > 0
       ? supabase.from("architecture_recommendations").select("participant_session_id").in("participant_session_id", participantSessionIds)
@@ -250,6 +250,7 @@ export default async function SessionControlPanelPage({
                   <tr className="border-b border-(--color-hairline) text-xs tracking-wide text-(--color-ink-muted) uppercase">
                     <th className="pb-2 pr-4">Name</th>
                     <th className="pb-2 pr-4">Email</th>
+                    <th className="pb-2 pr-4">Company</th>
                     <th className="pb-2 pr-4">Current module</th>
                     <th className="pb-2 pr-4">Status</th>
                     <th className="pb-2 pr-4">Blueprint ready?</th>
@@ -272,6 +273,9 @@ export default async function SessionControlPanelPage({
                         <td className="py-2 pr-4 text-(--color-ink-muted)">
                           {row.participant?.email}
                         </td>
+                        <td className="py-2 pr-4 text-(--color-ink-muted)">
+                          {row.participant?.company_name ?? "—"}
+                        </td>
                         <td className="py-2 pr-4">{row.currentModuleName ?? "—"}</td>
                         <td className="py-2 pr-4 capitalize">
                           {row.completion_state.replace("_", " ")}
@@ -285,7 +289,7 @@ export default async function SessionControlPanelPage({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="py-6 text-center text-(--color-ink-muted)">
+                      <td colSpan={8} className="py-6 text-center text-(--color-ink-muted)">
                         No one has registered yet.
                       </td>
                     </tr>

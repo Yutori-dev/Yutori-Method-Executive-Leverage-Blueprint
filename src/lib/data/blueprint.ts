@@ -4,6 +4,7 @@ import { getZoneOfInvestmentData, type ZoneOfInvestmentData } from "@/lib/data/z
 import { getExecutiveLeverageDiagnosticData, type ExecutiveLeverageProfileResult } from "@/lib/data/executiveLeverageDiagnostic";
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData, type ArchitectureData } from "@/lib/data/architecture";
+import type { CurrentSupportFlags } from "@/lib/currentSupportLabels";
 import type { LeverageLevel, SelfIdentification } from "@/types/database";
 
 export interface BlueprintDelegationOpportunity {
@@ -17,6 +18,13 @@ export interface BlueprintDelegationOpportunity {
 
 export interface BlueprintData {
   session: { name: string; organization: string | null };
+  participant: {
+    firstName: string;
+    lastName: string;
+    companyName: string | null;
+    currentRoleTitle: string | null;
+    currentSupport: CurrentSupportFlags;
+  };
   modules: { key: string; name: string; state: string; requiresLiveWorkshop: boolean }[];
   executiveLeverageProfile: ExecutiveLeverageProfileResult | null;
   selfIdentification: SelfIdentification | null;
@@ -56,10 +64,34 @@ export async function getBlueprintData(
       .select("white_whale, success_vision, success_vision_white_whale_followup")
       .eq("participant_session_id", participantSessionId)
       .maybeSingle(),
-    supabase.from("participant_sessions").select("self_identification").eq("id", participantSessionId).maybeSingle(),
+    supabase
+      .from("participant_sessions")
+      .select(
+        "self_identification, participants(first_name, last_name, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none)",
+      )
+      .eq("id", participantSessionId)
+      .maybeSingle(),
   ]);
 
   if (!session || !modules) return null;
+
+  const participantRow = participantSession?.participants as unknown as {
+    first_name: string;
+    last_name: string;
+    company_name: string | null;
+    current_role_title: string | null;
+    current_support_personal_assistant: boolean;
+    current_support_admin_or_va: boolean;
+    current_support_executive_assistant: boolean;
+    current_support_senior_executive_assistant: boolean;
+    current_support_head_of_operations: boolean;
+    current_support_chief_of_staff: boolean;
+    current_support_chief_integrator: boolean;
+    current_support_coo: boolean;
+    current_support_other: boolean;
+    current_support_other_text: string | null;
+    current_support_none: boolean;
+  } | null;
 
   const statusByModule = new Map((progress ?? []).map((p) => [p.module_id, p.status]));
 
@@ -82,6 +114,25 @@ export async function getBlueprintData(
 
   return {
     session: { name: session.name, organization: session.organization },
+    participant: {
+      firstName: participantRow?.first_name ?? "",
+      lastName: participantRow?.last_name ?? "",
+      companyName: participantRow?.company_name ?? null,
+      currentRoleTitle: participantRow?.current_role_title ?? null,
+      currentSupport: {
+        currentSupportPersonalAssistant: participantRow?.current_support_personal_assistant ?? false,
+        currentSupportAdminOrVa: participantRow?.current_support_admin_or_va ?? false,
+        currentSupportExecutiveAssistant: participantRow?.current_support_executive_assistant ?? false,
+        currentSupportSeniorExecutiveAssistant: participantRow?.current_support_senior_executive_assistant ?? false,
+        currentSupportHeadOfOperations: participantRow?.current_support_head_of_operations ?? false,
+        currentSupportChiefOfStaff: participantRow?.current_support_chief_of_staff ?? false,
+        currentSupportChiefIntegrator: participantRow?.current_support_chief_integrator ?? false,
+        currentSupportCoo: participantRow?.current_support_coo ?? false,
+        currentSupportOther: participantRow?.current_support_other ?? false,
+        currentSupportOtherText: participantRow?.current_support_other_text ?? null,
+        currentSupportNone: participantRow?.current_support_none ?? false,
+      },
+    },
     modules: modules.map((m) => ({
       key: m.key,
       name: m.name,

@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/Card";
 import { ZoneMatrix } from "@/components/participant/ZoneMatrix";
 import { CharacterPreview } from "@/components/participant/CharacterPreview";
 import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
+import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 import type { BlueprintData } from "@/lib/data/blueprint";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -30,6 +31,14 @@ export function BlueprintView({
         <p className="mt-1 text-sm text-(--color-ink-muted)">
           {data.session.name}
           {data.session.organization ? ` · ${data.session.organization}` : ""}
+        </p>
+        {data.participant.companyName || data.participant.currentRoleTitle ? (
+          <p className="mt-1 text-sm text-(--color-ink-muted)">
+            {[data.participant.currentRoleTitle, data.participant.companyName].filter(Boolean).join(" · ")}
+          </p>
+        ) : null}
+        <p className="mt-1 text-xs text-(--color-ink-muted)">
+          Current executive support: {formatCurrentSupport(data.participant.currentSupport)}
         </p>
       </div>
 

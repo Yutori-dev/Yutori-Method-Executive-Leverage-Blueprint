@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getSessionAggregates } from "@/lib/data/sessionAggregates";
 import { PresentationView } from "@/components/admin/PresentationView";
+import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 
 /** Brief section 19: Presentation Mode -- a facilitator-selectable, fully
  * anonymized view for projecting live during the in-person workshop.
@@ -25,6 +26,7 @@ export default async function PresentationModePage({
 
   return (
     <div>
+      <LiveRosterRefresher sessionId={sessionId} />
       <div className="flex items-center justify-between border-b border-white/10 bg-neutral-950 px-6 py-3">
         <p className="text-sm text-white/60">{session.name} — Presentation mode</p>
         <Link

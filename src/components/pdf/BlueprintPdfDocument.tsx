@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 import type { BlueprintData } from "@/lib/data/blueprint";
 
 const INK = "#1c1f26";
@@ -61,6 +62,10 @@ export function BlueprintPdfDocument({
         <Text style={styles.subtitle}>
           {data.session.name}
           {data.session.organization ? ` · ${data.session.organization}` : ""}
+          {data.participant.currentRoleTitle || data.participant.companyName
+            ? `\n${[data.participant.currentRoleTitle, data.participant.companyName].filter(Boolean).join(" · ")}`
+            : ""}
+          {`\nCurrent executive support: ${formatCurrentSupport(data.participant.currentSupport)}`}
         </Text>
 
         <Text style={styles.sectionTitle}>Character</Text>

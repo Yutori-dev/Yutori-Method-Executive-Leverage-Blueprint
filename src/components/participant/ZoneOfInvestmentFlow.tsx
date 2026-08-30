@@ -7,6 +7,7 @@ import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { HoldingState } from "./HoldingState";
+import { SessionGateWatcher } from "./SessionGateWatcher";
 import { ZoneMatrix } from "./ZoneMatrix";
 import { ZoneOfInvestmentViewedTracker } from "./ZoneOfInvestmentViewedTracker";
 import type { ZoneOfInvestmentData, ZoneOfInvestmentConfig } from "@/lib/data/zoneOfInvestment";
@@ -14,7 +15,7 @@ import { ZONE_OF_INVESTMENT_MIN_MAPPED, ZONE_OF_INVESTMENT_MAX_MAPPED } from "@/
 import type { RatingLevel } from "@/types/database";
 import { cn } from "@/lib/cn";
 
-type Phase = "mapping" | "result";
+type Phase = "selection" | "mapping" | "result";
 
 interface Rating {
   competency: RatingLevel | null;
@@ -25,24 +26,45 @@ export function ZoneOfInvestmentFlow({
   data,
   participantSessionId,
   moduleId,
+  sessionId,
   sessionPath,
   alreadyComplete,
 }: {
   data: ZoneOfInvestmentData;
   participantSessionId: string;
   moduleId: string;
+  sessionId: string;
   sessionPath: string;
   alreadyComplete: boolean;
 }) {
   const router = useRouter();
-  const [phase, setPhase] = useState<Phase>(() =>
-    data.mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED ? "result" : "mapping",
-  );
+  const alreadyRatedIds = data.ratings.map((r) => r.responsibilityId);
+  const [phase, setPhase] = useState<Phase>(() => {
+    if (data.mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED) return "result";
+    // A participant with existing ratings (rated under the previous flow,
+    // or a partial pass through the new one) skips straight to grading --
+    // the selection step is only needed to build that set from scratch.
+    return alreadyRatedIds.length > 0 ? "mapping" : "selection";
+  });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(alreadyRatedIds));
   const [ratings, setRatings] = useState<Record<string, Rating>>(() =>
     Object.fromEntries(data.ratings.map((r) => [r.responsibilityId, { competency: r.competency, passion: r.passion }])),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        if (next.size >= ZONE_OF_INVESTMENT_MAX_MAPPED) return prev;
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   const mappedIds = Object.entries(ratings)
     .filter(([, r]) => r.competency !== null && r.passion !== null)
@@ -97,34 +119,97 @@ export function ZoneOfInvestmentFlow({
     });
   }
 
-  if (phase === "mapping") {
+  if (phase === "selection") {
+    const canContinueSelection =
+      selectedIds.size >= ZONE_OF_INVESTMENT_MIN_MAPPED && selectedIds.size <= ZONE_OF_INVESTMENT_MAX_MAPPED;
     return (
       <div className="space-y-4">
         <Card>
           <p className="text-sm text-(--color-ink)">
             Identify 10 to 12 responsibilities that represent a significant investment of your
-            time and energy in a representative week. For each one, rate your Competency and
-            Passion as Low, Medium or High. Leave the remaining responsibilities blank.
+            time and energy in a representative week.
           </p>
           <RatingReference config={data.config} />
         </Card>
 
-        {data.library.map((r) => {
+        <Card>
+          <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Select 10–12 activities</p>
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {data.library.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => toggleSelected(r.id)}
+                className={cn(
+                  "rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                  selectedIds.has(r.id)
+                    ? "border-(--color-accent) bg-(--color-accent-soft)"
+                    : "border-(--color-hairline) hover:border-(--color-accent)",
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </Card>
+
+        <div className="sticky bottom-4 flex items-center gap-4 rounded-xl border border-(--color-hairline) bg-(--color-paper) px-4 py-3 shadow-sm">
+          <Button onClick={() => setPhase("mapping")} disabled={!canContinueSelection}>
+            CONTINUE
+          </Button>
+          <p
+            className={cn(
+              "text-sm",
+              canContinueSelection ? "text-(--color-ink-muted)" : "text-(--color-accent)",
+            )}
+          >
+            {selectedIds.size} of 10–12 selected
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "mapping") {
+    const selectedLibrary = data.library.filter((r) => selectedIds.has(r.id));
+    return (
+      <div className="space-y-4">
+        <Card>
+          <p className="text-sm text-(--color-ink)">
+            For each of your selected responsibilities, rate your Competency and Passion as Low,
+            Medium or High.
+          </p>
+          <RatingReference config={data.config} />
+        </Card>
+
+        <button
+          type="button"
+          onClick={() => setPhase("selection")}
+          className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+        >
+          ← Change selection
+        </button>
+
+        {selectedLibrary.map((r) => {
           const rating = ratings[r.id] ?? { competency: null, passion: null };
           return (
             <Card key={r.id}>
               <p className="text-(--color-ink)">{r.label}</p>
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <RatingPicker
-                  label="Competency"
-                  value={rating.competency}
-                  onChange={(v) => handleRate(r.id, "competency", v)}
-                />
-                <RatingPicker
-                  label="Passion"
-                  value={rating.passion}
-                  onChange={(v) => handleRate(r.id, "passion", v)}
-                />
+              <div className="mt-4 grid grid-cols-1 divide-y divide-(--color-hairline) sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                <div className="pb-4 sm:pr-6 sm:pb-0">
+                  <RatingPicker
+                    label="Competency"
+                    value={rating.competency}
+                    onChange={(v) => handleRate(r.id, "competency", v)}
+                  />
+                </div>
+                <div className="pt-4 sm:pt-0 sm:pl-6">
+                  <RatingPicker
+                    label="Passion"
+                    value={rating.passion}
+                    onChange={(v) => handleRate(r.id, "passion", v)}
+                  />
+                </div>
               </div>
             </Card>
           );
@@ -147,6 +232,7 @@ export function ZoneOfInvestmentFlow({
   if (!data.revealed) {
     return (
       <div className="space-y-4">
+        <SessionGateWatcher sessionId={sessionId} />
         <HoldingState sessionPath={sessionPath} />
         <button
           onClick={() => setPhase("mapping")}

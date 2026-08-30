@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
-import { hasCompletedExecutiveContext } from "@/lib/data/moduleZeroStatus";
+import { hasCompletedIntake } from "@/lib/data/moduleZeroStatus";
 import { resolveParticipantDestination } from "@/lib/moduleState";
 import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleContent";
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
@@ -47,7 +47,7 @@ export default async function ModulePage({
   // they haven't reached yet -- a late joiner in particular may find
   // several modules cohort-unlocked at once (see resolveParticipantDestination).
   if (currentModule.state !== "COMPLETE") {
-    const contextDone = await hasCompletedExecutiveContext(dashboard.participantSessionId);
+    const contextDone = await hasCompletedIntake();
     const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
     const destination = resolveParticipantDestination(contextDone, trackedModules);
     const isCurrentStep = destination.type === "module" && destination.moduleKey === moduleKey;
@@ -73,6 +73,7 @@ export default async function ModulePage({
         data={operatingAltitudeData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
+        sessionId={sessionId}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
       />
@@ -95,6 +96,7 @@ export default async function ModulePage({
         data={zoneData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
+        sessionId={sessionId}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
       />
