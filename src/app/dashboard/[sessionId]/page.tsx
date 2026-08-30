@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
-import { hasCompletedIntake } from "@/lib/data/moduleZeroStatus";
 import { resolveParticipantDestination } from "@/lib/moduleState";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
@@ -23,8 +22,7 @@ export default async function ParticipantDashboardPage({
 
   const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
   const completedCount = trackedModules.filter((m) => m.state === "COMPLETE").length;
-  const contextDone = await hasCompletedIntake();
-  const destination = resolveParticipantDestination(contextDone, trackedModules, {
+  const destination = resolveParticipantDestination(dashboard.intakeCompleted, trackedModules, {
     released: dashboard.session.workshopFeedbackReleased,
     submitted: dashboard.feedbackSubmitted,
   });

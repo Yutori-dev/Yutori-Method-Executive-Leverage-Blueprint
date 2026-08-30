@@ -139,11 +139,6 @@ async function runParticipantFlow(p: Provisioned, joinCode: string, sessionId: s
       .limit(10);
     const ids = (responsibilities ?? []).map((r) => r.id);
 
-    await rpcStep("select_responsibilities", client, "select_responsibilities", {
-      p_participant_session_id: participantSessionId,
-      p_responsibility_ids: ids,
-    });
-
     const ratingPairs: ["low" | "medium" | "high", "low" | "medium" | "high"][] = [
       ["high", "high"], ["high", "medium"], ["medium", "high"], ["medium", "medium"], ["high", "low"],
       ["low", "high"], ["medium", "low"], ["low", "medium"], ["low", "low"], ["high", "high"],

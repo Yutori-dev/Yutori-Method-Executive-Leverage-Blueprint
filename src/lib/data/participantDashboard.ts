@@ -18,6 +18,7 @@ export interface ParticipantDashboardData {
   session: { id: string; name: string; organization: string | null; status: string; workshopFeedbackReleased: boolean };
   participantSessionId: string;
   feedbackSubmitted: boolean;
+  intakeCompleted: boolean;
   modules: DashboardModule[];
 }
 
@@ -42,7 +43,7 @@ export async function getParticipantDashboard(
   // test writeup).
   const [{ data: participant }, { data: session }, { data: modules }, { data: participantSession }] =
     await Promise.all([
-      supabase.from("participants").select("first_name, last_name").eq("id", user.id).maybeSingle(),
+      supabase.from("participants").select("first_name, last_name, intake_completed_at").eq("id", user.id).maybeSingle(),
       supabase
         .from("sessions")
         .select("id, name, organization, status, active_module_id, workshop_feedback_released")
@@ -107,6 +108,7 @@ export async function getParticipantDashboard(
     },
     participantSessionId: participantSession.id,
     feedbackSubmitted,
+    intakeCompleted: participant.intake_completed_at != null,
     modules: dashboardModules,
   };
 }
