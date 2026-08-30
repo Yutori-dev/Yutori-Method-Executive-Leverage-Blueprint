@@ -170,11 +170,9 @@ worth getting the actual Section 4 spec from Nicole whenever it's ready.
       placeholder, privacy note all verified byte-for-byte against the DB
       content. No changes needed.
 - [x] **Leadership Wiring** — exact match on header/prompt/descriptions.
-      **Found and left open**: `leadership_wiring_config.dashboard_note`
-      (the facilitator-dashboard "what this represents" caption the spec
-      asks for) is seeded in the DB but never fetched or rendered anywhere
-      — minor polish gap, not fixed this round, flagging so it doesn't get
-      lost.
+      Found `leadership_wiring_config.dashboard_note` seeded in the DB but
+      never rendered anywhere — fixed, now shows under the Visionary/
+      Integrator/Hybrid distribution on the facilitator aggregate dashboard.
 - [x] **Zone of Investment** — content (21 responsibilities, 9 zone
       names/macro-zones, competency/passion definitions, reflection
       prompts) matches exactly. Fixed two missing headers ("Map Your
@@ -215,24 +213,55 @@ worth getting the actual Section 4 spec from Nicole whenever it's ready.
       selection, strongest-barrier ties, "no primary barrier surfaced"
       fallback, ownership-transfer flagging with correct tiebreak, and
       per-question autosave gated on module unlock.
-- [ ] Admin editing of Delegation Beliefs copy (intro text, domain
-      interpretation copy, question wording) — not built. Content is
-      correct because it's seeded directly from the spec via migration;
-      there's just no admin UI to edit it later without another migration.
+- [x] Admin editing of Delegation Beliefs copy — `/admin/delegation-beliefs-config`:
+      intro copy, per-domain interpretation copy (3 domains × 3 ranges),
+      thresholds, and all 15 questions (prompt + domain, or opportunity
+      label + both interpretation texts for Ownership Transfer
+      Indicators). Saves as a new version, same as the Diagnostic. Added
+      the admin write RLS policies this needed (only had a read policy
+      from the original build). Verified live: non-admin writes rejected.
 
-## Still to do
+## Priority Delegation Opportunities enhancement — done
 
-- [ ] **Priority Delegation Opportunities enhancement** (its own full
-      spec, not yet started this round): the pressure-test step (Yes/
-      Somewhat/No after selecting), the "revisit vs. keep selections"
-      flow, and the fewer-than-3-eligible / zero-eligible copy and
-      required-count adjustment. The existing fewer-than-3 handling
-      already works functionally, just with different wording than the
-      spec.
-- [ ] **Participant Intake**: admin edit of a participant's own intake
-      data, and architecture-recalculation flagging on edit-after-
-      generation (both already flagged as gaps in round 4, still open).
-- [ ] **Leadership Wiring**: render the seeded `dashboard_note` on the
-      facilitator dashboard (see audit above).
-- [ ] Diagnostic response-option wording — resolved this round (see
-      above); the earlier "send me the text" ask is now moot.
+- [x] Pressure-test step (Yes/Somewhat/No) after selecting; Somewhat/No
+      offers "revisit my selections" (returns to selection, retained and
+      editable) or "keep these selections" (proceeds to confirmation).
+      Required selection count now adapts to eligibility — fewer than 3
+      eligible lowers the bar to match, zero eligible skips straight to
+      the "none assigned" confirmation. New `priority_delegation_pressure_test`
+      table + RPCs; `select_priority_delegation_opportunities` reworked
+      for the variable count and clears any prior pressure-test answer
+      when selections change.
+- [x] Facilitator dashboard: added a Pressure Test distribution card.
+- [x] All copy admin-editable at `/admin/priority-delegation-config`
+      (intro, fewer-than-three, zero-eligible, zone descriptions,
+      pressure-test question, follow-up copy, confirmation copy) — the
+      participant flow reads from this table now, not hardcoded strings.
+- [x] Verified live: full select → pressure test → revisit → reselect
+      cycle, and required-count enforcement with only 2 of 3 eligible.
+
+## Participant Intake — remaining items done
+
+- [x] Admin can now edit a participant's Company/Role/Current Executive
+      Support directly from the participant detail page (new
+      `admin_update_participant_intake` RPC, admin-gated, edit/view toggle).
+- [x] Architecture-recalculation flagging: editing intake (by the
+      participant or an admin) after an architecture recommendation
+      already exists flags it (`needs_recalculation`), surfaced as a note
+      on the Architecture card in the admin view. Verified live.
+- [ ] Part 5's actual recommendation-engine role-mapping logic is still
+      not built — the spec itself calls this "eventual" future work, and
+      current-support data still doesn't influence the architecture
+      recommendation's output. Everything else in the Intake spec is done.
+
+## Genuinely still open (not something to silently resolve)
+
+- [ ] **Zone of Investment selection-step conflict** (see audit above) —
+      your explicit ask vs. Nicole's formal spec disagree on whether
+      there's a separate "pick your 10-12 first" screen. Left as you
+      asked; still needs a decision on whether to tell Nicole or revert.
+- [ ] **Section 4 (the `leverage` module / "Executive Support Audit")** —
+      confirmed completely unbuilt, no spec received yet. Doesn't block
+      anything else.
+- [ ] **Live support during the Sept 3, 9-11am EST session** — a staffing
+      commitment, not a build item.
