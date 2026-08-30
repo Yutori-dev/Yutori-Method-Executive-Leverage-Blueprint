@@ -2,6 +2,7 @@ import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { LeverageLevel, MacroZone, RatingLevel, ArchitectureReaction } from "@/types/database";
 import type { CurrentSupportFlags } from "@/lib/currentSupportLabels";
+import { getDelegationBeliefsData, getPrimaryDelegationBarriers, type DelegationBarrier } from "@/lib/data/delegationBeliefs";
 
 export interface AdminProfileAnswer {
   prompt: string;
@@ -43,7 +44,13 @@ export interface AdminParticipantProfile {
   operatingAltitude: AdminProfileAnswer[];
   zoneOfInvestment: AdminProfileResponsibility[];
   delegation: {
-    readinessResult: { overallResult: string | null; interpretation: string | null } | null;
+    beliefs: {
+      trustControlAvg: number;
+      teamOutcomesAvg: number;
+      workloadResourcesAvg: number;
+      primaryBarriers: DelegationBarrier[];
+      flaggedOpportunities: { id: string; label: string; interpretation: string }[];
+    } | null;
     priorities: AdminProfilePriority[];
   };
   architecture: {
@@ -135,24 +142,9 @@ export async function getAdminParticipantProfile(
       });
   }
 
-  const { data: delegationAssessment } = await supabase
-    .from("assessments")
-    .select("id")
-    .eq("key", "dev_demo_delegation_beliefs")
-    .maybeSingle();
-
-  let readinessResult: { overallResult: string | null; interpretation: string | null } | null = null;
-  if (delegationAssessment) {
-    const { data: result } = await supabase
-      .from("assessment_results")
-      .select("overall_result, interpretation")
-      .eq("participant_session_id", participantSessionId)
-      .eq("assessment_id", delegationAssessment.id)
-      .maybeSingle();
-    if (result) {
-      readinessResult = { overallResult: result.overall_result, interpretation: result.interpretation };
-    }
-  }
+  const delegationBeliefsData = await getDelegationBeliefsData(participantSessionId);
+  const delegationBeliefsResult = delegationBeliefsData?.result ?? null;
+  const primaryBarriers = delegationBeliefsData ? getPrimaryDelegationBarriers(delegationBeliefsData) : [];
 
   return {
     participant: {
@@ -198,7 +190,15 @@ export async function getAdminParticipantProfile(
       };
     }),
     delegation: {
-      readinessResult,
+      beliefs: delegationBeliefsResult
+        ? {
+            trustControlAvg: delegationBeliefsResult.trustControlAvg,
+            teamOutcomesAvg: delegationBeliefsResult.teamOutcomesAvg,
+            workloadResourcesAvg: delegationBeliefsResult.workloadResourcesAvg,
+            primaryBarriers,
+            flaggedOpportunities: delegationBeliefsResult.flaggedOpportunities,
+          }
+        : null,
       priorities: (priorityRows ?? []).map((p) => {
         const responsibility = p.responsibilities as unknown as { label: string };
         return {

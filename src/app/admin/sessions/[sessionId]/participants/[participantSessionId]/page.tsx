@@ -120,14 +120,43 @@ export default async function AdminParticipantProfilePage({
             </Card>
           ) : null}
 
-          {profile.delegation.readinessResult || profile.delegation.priorities.length > 0 ? (
+          {profile.delegation.beliefs || profile.delegation.priorities.length > 0 ? (
             <Card>
               <h2 className="font-serif text-lg">Delegation</h2>
-              {profile.delegation.readinessResult ? (
-                <p className="mt-2 text-sm text-(--color-ink-muted)">
-                  {profile.delegation.readinessResult.overallResult ?? "Result pending"} —{" "}
-                  {profile.delegation.readinessResult.interpretation}
-                </p>
+              {profile.delegation.beliefs ? (
+                <div className="mt-2 space-y-3">
+                  <dl className="grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <dt className="text-xs text-(--color-ink-muted)">Trust & Control</dt>
+                      <dd className="mt-0.5">{profile.delegation.beliefs.trustControlAvg.toFixed(1)} / 5</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-(--color-ink-muted)">Team & Outcomes</dt>
+                      <dd className="mt-0.5">{profile.delegation.beliefs.teamOutcomesAvg.toFixed(1)} / 5</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-(--color-ink-muted)">Workload & Resources</dt>
+                      <dd className="mt-0.5">{profile.delegation.beliefs.workloadResourcesAvg.toFixed(1)} / 5</dd>
+                    </div>
+                  </dl>
+                  {profile.delegation.beliefs.primaryBarriers.length > 0 ? (
+                    <p className="text-sm text-(--color-ink-muted)">
+                      Strongest barrier: {profile.delegation.beliefs.primaryBarriers.map((b) => b.domainLabel).join(", ")}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-(--color-ink-muted)">No primary barrier surfaced.</p>
+                  )}
+                  {profile.delegation.beliefs.flaggedOpportunities.length > 0 ? (
+                    <div>
+                      <p className="text-xs text-(--color-ink-muted)">Ownership transfer opportunities:</p>
+                      <ul className="mt-1 space-y-1 text-sm">
+                        {profile.delegation.beliefs.flaggedOpportunities.map((o) => (
+                          <li key={o.id}>{o.label}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
               {profile.delegation.priorities.length > 0 ? (
                 <ol className="mt-3 space-y-1.5">

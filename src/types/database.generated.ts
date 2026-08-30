@@ -315,6 +315,213 @@ export type Database = {
         }
         Relationships: []
       }
+      delegation_beliefs_config: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          intro_copy: string
+          ownership_transfer_intro: string
+          team_outcomes_high_copy: string
+          team_outcomes_low_copy: string
+          team_outcomes_mid_copy: string
+          threshold_low_max: number
+          threshold_mid_max: number
+          trust_control_high_copy: string
+          trust_control_low_copy: string
+          trust_control_mid_copy: string
+          version: number
+          workload_resources_high_copy: string
+          workload_resources_low_copy: string
+          workload_resources_mid_copy: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          intro_copy: string
+          ownership_transfer_intro: string
+          team_outcomes_high_copy: string
+          team_outcomes_low_copy: string
+          team_outcomes_mid_copy: string
+          threshold_low_max?: number
+          threshold_mid_max?: number
+          trust_control_high_copy: string
+          trust_control_low_copy: string
+          trust_control_mid_copy: string
+          version?: number
+          workload_resources_high_copy: string
+          workload_resources_low_copy: string
+          workload_resources_mid_copy: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          intro_copy?: string
+          ownership_transfer_intro?: string
+          team_outcomes_high_copy?: string
+          team_outcomes_low_copy?: string
+          team_outcomes_mid_copy?: string
+          threshold_low_max?: number
+          threshold_mid_max?: number
+          trust_control_high_copy?: string
+          trust_control_low_copy?: string
+          trust_control_mid_copy?: string
+          version?: number
+          workload_resources_high_copy?: string
+          workload_resources_low_copy?: string
+          workload_resources_mid_copy?: string
+        }
+        Relationships: []
+      }
+      delegation_beliefs_questions: {
+        Row: {
+          active: boolean
+          config_id: string
+          domain: string | null
+          id: string
+          opportunity_label: string | null
+          prompt: string
+          rarely_interpretation: string | null
+          section: string
+          sometimes_interpretation: string | null
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          config_id: string
+          domain?: string | null
+          id?: string
+          opportunity_label?: string | null
+          prompt: string
+          rarely_interpretation?: string | null
+          section: string
+          sometimes_interpretation?: string | null
+          sort_order: number
+        }
+        Update: {
+          active?: boolean
+          config_id?: string
+          domain?: string | null
+          id?: string
+          opportunity_label?: string | null
+          prompt?: string
+          rarely_interpretation?: string | null
+          section?: string
+          sometimes_interpretation?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegation_beliefs_questions_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "delegation_beliefs_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delegation_beliefs_responses: {
+        Row: {
+          created_at: string
+          id: string
+          participant_session_id: string
+          question_id: string
+          score: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_session_id: string
+          question_id: string
+          score: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_session_id?: string
+          question_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegation_beliefs_responses_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: false
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegation_beliefs_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "delegation_beliefs_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delegation_beliefs_results: {
+        Row: {
+          calculated_at: string
+          config_id: string
+          flagged_opportunity_question_ids: string[]
+          id: string
+          participant_session_id: string
+          priority_opportunity_question_id: string | null
+          strongest_barrier_domains: string[]
+          team_outcomes_avg: number
+          trust_control_avg: number
+          workload_resources_avg: number
+        }
+        Insert: {
+          calculated_at?: string
+          config_id: string
+          flagged_opportunity_question_ids?: string[]
+          id?: string
+          participant_session_id: string
+          priority_opportunity_question_id?: string | null
+          strongest_barrier_domains?: string[]
+          team_outcomes_avg: number
+          trust_control_avg: number
+          workload_resources_avg: number
+        }
+        Update: {
+          calculated_at?: string
+          config_id?: string
+          flagged_opportunity_question_ids?: string[]
+          id?: string
+          participant_session_id?: string
+          priority_opportunity_question_id?: string | null
+          strongest_barrier_domains?: string[]
+          team_outcomes_avg?: number
+          trust_control_avg?: number
+          workload_resources_avg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegation_beliefs_results_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "delegation_beliefs_config"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegation_beliefs_results_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegation_beliefs_results_priority_opportunity_question_i_fkey"
+            columns: ["priority_opportunity_question_id"]
+            isOneToOne: false
+            referencedRelation: "delegation_beliefs_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follow_up_interests: {
         Row: {
           id: string
@@ -1336,6 +1543,27 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      calculate_delegation_beliefs_results: {
+        Args: { p_participant_session_id: string }
+        Returns: {
+          calculated_at: string
+          config_id: string
+          flagged_opportunity_question_ids: string[]
+          id: string
+          participant_session_id: string
+          priority_opportunity_question_id: string | null
+          strongest_barrier_domains: string[]
+          team_outcomes_avg: number
+          trust_control_avg: number
+          workload_resources_avg: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "delegation_beliefs_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       calculate_delegation_readiness: {
         Args: { p_assessment_key: string; p_participant_session_id: string }
         Returns: {
@@ -1490,6 +1718,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_delegation_belief_response: {
+        Args: {
+          p_participant_session_id: string
+          p_question_id: string
+          p_score: number
+        }
+        Returns: undefined
       }
       save_participant_intake: {
         Args: {

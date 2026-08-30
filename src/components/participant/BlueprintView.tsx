@@ -92,16 +92,36 @@ export function BlueprintView({
         </section>
       ) : null}
 
-      {data.delegation.readinessResult || data.delegation.priorityOpportunities.length > 0 ? (
+      {data.delegation.primaryBarriers.length > 0 ||
+      data.delegation.priorityOwnershipTransferOpportunity ||
+      data.delegation.priorityOpportunities.length > 0 ? (
         <section>
           <h2 className="font-serif text-xl">Delegation</h2>
-          {data.delegation.readinessResult ? (
+          {data.delegation.primaryBarriers.length > 0 ? (
             <Card className="mt-3">
-              <p className="text-sm text-(--color-ink)">
-                {data.delegation.readinessResult.overallResult ?? "Delegation Readiness result pending"}
+              <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+                Primary Delegation Barrier
               </p>
-              <p className="mt-2 text-sm text-(--color-ink-muted)">
-                {data.delegation.readinessResult.interpretation}
+              <div className="mt-2 space-y-3">
+                {data.delegation.primaryBarriers.map((b) => (
+                  <div key={b.domain}>
+                    <p className="text-sm text-(--color-ink)">
+                      {b.domainLabel} — {b.avg.toFixed(1)} / 5
+                    </p>
+                    <p className="mt-1 text-sm text-(--color-ink-muted)">{b.interpretation}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+          {data.delegation.priorityOwnershipTransferOpportunity ? (
+            <Card className="mt-3">
+              <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+                Priority Ownership Transfer Opportunity
+              </p>
+              <p className="mt-2 text-sm text-(--color-ink)">{data.delegation.priorityOwnershipTransferOpportunity.label}</p>
+              <p className="mt-1 text-sm text-(--color-ink-muted)">
+                {data.delegation.priorityOwnershipTransferOpportunity.interpretation}
               </p>
             </Card>
           ) : null}

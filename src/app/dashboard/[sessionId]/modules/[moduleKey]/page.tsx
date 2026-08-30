@@ -3,9 +3,10 @@ import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
 import { hasCompletedIntake } from "@/lib/data/moduleZeroStatus";
 import { resolveParticipantDestination } from "@/lib/moduleState";
-import { getDemoAssessment, getDemoAssessmentByKey } from "@/lib/data/moduleContent";
+import { getDemoAssessment } from "@/lib/data/moduleContent";
 import { getZoneOfInvestmentData } from "@/lib/data/zoneOfInvestment";
 import { getDelegationCandidates } from "@/lib/data/delegation";
+import { getDelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 import { getArchitectureData } from "@/lib/data/architecture";
 import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
 import { getExecutiveLeverageDiagnosticData } from "@/lib/data/executiveLeverageDiagnostic";
@@ -20,8 +21,6 @@ import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
 import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitudeFlow";
 import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
-
-const DELEGATION_BELIEFS_ASSESSMENT_KEY = "dev_demo_delegation_beliefs";
 
 const WIDE_MODULES = new Set(["current_structure", "delegation"]);
 
@@ -102,14 +101,13 @@ export default async function ModulePage({
       />
     );
   } else if (moduleKey === "delegation") {
-    const [assessment, candidates] = await Promise.all([
-      getDemoAssessmentByKey(DELEGATION_BELIEFS_ASSESSMENT_KEY, dashboard.participantSessionId),
+    const [delegationBeliefsData, candidates] = await Promise.all([
+      getDelegationBeliefsData(dashboard.participantSessionId),
       getDelegationCandidates(dashboard.participantSessionId),
     ]);
     content = (
       <DelegationFlow
-        assessment={assessment}
-        assessmentKey={DELEGATION_BELIEFS_ASSESSMENT_KEY}
+        delegationBeliefsData={delegationBeliefsData}
         candidates={candidates}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}

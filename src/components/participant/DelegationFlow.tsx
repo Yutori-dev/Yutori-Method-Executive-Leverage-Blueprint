@@ -3,38 +3,19 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AssessmentForm } from "./AssessmentForm";
-import { calculateDelegationReadiness, selectPriorityDelegationOpportunities } from "@/lib/actions/zone";
+import { DelegationBeliefsFlow } from "./DelegationBeliefsFlow";
+import { selectPriorityDelegationOpportunities } from "@/lib/actions/zone";
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import type { DemoAssessment } from "@/lib/data/moduleContent";
-import type { DelegationCandidatesData, DelegationReadinessResult } from "@/lib/data/delegation";
+import type { DelegationCandidatesData } from "@/lib/data/delegation";
+import type { DelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 
 const REQUIRED_SELECTIONS = 3;
 
-function titleCase(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
-}
-
-/** Highest-strength dimension / primary barrier (brief section 13) --
- * a generic "which dimension scored highest/lowest" reading of whatever
- * dimensions the configured questions define, not final Yutori
- * interpretation copy (that stays content-dependent). */
-function strengthAndBarrier(dimensionScores: Record<string, number>) {
-  const entries = Object.entries(dimensionScores).filter(([, v]) => typeof v === "number");
-  if (entries.length < 2) return null;
-  const sorted = [...entries].sort((a, b) => b[1] - a[1]);
-  const [highestDimension] = sorted[0];
-  const [lowestDimension] = sorted[sorted.length - 1];
-  if (highestDimension === lowestDimension) return null;
-  return { highestDimension, lowestDimension };
-}
-
 export function DelegationFlow({
-  assessment,
-  assessmentKey,
+  delegationBeliefsData,
   candidates,
   participantSessionId,
   moduleId,
@@ -42,8 +23,7 @@ export function DelegationFlow({
   sessionPath,
   alreadyComplete,
 }: {
-  assessment: DemoAssessment | null;
-  assessmentKey: string;
+  delegationBeliefsData: DelegationBeliefsData | null;
   candidates: DelegationCandidatesData;
   participantSessionId: string;
   moduleId: string;
@@ -52,37 +32,13 @@ export function DelegationFlow({
   alreadyComplete: boolean;
 }) {
   const router = useRouter();
-  const [requiredAnswered, setRequiredAnswered] = useState(candidates.readinessResult !== null);
-  const [readinessResult, setReadinessResult] = useState<DelegationReadinessResult | null>(
-    candidates.readinessResult,
-  );
+  const [beliefsComplete, setBeliefsComplete] = useState(delegationBeliefsData?.result !== null && delegationBeliefsData?.result !== undefined);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(candidates.currentSelections.map((s) => s.responsibilityId)),
   );
   const [prioritiesSaved, setPrioritiesSaved] = useState(candidates.currentSelections.length === REQUIRED_SELECTIONS);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  function handleCalculateReadiness() {
-    setErrorMessage(null);
-    startTransition(async () => {
-      const result = await calculateDelegationReadiness({
-        participantSessionId,
-        assessmentKey,
-        sessionPath,
-      });
-      if (!result.ok) {
-        setErrorMessage(result.message);
-        return;
-      }
-      router.refresh();
-      setReadinessResult({
-        overallResult: result.overallResult,
-        interpretation: result.interpretation,
-        dimensionScores: result.dimensionScores,
-      });
-    });
-  }
 
   function toggleCandidate(id: string) {
     setSelectedIds((prev) => {
@@ -120,75 +76,32 @@ export function DelegationFlow({
     });
   }
 
-  const canComplete = requiredAnswered && readinessResult !== null && prioritiesSaved;
+  const canComplete = beliefsComplete && prioritiesSaved;
 
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="font-serif text-xl">Delegation Beliefs</h2>
-        <div className="mt-4">
-          {assessment ? (
-            <AssessmentForm
-              assessment={assessment}
-              participantSessionId={participantSessionId}
-              moduleId={moduleId}
-              moduleKey="delegation"
-              sessionPath={sessionPath}
-              alreadyComplete={alreadyComplete}
-              isPlaceholder
-              hideCompleteButton
-              onRequiredAnsweredChange={setRequiredAnswered}
-            />
-          ) : (
-            <Card>
-              <p className="text-sm text-(--color-ink-muted)">
-                [YUTORI CONTENT PENDING] The Delegation Beliefs assessment has not been configured
-                yet.
-              </p>
-            </Card>
-          )}
-        </div>
+        {delegationBeliefsData ? (
+          <DelegationBeliefsFlow
+            data={delegationBeliefsData}
+            participantSessionId={participantSessionId}
+            sessionPath={sessionPath}
+            onComplete={() => {
+              setBeliefsComplete(true);
+              router.refresh();
+            }}
+          />
+        ) : (
+          <Card>
+            <p className="text-sm text-(--color-ink-muted)">
+              [YUTORI CONTENT PENDING] The Delegation Beliefs assessment has not been configured
+              yet.
+            </p>
+          </Card>
+        )}
       </section>
 
-      {requiredAnswered ? (
-        <section>
-          <h2 className="font-serif text-xl">Delegation Readiness</h2>
-          <div className="mt-4">
-            {readinessResult ? (
-              <Card>
-                <p className="text-(--color-ink)">
-                  {readinessResult.overallResult ?? "Your Delegation Readiness result is pending."}
-                </p>
-                <p className="mt-2 text-sm text-(--color-ink-muted)">{readinessResult.interpretation}</p>
-                {(() => {
-                  const sb = strengthAndBarrier(readinessResult.dimensionScores);
-                  if (!sb) return null;
-                  return (
-                    <div className="mt-4 grid grid-cols-2 gap-4 border-t border-(--color-hairline) pt-4">
-                      <div>
-                        <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
-                          Highest-strength dimension
-                        </p>
-                        <p className="mt-1 text-sm text-(--color-ink)">{titleCase(sb.highestDimension)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary barrier</p>
-                        <p className="mt-1 text-sm text-(--color-ink)">{titleCase(sb.lowestDimension)}</p>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </Card>
-            ) : (
-              <Button onClick={handleCalculateReadiness} disabled={isPending}>
-                {isPending ? "Calculating..." : "See my Delegation Readiness"}
-              </Button>
-            )}
-          </div>
-        </section>
-      ) : null}
-
-      {readinessResult ? (
+      {beliefsComplete ? (
         <section>
           <h2 className="font-serif text-xl">Priority Delegation Opportunities</h2>
           <p className="mt-1 text-sm text-(--color-ink-muted)">

@@ -5,6 +5,12 @@ import { getExecutiveLeverageDiagnosticData, type ExecutiveLeverageProfileResult
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData, type ArchitectureData } from "@/lib/data/architecture";
 import type { CurrentSupportFlags } from "@/lib/currentSupportLabels";
+import {
+  getDelegationBeliefsData,
+  getPrimaryDelegationBarriers,
+  getPriorityOwnershipTransferOpportunity,
+  type DelegationBarrier,
+} from "@/lib/data/delegationBeliefs";
 import type { LeverageLevel, SelfIdentification } from "@/types/database";
 
 export interface BlueprintDelegationOpportunity {
@@ -30,7 +36,8 @@ export interface BlueprintData {
   selfIdentification: SelfIdentification | null;
   zone: ZoneOfInvestmentData;
   delegation: {
-    readinessResult: { overallResult: string | null; interpretation: string | null } | null;
+    primaryBarriers: DelegationBarrier[];
+    priorityOwnershipTransferOpportunity: { label: string; interpretation: string } | null;
     priorityOpportunities: BlueprintDelegationOpportunity[];
   };
   architecture: ArchitectureData;
@@ -95,12 +102,17 @@ export async function getBlueprintData(
 
   const statusByModule = new Map((progress ?? []).map((p) => [p.module_id, p.status]));
 
-  const [diagnostic, zone, delegationCandidates, architecture] = await Promise.all([
+  const [diagnostic, zone, delegationCandidates, architecture, delegationBeliefsData] = await Promise.all([
     getExecutiveLeverageDiagnosticData(participantSessionId),
     getZoneOfInvestmentData(sessionId, participantSessionId),
     getDelegationCandidates(participantSessionId),
     getArchitectureData(sessionId, participantSessionId),
+    getDelegationBeliefsData(participantSessionId),
   ]);
+
+  const priorityOwnershipTransferOpportunity = delegationBeliefsData
+    ? getPriorityOwnershipTransferOpportunity(delegationBeliefsData)
+    : null;
 
   // leverage_level_snapshot is already in delegationCandidates.currentSelections
   // (getDelegationCandidates fetches it unconditionally, it's cheap) -- no
@@ -143,11 +155,9 @@ export async function getBlueprintData(
     selfIdentification: (participantSession?.self_identification as SelfIdentification | null) ?? null,
     zone,
     delegation: {
-      readinessResult: delegationCandidates.readinessResult
-        ? {
-            overallResult: delegationCandidates.readinessResult.overallResult,
-            interpretation: delegationCandidates.readinessResult.interpretation,
-          }
+      primaryBarriers: delegationBeliefsData ? getPrimaryDelegationBarriers(delegationBeliefsData) : [],
+      priorityOwnershipTransferOpportunity: priorityOwnershipTransferOpportunity
+        ? { label: priorityOwnershipTransferOpportunity.label, interpretation: priorityOwnershipTransferOpportunity.interpretation }
         : null,
       priorityOpportunities,
     },

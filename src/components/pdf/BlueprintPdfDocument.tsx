@@ -115,15 +115,29 @@ export function BlueprintPdfDocument({
           </>
         ) : null}
 
-        {data.delegation.readinessResult || data.delegation.priorityOpportunities.length > 0 ? (
+        {data.delegation.primaryBarriers.length > 0 ||
+        data.delegation.priorityOwnershipTransferOpportunity ||
+        data.delegation.priorityOpportunities.length > 0 ? (
           <>
             <Text style={styles.sectionTitle}>Delegation</Text>
-            {data.delegation.readinessResult ? (
+            {data.delegation.primaryBarriers.length > 0 ? (
               <View style={styles.card}>
-                <Text style={styles.value}>
-                  {data.delegation.readinessResult.overallResult ?? "Delegation Readiness result pending"}
-                </Text>
-                <Text style={styles.label}>{data.delegation.readinessResult.interpretation}</Text>
+                <Text style={{ ...styles.label, marginBottom: 6 }}>Primary Delegation Barrier</Text>
+                {data.delegation.primaryBarriers.map((b) => (
+                  <View key={b.domain} style={{ marginBottom: 6 }}>
+                    <Text style={styles.value}>
+                      {b.domainLabel} — {b.avg.toFixed(1)} / 5
+                    </Text>
+                    <Text style={styles.label}>{b.interpretation}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            {data.delegation.priorityOwnershipTransferOpportunity ? (
+              <View style={styles.card}>
+                <Text style={{ ...styles.label, marginBottom: 6 }}>Priority Ownership Transfer Opportunity</Text>
+                <Text style={styles.value}>{data.delegation.priorityOwnershipTransferOpportunity.label}</Text>
+                <Text style={styles.label}>{data.delegation.priorityOwnershipTransferOpportunity.interpretation}</Text>
               </View>
             ) : null}
             {data.delegation.priorityOpportunities.length > 0 ? (
