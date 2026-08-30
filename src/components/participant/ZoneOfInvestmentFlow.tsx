@@ -125,7 +125,8 @@ export function ZoneOfInvestmentFlow({
     return (
       <div className="space-y-4">
         <Card>
-          <p className="text-sm text-(--color-ink)">
+          <h2 className="font-serif text-xl">Map Your Current Responsibilities</h2>
+          <p className="mt-3 text-sm text-(--color-ink)">
             Identify 10 to 12 responsibilities that represent a significant investment of your
             time and energy in a representative week.
           </p>
@@ -175,7 +176,8 @@ export function ZoneOfInvestmentFlow({
     return (
       <div className="space-y-4">
         <Card>
-          <p className="text-sm text-(--color-ink)">
+          <h2 className="font-serif text-xl">Map Your Current Responsibilities</h2>
+          <p className="mt-3 text-sm text-(--color-ink)">
             For each of your selected responsibilities, rate your Competency and Passion as Low,
             Medium or High.
           </p>
@@ -251,7 +253,8 @@ export function ZoneOfInvestmentFlow({
     <div className="space-y-6">
       <ZoneOfInvestmentViewedTracker shouldTrack={!data.alreadyViewed} participantSessionId={participantSessionId} />
       <Card>
-        <p className="text-sm text-(--color-ink)">
+        <h2 className="font-serif text-xl">Your Zone of Investment Map</h2>
+        <p className="mt-3 text-sm text-(--color-ink)">
           Here is where your current responsibilities fall based on your Competency and Passion
           ratings.
         </p>
