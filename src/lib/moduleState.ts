@@ -49,6 +49,7 @@ export type ParticipantDestination =
   | { type: "context" }
   | { type: "module"; moduleKey: string }
   | { type: "holding" }
+  | { type: "final-feedback" }
   | { type: "all-done" };
 
 /**
@@ -64,6 +65,7 @@ export type ParticipantDestination =
 export function resolveParticipantDestination(
   contextDone: boolean,
   modules: { key: string; state: ModuleDisplayState; requiresLiveWorkshop: boolean; sortOrder: number }[],
+  workshopFeedback?: { released: boolean; submitted: boolean },
 ): ParticipantDestination {
   if (!contextDone) return { type: "context" };
 
@@ -73,7 +75,10 @@ export function resolveParticipantDestination(
 
   const firstIncomplete = trackedModules.find((m) => m.state !== "COMPLETE");
 
-  if (!firstIncomplete) return { type: "all-done" };
+  if (!firstIncomplete) {
+    if (workshopFeedback?.released && !workshopFeedback.submitted) return { type: "final-feedback" };
+    return { type: "all-done" };
+  }
   if (firstIncomplete.state === "LOCKED") return { type: "holding" };
   return { type: "module", moduleKey: firstIncomplete.key };
 }

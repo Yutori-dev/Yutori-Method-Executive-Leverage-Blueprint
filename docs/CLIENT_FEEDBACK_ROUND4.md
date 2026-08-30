@@ -51,23 +51,35 @@ order they were mentioned.
 
 ## Final Workshop Feedback / Review step (new)
 
-- [ ] Admin-gated release (mirrors the `architecture_revealed` /
+- [x] Admin-gated release (mirrors the `architecture_revealed` /
       `zone_of_investment_revealed` boolean + RPC pattern already used
-      three times in this app).
-- [ ] On release, every currently-live, eligible participant is
-      auto-navigated straight to it (same realtime mechanism as the module
-      push above).
-- [ ] A participant who isn't live at release time lands here automatically
+      three times in this app) — `ReleaseWorkshopFeedbackControl` on the
+      session control panel.
+- [x] On release, every currently-live, eligible participant is
+      auto-navigated straight to it (same `SessionGateWatcher` mechanism as
+      the module push above — the dashboard now also watches while
+      "all-done", not just "holding").
+- [x] A participant who isn't live at release time lands here automatically
       the next time they open the app, if they've completed the workshop
-      content (extends `resolveParticipantDestination`'s destination table
-      with a new `final-feedback` case).
-- [ ] Participant screen: 1-5 star rating (required, "How would you rate
-      your experience today?"), optional free-text box, required choice
-      between "use my feedback publicly with my name" / "publicly but
-      anonymously," submit → thank-you screen with a link to submit their
-      diagnostic for follow-up.
-- [ ] Admin reporting: response count, average rating, individual ratings,
-      written responses, and the name/anonymous permission per response.
+      content (`resolveParticipantDestination` gained a `final-feedback`
+      case, gated on `workshop_feedback_released` and not-yet-submitted).
+- [x] Participant screen at `/dashboard/[sessionId]/feedback`: 1-5 star
+      rating (required), optional free-text box, required choice between
+      "use my feedback publicly with my name" / "publicly but anonymously,"
+      submit → thank-you screen with a link to submit their diagnostic
+      (admin-editable, see below).
+- [x] Admin reporting at `/admin/sessions/[sessionId]/feedback`: response
+      count, average rating, individual ratings, written responses, and the
+      name/anonymous permission per response.
+- [x] Diagnostic follow-up link is admin-editable at
+      `/admin/workshop-feedback-settings` (client's answer: "make it
+      admin-editable" rather than hardcoding a URL) — a singleton settings
+      row, blank hides the thank-you screen's link line entirely.
+
+Verified live: rating bounds (1-5) enforced server-side, a participant
+can't submit feedback for someone else's `participant_session_id`,
+non-admins can't release feedback or edit the settings URL, settings are
+publicly readable (needed for the thank-you screen).
 
 ## Executive Leverage Diagnostic
 

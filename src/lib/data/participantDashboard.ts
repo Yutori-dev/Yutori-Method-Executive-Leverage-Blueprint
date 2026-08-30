@@ -15,8 +15,9 @@ export interface DashboardModule {
 
 export interface ParticipantDashboardData {
   participant: { firstName: string; lastName: string };
-  session: { id: string; name: string; organization: string | null; status: string };
+  session: { id: string; name: string; organization: string | null; status: string; workshopFeedbackReleased: boolean };
   participantSessionId: string;
+  feedbackSubmitted: boolean;
   modules: DashboardModule[];
 }
 
@@ -44,7 +45,7 @@ export async function getParticipantDashboard(
       supabase.from("participants").select("first_name, last_name").eq("id", user.id).maybeSingle(),
       supabase
         .from("sessions")
-        .select("id, name, organization, status, active_module_id")
+        .select("id, name, organization, status, active_module_id, workshop_feedback_released")
         .eq("id", sessionId)
         .maybeSingle(),
       supabase.from("modules").select("*").eq("active", true).order("sort_order", { ascending: true }),
@@ -57,6 +58,18 @@ export async function getParticipantDashboard(
     ]);
 
   if (!participant || !session || !modules || !participantSession) return null;
+
+  // Only relevant once workshop_feedback_released is true (near the end of
+  // the workshop), so this doesn't add a round trip to every other page load.
+  let feedbackSubmitted = false;
+  if (session.workshop_feedback_released) {
+    const { data: feedback } = await supabase
+      .from("workshop_feedback")
+      .select("id")
+      .eq("participant_session_id", participantSession.id)
+      .maybeSingle();
+    feedbackSubmitted = !!feedback;
+  }
 
   const activeModule = modules.find((m) => m.id === session.active_module_id);
   const cohortActiveModuleSortOrder = activeModule ? activeModule.sort_order : null;
@@ -85,8 +98,15 @@ export async function getParticipantDashboard(
 
   return {
     participant: { firstName: participant.first_name, lastName: participant.last_name },
-    session: { id: session.id, name: session.name, organization: session.organization, status: session.status },
+    session: {
+      id: session.id,
+      name: session.name,
+      organization: session.organization,
+      status: session.status,
+      workshopFeedbackReleased: session.workshop_feedback_released,
+    },
     participantSessionId: participantSession.id,
+    feedbackSubmitted,
     modules: dashboardModules,
   };
 }

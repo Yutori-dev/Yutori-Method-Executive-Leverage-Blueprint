@@ -101,6 +101,13 @@ export async function revealArchitecture(sessionId: string) {
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
 
+export async function releaseWorkshopFeedback(sessionId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("admin_release_workshop_feedback", { p_session_id: sessionId });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
 export async function revealZoneOfInvestment(sessionId: string) {
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.rpc("admin_reveal_zone_of_investment", { p_session_id: sessionId });

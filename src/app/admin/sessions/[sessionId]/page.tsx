@@ -10,6 +10,7 @@ import { RevealArchitectureControl } from "@/components/admin/RevealArchitecture
 import { RevealZoneOfInvestmentControl } from "@/components/admin/RevealZoneOfInvestmentControl";
 import { UnlockWhiteWhaleControl } from "@/components/admin/UnlockWhiteWhaleControl";
 import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadershipWiringControl";
+import { ReleaseWorkshopFeedbackControl } from "@/components/admin/ReleaseWorkshopFeedbackControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
@@ -130,6 +131,12 @@ export default async function SessionControlPanelPage({
             >
               Follow-up queue
             </Link>
+            <Link
+              href={`/admin/sessions/${sessionId}/feedback`}
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Workshop feedback
+            </Link>
             <a
               href={`/admin/sessions/${sessionId}/export`}
               className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
@@ -236,6 +243,20 @@ export default async function SessionControlPanelPage({
                 </div>
               </div>
             ) : null}
+
+            <div className="mt-6 border-t border-(--color-hairline) pt-6">
+              <h3 className="text-sm font-medium">Final workshop feedback</h3>
+              <p className="mt-1 text-xs text-(--color-ink-muted)">
+                Once released, every eligible participant who has completed the workshop content
+                is taken straight to the feedback step.
+              </p>
+              <div className="mt-3">
+                <ReleaseWorkshopFeedbackControl
+                  sessionId={sessionId}
+                  alreadyReleased={session.workshop_feedback_released}
+                />
+              </div>
+            </div>
           </Card>
 
           <Card>

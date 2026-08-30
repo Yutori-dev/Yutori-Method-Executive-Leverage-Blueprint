@@ -938,6 +938,7 @@ export type Database = {
           status: string
           updated_at: string
           white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
           zone_of_investment_revealed: boolean
         }
         Insert: {
@@ -955,6 +956,7 @@ export type Database = {
           status?: string
           updated_at?: string
           white_whale_unlocked?: boolean
+          workshop_feedback_released?: boolean
           zone_of_investment_revealed?: boolean
         }
         Update: {
@@ -972,6 +974,7 @@ export type Database = {
           status?: string
           updated_at?: string
           white_whale_unlocked?: boolean
+          workshop_feedback_released?: boolean
           zone_of_investment_revealed?: boolean
         }
         Relationships: [
@@ -1024,6 +1027,56 @@ export type Database = {
           prompt?: string
           setup_copy?: string
           version?: number
+        }
+        Relationships: []
+      }
+      workshop_feedback: {
+        Row: {
+          id: string
+          participant_session_id: string
+          permission: string
+          rating: number
+          submitted_at: string
+          written_feedback: string | null
+        }
+        Insert: {
+          id?: string
+          participant_session_id: string
+          permission: string
+          rating: number
+          submitted_at?: string
+          written_feedback?: string | null
+        }
+        Update: {
+          id?: string
+          participant_session_id?: string
+          permission?: string
+          rating?: number
+          submitted_at?: string
+          written_feedback?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workshop_feedback_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: true
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workshop_feedback_settings: {
+        Row: {
+          diagnostic_follow_up_url: string | null
+          id: boolean
+        }
+        Insert: {
+          diagnostic_follow_up_url?: string | null
+          id?: boolean
+        }
+        Update: {
+          diagnostic_follow_up_url?: string | null
+          id?: boolean
         }
         Relationships: []
       }
@@ -1116,6 +1169,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_release_workshop_feedback: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
       admin_reveal_architecture: {
         Args: { p_session_id: string }
         Returns: {
@@ -1133,6 +1190,7 @@ export type Database = {
           status: string
           updated_at: string
           white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1159,6 +1217,7 @@ export type Database = {
           status: string
           updated_at: string
           white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1185,6 +1244,7 @@ export type Database = {
           status: string
           updated_at: string
           white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1211,6 +1271,7 @@ export type Database = {
           status: string
           updated_at: string
           white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1237,6 +1298,7 @@ export type Database = {
           status: string
           updated_at: string
           white_whale_unlocked: boolean
+          workshop_feedback_released: boolean
           zone_of_investment_revealed: boolean
         }
         SetofOptions: {
@@ -1477,6 +1539,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_workshop_feedback_settings: {
+        Args: { p_diagnostic_follow_up_url: string }
+        Returns: {
+          diagnostic_follow_up_url: string | null
+          id: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workshop_feedback_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       select_priority_delegation_opportunities: {
         Args: {
           p_participant_session_id: string
@@ -1525,6 +1600,28 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "architecture_recommendations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_workshop_feedback: {
+        Args: {
+          p_participant_session_id: string
+          p_permission: string
+          p_rating: number
+          p_written_feedback: string
+        }
+        Returns: {
+          id: string
+          participant_session_id: string
+          permission: string
+          rating: number
+          submitted_at: string
+          written_feedback: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workshop_feedback"
           isOneToOne: true
           isSetofReturn: false
         }

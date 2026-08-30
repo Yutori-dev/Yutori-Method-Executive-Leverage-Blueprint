@@ -24,18 +24,24 @@ export default async function ParticipantDashboardPage({
   const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
   const completedCount = trackedModules.filter((m) => m.state === "COMPLETE").length;
   const contextDone = await hasCompletedIntake();
-  const destination = resolveParticipantDestination(contextDone, trackedModules);
+  const destination = resolveParticipantDestination(contextDone, trackedModules, {
+    released: dashboard.session.workshopFeedbackReleased,
+    submitted: dashboard.feedbackSubmitted,
+  });
 
   const currentModuleKey = destination.type === "module" ? destination.moduleKey : null;
+  const isWaiting = destination.type === "holding" || destination.type === "all-done";
+  const advanceHref =
+    destination.type === "module"
+      ? `/dashboard/${sessionId}/modules/${destination.moduleKey}`
+      : destination.type === "final-feedback"
+        ? `/dashboard/${sessionId}/feedback`
+        : null;
 
   return (
     <main className="flex-1 py-16">
       <Container narrow>
-        <SessionGateWatcher
-          sessionId={sessionId}
-          isHolding={destination.type === "holding"}
-          advanceHref={destination.type === "module" ? `/dashboard/${sessionId}/modules/${destination.moduleKey}` : null}
-        />
+        <SessionGateWatcher sessionId={sessionId} isHolding={isWaiting} advanceHref={advanceHref} />
         <p className="font-serif text-sm italic text-(--color-ink-muted)">
           Yutori Method™ Executive Leverage Blueprint
         </p>
@@ -78,6 +84,16 @@ export default async function ParticipantDashboardPage({
                   href={`/dashboard/${sessionId}/modules/${destination.moduleKey}`}
                   className="mt-3 inline-block"
                 >
+                  <Button>CONTINUE</Button>
+                </Link>
+              </>
+            ) : destination.type === "final-feedback" ? (
+              <>
+                <p className="text-sm text-(--color-ink)">One last thing</p>
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  A couple of quick questions about your workshop experience.
+                </p>
+                <Link href={`/dashboard/${sessionId}/feedback`} className="mt-3 inline-block">
                   <Button>CONTINUE</Button>
                 </Link>
               </>

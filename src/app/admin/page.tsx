@@ -60,6 +60,12 @@ export default async function AdminSessionsPage() {
             >
               White Whale / Leadership Wiring config
             </Link>
+            <Link
+              href="/admin/workshop-feedback-settings"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Workshop feedback settings
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>
