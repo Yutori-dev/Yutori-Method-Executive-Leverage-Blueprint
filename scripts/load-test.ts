@@ -251,13 +251,30 @@ async function main() {
 
   console.log(`\nCleaning up ${provisioned.length} test participants...`);
   const userIds = provisioned.map((r) => r.userId).filter((id): id is string => !!id);
-  await admin.from("participant_sessions").delete().in("participant_id", userIds);
-  await admin.from("participants").delete().in("id", userIds);
+  const { error: psDeleteErr } = await admin.from("participant_sessions").delete().in("participant_id", userIds);
+  const { error: pDeleteErr } = await admin.from("participants").delete().in("id", userIds);
+  const authDeleteErrors: string[] = [];
   for (const batchStart of Array.from({ length: Math.ceil(userIds.length / 20) }, (_, i) => i * 20)) {
-    await Promise.all(userIds.slice(batchStart, batchStart + 20).map((id) => admin.auth.admin.deleteUser(id)));
+    const results = await Promise.all(
+      userIds.slice(batchStart, batchStart + 20).map((id) => admin.auth.admin.deleteUser(id)),
+    );
+    for (const r of results) if (r.error) authDeleteErrors.push(r.error.message);
   }
-  await admin.from("sessions").delete().eq("id", sessionId);
-  console.log("Done.");
+  const { error: sessionDeleteErr } = await admin.from("sessions").delete().eq("id", sessionId);
+
+  const cleanupErrors = [
+    psDeleteErr && `participant_sessions: ${psDeleteErr.message}`,
+    pDeleteErr && `participants: ${pDeleteErr.message}`,
+    sessionDeleteErr && `sessions: ${sessionDeleteErr.message}`,
+    ...authDeleteErrors.map((m) => `auth user: ${m}`),
+  ].filter((e): e is string => !!e);
+
+  if (cleanupErrors.length > 0) {
+    console.log(`Cleanup had ${cleanupErrors.length} error(s) -- some test data may remain:`);
+    for (const e of cleanupErrors.slice(0, 10)) console.log(`  ${e}`);
+  } else {
+    console.log("Done, cleanup verified.");
+  }
 
   process.exit(failed.length > participantCount * 0.05 ? 1 : 0);
 }
