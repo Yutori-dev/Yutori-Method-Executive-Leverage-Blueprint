@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAdminParticipantProfile } from "@/lib/data/adminParticipantProfile";
-import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
+import { IntakeCard } from "@/components/admin/IntakeCard";
 
 const LEVEL_LABEL: Record<string, string> = {
   execution: "Execution",
@@ -42,23 +42,13 @@ export default async function AdminParticipantProfilePage({
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card>
-            <h2 className="font-serif text-lg">Intake</h2>
-            <dl className="mt-3 space-y-3 text-sm">
-              <div>
-                <dt className="text-xs text-(--color-ink-muted)">Company</dt>
-                <dd className="mt-0.5">{profile.participant.companyName ?? "Not yet provided"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-(--color-ink-muted)">Role / title</dt>
-                <dd className="mt-0.5">{profile.participant.currentRoleTitle ?? "Not yet provided"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-(--color-ink-muted)">Current executive support</dt>
-                <dd className="mt-0.5">{formatCurrentSupport(profile.participant.currentSupport)}</dd>
-              </div>
-            </dl>
-          </Card>
+          <IntakeCard
+            participantId={profile.participantId}
+            companyName={profile.participant.companyName}
+            currentRoleTitle={profile.participant.currentRoleTitle}
+            currentSupport={profile.participant.currentSupport}
+            adminPath={`/admin/sessions/${sessionId}/participants/${participantSessionId}`}
+          />
 
           <Card>
             <h2 className="font-serif text-lg">Module progress</h2>
@@ -181,6 +171,11 @@ export default async function AdminParticipantProfilePage({
               <p className="mt-2 text-sm text-(--color-ink-muted)">
                 {profile.architecture.revealed ? "Revealed to participant" : "Calculated, not yet revealed"}
               </p>
+              {profile.architecture.needsRecalculation ? (
+                <p className="mt-2 text-sm text-(--color-accent)">
+                  Intake data was edited after this recommendation was calculated — may be stale.
+                </p>
+              ) : null}
               <p className="mt-2 text-sm">
                 Primary signal:{" "}
                 {profile.architecture.isTied

@@ -60,7 +60,9 @@ export interface AdminParticipantProfile {
     rationale: string | null;
     reaction: ArchitectureReaction | null;
     reactionNote: string | null;
+    needsRecalculation: boolean;
   } | null;
+  participantId: string;
 }
 
 export async function getAdminParticipantProfile(
@@ -111,7 +113,7 @@ export async function getAdminParticipantProfile(
       .order("selection_order", { ascending: true }),
     supabase
       .from("architecture_recommendations")
-      .select("primary_signal_leverage_level, is_tied, rationale, reaction, reaction_note")
+      .select("primary_signal_leverage_level, is_tied, rationale, reaction, reaction_note, needs_recalculation")
       .eq("participant_session_id", participantSessionId)
       .maybeSingle(),
   ]);
@@ -216,7 +218,9 @@ export async function getAdminParticipantProfile(
           rationale: recommendation.rationale,
           reaction: recommendation.reaction as ArchitectureReaction | null,
           reactionNote: recommendation.reaction_note,
+          needsRecalculation: recommendation.needs_recalculation,
         }
       : null,
+    participantId: enrollment.participant_id,
   };
 }
