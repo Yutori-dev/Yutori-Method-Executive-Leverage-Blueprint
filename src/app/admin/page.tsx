@@ -72,6 +72,12 @@ export default async function AdminSessionsPage() {
             >
               Priority Delegation config
             </Link>
+            <Link
+              href="/admin/delegation-beliefs-config"
+              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+            >
+              Delegation Beliefs config
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>
