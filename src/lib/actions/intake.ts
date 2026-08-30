@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export interface IntakeInput {
+  firstName: string;
+  lastName: string;
   companyName: string;
   currentRoleTitle: string;
   currentSupportPersonalAssistant: boolean;
@@ -24,6 +26,8 @@ export async function saveParticipantIntake(input: IntakeInput) {
   const supabase = await createServerSupabaseClient();
 
   const { error } = await supabase.rpc("save_participant_intake", {
+    p_first_name: input.firstName,
+    p_last_name: input.lastName,
     p_company_name: input.companyName,
     p_current_role_title: input.currentRoleTitle,
     p_current_support_personal_assistant: input.currentSupportPersonalAssistant,
@@ -60,6 +64,8 @@ export async function adminUpdateParticipantIntake(input: AdminIntakeInput) {
 
   const { error } = await supabase.rpc("admin_update_participant_intake", {
     p_participant_id: input.participantId,
+    p_first_name: input.firstName,
+    p_last_name: input.lastName,
     p_company_name: input.companyName,
     p_current_role_title: input.currentRoleTitle,
     p_current_support_personal_assistant: input.currentSupportPersonalAssistant,

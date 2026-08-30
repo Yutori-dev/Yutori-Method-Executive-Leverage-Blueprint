@@ -2,6 +2,9 @@ import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export interface ParticipantIntakeData {
+  firstName: string;
+  lastName: string;
+  email: string;
   companyName: string;
   currentRoleTitle: string;
   currentSupportPersonalAssistant: boolean;
@@ -33,7 +36,7 @@ export async function getParticipantIntake(): Promise<ParticipantIntakeData | nu
   const { data } = await supabase
     .from("participants")
     .select(
-      "company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
+      "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_other, current_support_other_text, current_support_none",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -41,6 +44,9 @@ export async function getParticipantIntake(): Promise<ParticipantIntakeData | nu
   if (!data) return null;
 
   return {
+    firstName: data.first_name,
+    lastName: data.last_name,
+    email: data.email,
     companyName: data.company_name ?? "",
     currentRoleTitle: data.current_role_title ?? "",
     currentSupportPersonalAssistant: data.current_support_personal_assistant,

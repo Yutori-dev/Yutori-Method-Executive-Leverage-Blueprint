@@ -44,6 +44,8 @@ export default async function AdminParticipantProfilePage({
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <IntakeCard
             participantId={profile.participantId}
+            firstName={profile.participant.firstName}
+            lastName={profile.participant.lastName}
             companyName={profile.participant.companyName}
             currentRoleTitle={profile.participant.currentRoleTitle}
             currentSupport={profile.participant.currentSupport}

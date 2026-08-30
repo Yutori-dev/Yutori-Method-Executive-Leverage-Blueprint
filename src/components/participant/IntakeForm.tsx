@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 
 type SupportKey = Exclude<
   keyof ParticipantIntakeData,
-  "companyName" | "currentRoleTitle" | "currentSupportOtherText"
+  "firstName" | "lastName" | "email" | "companyName" | "currentRoleTitle" | "currentSupportOtherText"
 >;
 
 const SUPPORT_OPTIONS: { key: SupportKey; label: string }[] = [
@@ -25,6 +25,9 @@ const SUPPORT_OPTIONS: { key: SupportKey; label: string }[] = [
 ];
 
 const EMPTY: ParticipantIntakeData = {
+  firstName: "",
+  lastName: "",
+  email: "",
   companyName: "",
   currentRoleTitle: "",
   currentSupportPersonalAssistant: false,
@@ -84,6 +87,44 @@ export function IntakeForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <p className="text-xs font-medium text-(--color-ink-muted)">Full Name</p>
+        <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input
+            id="firstName"
+            required
+            placeholder="First name"
+            aria-label="First name"
+            value={form.firstName}
+            onChange={(e) => setForm((prev) => ({ ...prev, firstName: e.target.value }))}
+            className="w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+          />
+          <input
+            id="lastName"
+            required
+            placeholder="Last name"
+            aria-label="Last name"
+            value={form.lastName}
+            onChange={(e) => setForm((prev) => ({ ...prev, lastName: e.target.value }))}
+            className="w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="email" className="block text-xs font-medium text-(--color-ink-muted)">
+          Email Address
+        </label>
+        <input
+          id="email"
+          type="email"
+          disabled
+          value={form.email}
+          className="mt-1 w-full cursor-not-allowed rounded-lg border border-(--color-hairline) bg-(--color-accent-soft)/40 px-3 py-2 text-sm text-(--color-ink-muted) outline-none"
+        />
+        <p className="mt-1 text-xs text-(--color-ink-muted)">This is the email you signed in with.</p>
+      </div>
+
       <div>
         <label htmlFor="companyName" className="block text-xs font-medium text-(--color-ink-muted)">
           Company Name

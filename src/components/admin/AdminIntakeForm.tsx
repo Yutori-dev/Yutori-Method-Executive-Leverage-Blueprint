@@ -23,6 +23,8 @@ const SUPPORT_OPTIONS: { key: SupportKey; label: string }[] = [
 
 export function AdminIntakeForm({
   participantId,
+  firstName,
+  lastName,
   companyName,
   currentRoleTitle,
   currentSupport,
@@ -30,6 +32,8 @@ export function AdminIntakeForm({
   onDone,
 }: {
   participantId: string;
+  firstName: string;
+  lastName: string;
   companyName: string | null;
   currentRoleTitle: string | null;
   currentSupport: CurrentSupportFlags;
@@ -37,6 +41,8 @@ export function AdminIntakeForm({
   onDone: () => void;
 }) {
   const router = useRouter();
+  const [first, setFirst] = useState(firstName);
+  const [last, setLast] = useState(lastName);
   const [company, setCompany] = useState(companyName ?? "");
   const [role, setRole] = useState(currentRoleTitle ?? "");
   const [support, setSupport] = useState<CurrentSupportFlags>({
@@ -65,6 +71,8 @@ export function AdminIntakeForm({
 
     const result = await adminUpdateParticipantIntake({
       participantId,
+      firstName: first,
+      lastName: last,
       companyName: company,
       currentRoleTitle: role,
       ...support,
@@ -84,6 +92,32 @@ export function AdminIntakeForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="admin-first-name" className="block text-xs font-medium text-(--color-ink-muted)">
+            First name
+          </label>
+          <input
+            id="admin-first-name"
+            required
+            value={first}
+            onChange={(e) => setFirst(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+          />
+        </div>
+        <div>
+          <label htmlFor="admin-last-name" className="block text-xs font-medium text-(--color-ink-muted)">
+            Last name
+          </label>
+          <input
+            id="admin-last-name"
+            required
+            value={last}
+            onChange={(e) => setLast(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+          />
+        </div>
+      </div>
       <div>
         <label htmlFor="admin-company" className="block text-xs font-medium text-(--color-ink-muted)">
           Company

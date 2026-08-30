@@ -8,12 +8,16 @@ import { Button } from "@/components/ui/Button";
 
 export function IntakeCard({
   participantId,
+  firstName,
+  lastName,
   companyName,
   currentRoleTitle,
   currentSupport,
   adminPath,
 }: {
   participantId: string;
+  firstName: string;
+  lastName: string;
   companyName: string | null;
   currentRoleTitle: string | null;
   currentSupport: CurrentSupportFlags;
@@ -36,6 +40,8 @@ export function IntakeCard({
         <div className="mt-3">
           <AdminIntakeForm
             participantId={participantId}
+            firstName={firstName}
+            lastName={lastName}
             companyName={companyName}
             currentRoleTitle={currentRoleTitle}
             currentSupport={currentSupport}

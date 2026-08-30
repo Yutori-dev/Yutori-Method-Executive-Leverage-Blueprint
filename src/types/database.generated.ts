@@ -1610,6 +1610,8 @@ export type Database = {
           p_current_support_other_text: string
           p_current_support_personal_assistant: boolean
           p_current_support_senior_executive_assistant: boolean
+          p_first_name: string
+          p_last_name: string
           p_participant_id: string
         }
         Returns: {
@@ -1876,6 +1878,8 @@ export type Database = {
           p_current_support_other_text: string
           p_current_support_personal_assistant: boolean
           p_current_support_senior_executive_assistant: boolean
+          p_first_name: string
+          p_last_name: string
         }
         Returns: {
           company_name: string | null
