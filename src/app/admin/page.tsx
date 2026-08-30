@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { AdminQuickLinks } from "@/components/admin/AdminQuickLinks";
 
 const statusLabel: Record<string, string> = {
   draft: "Draft",
@@ -35,70 +36,17 @@ export default async function AdminSessionsPage() {
       <Container>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="font-serif text-3xl">Sessions</h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <Link
-              href="/admin/analytics"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Analytics (all sessions)
-            </Link>
-            <Link
-              href="/admin/diagnostic-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Diagnostic config
-            </Link>
-            <Link
-              href="/admin/zone-of-investment-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Zone of Investment config
-            </Link>
-            <Link
-              href="/admin/operating-altitude-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              White Whale / Leadership Wiring config
-            </Link>
-            <Link
-              href="/admin/workshop-feedback-settings"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Workshop feedback settings
-            </Link>
-            <Link
-              href="/admin/priority-delegation-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Priority Delegation config
-            </Link>
-            <Link
-              href="/admin/delegation-beliefs-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Delegation Beliefs config
-            </Link>
-            <Link
-              href="/admin/executive-support-audit-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Executive Support Audit config
-            </Link>
-            <Link
-              href="/admin/priority-leverage-reveal-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Priority Leverage Reveal config
-            </Link>
-            <Link
-              href="/admin/executive-support-architecture-config"
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
-            >
-              Executive Support Architecture config
-            </Link>
-            <Link href="/admin/sessions/new">
-              <Button>New session</Button>
-            </Link>
+          <Link href="/admin/sessions/new">
+            <Button>New session</Button>
+          </Link>
+        </div>
+
+        <div className="mt-8">
+          <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+            Analytics &amp; configuration
+          </p>
+          <div className="mt-3">
+            <AdminQuickLinks />
           </div>
         </div>
 
