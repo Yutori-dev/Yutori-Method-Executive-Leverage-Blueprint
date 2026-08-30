@@ -117,7 +117,7 @@ export default async function AdminParticipantProfilePage({
               <h2 className="font-serif text-lg">Delegation</h2>
               {profile.delegation.beliefs ? (
                 <div className="mt-2 space-y-3">
-                  <dl className="grid grid-cols-3 gap-3 text-sm">
+                  <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
                     <div>
                       <dt className="text-xs text-(--color-ink-muted)">Trust & Control</dt>
                       <dd className="mt-0.5">{profile.delegation.beliefs.trustControlAvg.toFixed(1)} / 5</dd>

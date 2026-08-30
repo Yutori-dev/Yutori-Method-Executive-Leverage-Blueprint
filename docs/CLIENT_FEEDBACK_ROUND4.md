@@ -273,10 +273,74 @@ worth getting the actual Section 4 spec from Nicole whenever it's ready.
       exactly. Unrelated round-4 improvements (visual separation, headers,
       realtime push-nav) are untouched.
 
+## Section 4 — Executive Support Audit (2026-09-08, spec received and built)
+
+Full V1 developer spec received for the `leverage` module (sort_order 4,
+between Delegation and Architecture) — previously a bare
+`[YUTORI CONTENT PENDING]` placeholder, now fully built.
+
+- [x] Schema: `executive_support_audit_config` (intro/results copy,
+      per-layer primary/secondary interpretation copy for all 4 leverage
+      layers, secondary-qualification threshold), `executive_support_audit_questions`
+      (12 questions, one option per layer, exact spec prompts/options
+      seeded), responses table, results table (`primary_layers`/
+      `secondary_layers` as arrays — spec requires ties to be handled, not
+      broken).
+- [x] Reuses the existing `LeverageLevel` type
+      (execution/orchestration/strategic/systems) already defined for
+      Architecture rather than inventing a parallel one — same concept,
+      confirmed exact match first.
+- [x] Participant flow: intro screen, one question per screen with
+      auto-advance on selection (no Next button, per spec), results screen
+      that correctly handles a tied primary (shows "your most prominent
+      leverage gaps," no secondary) versus a single primary (+ secondary
+      when it clears the threshold, or fallback copy when it doesn't).
+- [x] Facilitator dashboard: completion stat, primary/secondary frequency
+      breakdown (counting both layers on a tie), tied-primary and
+      no-secondary counts.
+- [x] Participant detail page: per-participant layer scores + primary/
+      secondary layers, for coaching use.
+- [x] Blueprint (web + PDF): new section ahead of Executive Support
+      Architecture, same tied/single-primary handling as the results
+      screen.
+- [x] Admin-editable at `/admin/executive-support-audit-config` — intro
+      copy, all 4 layers' primary/secondary interpretation copy, secondary
+      threshold, all 12 questions. Saves as a new version, same pattern as
+      every other config screen in this app.
+- [x] Verified live: all 12 questions present; three scoring scenarios
+      tested end-to-end (single primary + qualifying secondary, tied
+      primary → correctly empty secondary, single primary + secondary
+      below threshold → correctly empty secondary), scores summed to
+      exactly 12 in every case.
+
+## Site-wide responsiveness pass (2026-09-08)
+
+Client asked directly whether the site is responsive on all devices.
+Audited every grid/flex layout across participant and admin surfaces for
+mobile breakage (non-responsive multi-column grids, unwrapped wide
+tables, fixed pixel widths without a scroll container).
+
+- [x] Found and fixed one real issue: the Delegation Beliefs domain-average
+      stats on the admin participant detail page were a rigid 3-column grid
+      (`grid-cols-3`), cramping longer labels like "Workload & Resources"
+      on narrow screens. Changed to stack on mobile and go 3-column from
+      `sm:` up.
+- [x] Reviewed and left unchanged as low-risk (pre-existing, short labels
+      that don't wrap): session-form date/format fields, diagnostic and
+      Zone of Investment stat cards, the sign-up/sign-in tab toggle.
+- [x] Confirmed every admin `<table>` (rosters, exports, aggregates) is
+      already wrapped in `overflow-x-auto`.
+- [x] Confirmed the Zone of Investment matrix's `min-w-[560px]` grid — the
+      one intentionally-wide layout in the app — is correctly wrapped in
+      its own horizontal scroll container rather than overflowing the
+      page.
+- [x] Confirmed all newly-built forms this round (Intake, Delegation
+      Beliefs config, Executive Support Audit config, Priority Delegation
+      flow, Workshop Feedback) already use correct responsive patterns with
+      no changes needed.
+- [x] `typecheck`/`lint`/clean `build` all pass after the fix.
+
 ## Genuinely still open (not something to silently resolve)
 
-- [ ] **Section 4 (the `leverage` module / "Executive Support Audit")** —
-      confirmed completely unbuilt, no spec received yet. Doesn't block
-      anything else.
 - [ ] **Live support during the Sept 3, 9-11am EST session** — a staffing
       commitment, not a build item.
