@@ -22,29 +22,48 @@ export function LiveRosterRefresher({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const scheduleRefresh = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => router.refresh(), 800);
     };
 
-    const channel = supabase
-      .channel(`admin-roster-${sessionId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "participant_sessions", filter: `session_id=eq.${sessionId}` },
-        scheduleRefresh,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "participant_module_progress" },
-        scheduleRefresh,
-      )
-      .subscribe();
+    // Realtime enforces RLS on postgres_changes -- subscribing before the
+    // client's Realtime auth token is set connects fine but silently
+    // delivers nothing (see SessionGateWatcher.tsx for the full story on
+    // this). Set it explicitly before subscribing rather than racing
+    // createBrowserClient's own async init.
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session?.access_token) {
+        await supabase.realtime.setAuth(session.access_token);
+      }
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`admin-roster-${sessionId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "participant_sessions", filter: `session_id=eq.${sessionId}` },
+          scheduleRefresh,
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "participant_module_progress" },
+          scheduleRefresh,
+        )
+        .subscribe();
+    })();
 
     return () => {
+      cancelled = true;
       if (timerRef.current) clearTimeout(timerRef.current);
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [sessionId, router]);
 

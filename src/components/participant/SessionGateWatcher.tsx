@@ -50,23 +50,45 @@ export function SessionGateWatcher({
     if (!isHolding) return;
 
     const supabase = createClient();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const scheduleRefresh = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => router.refresh(), 800);
     };
 
-    const channel = supabase
-      .channel(`session-gate-${sessionId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` },
-        scheduleRefresh,
-      )
-      .subscribe();
+    // Realtime enforces RLS on postgres_changes -- the socket connects and
+    // reports "SUBSCRIBED" either way, but a subscription opened before the
+    // client's Realtime auth token is set stays silently unauthorized for
+    // row-level reads (connects fine, delivers nothing). createBrowserClient
+    // wires this up asynchronously on init, so it isn't reliably ready by
+    // the time this effect runs -- fetch the session and set it explicitly
+    // before subscribing rather than racing that internal wiring.
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session?.access_token) {
+        await supabase.realtime.setAuth(session.access_token);
+      }
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`session-gate-${sessionId}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` },
+          scheduleRefresh,
+        )
+        .subscribe();
+    })();
 
     return () => {
+      cancelled = true;
       if (timerRef.current) clearTimeout(timerRef.current);
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [isHolding, sessionId, router]);
 
