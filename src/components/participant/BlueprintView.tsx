@@ -4,9 +4,11 @@ import { CharacterPreview } from "@/components/participant/CharacterPreview";
 import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 import { whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
+import { ArchitecturePyramid } from "@/components/participant/ArchitecturePyramid";
 import type { BlueprintData } from "@/lib/data/blueprint";
 import type { ArchitectureRecommendationView } from "@/lib/data/architecture";
 import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
+import type { LeverageLevel } from "@/types/database";
 
 const LEVEL_LABEL: Record<string, string> = {
   execution: "Execution",
@@ -250,6 +252,12 @@ function ArchitectureSummary({
   config: ExecutiveSupportArchitectureConfigInput;
 }) {
   const headlineLevel = rec.primaryLeverageNeed ?? rec.leadingLeverageNeed;
+  const highlighted = new Set<LeverageLevel>(
+    [rec.primaryLeverageNeed, rec.leadingLeverageNeed, ...rec.multiLayerLevels].filter(
+      (l): l is LeverageLevel => !!l,
+    ),
+  );
+  const secondaryHighlighted = new Set<LeverageLevel>(rec.secondaryLeverageNeeds);
 
   if (rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel)) {
     return (
@@ -262,6 +270,9 @@ function ArchitectureSummary({
             {withLevel(config.leadingNeedBody, rec.leadingLeverageNeed)}
           </p>
         ) : null}
+        <div className="mt-6">
+          <ArchitecturePyramid highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
+        </div>
       </div>
     );
   }
@@ -283,6 +294,9 @@ function ArchitectureSummary({
           Secondary: {rec.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(" · ")}
         </p>
       ) : null}
+      <div className="mt-6">
+        <ArchitecturePyramid highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
+      </div>
     </div>
   );
 }

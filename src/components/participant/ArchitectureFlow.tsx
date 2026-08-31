@@ -6,8 +6,8 @@ import { calculateArchitectureRecommendation, submitArchitectureReaction } from 
 import { markModuleComplete } from "@/lib/actions/participant";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/cn";
 import { LEVEL_LABEL, whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
+import { ArchitecturePyramid } from "@/components/participant/ArchitecturePyramid";
 import type { ArchitectureData, ArchitectureRecommendationView } from "@/lib/data/architecture";
 import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
 import type { ArchitectureReaction, LeverageLevel } from "@/types/database";
@@ -274,12 +274,6 @@ function ArchitectureResult({
   );
 }
 
-const TIERS: { level: LeverageLevel; label: string; roles: string[] }[] = [
-  { level: "execution", label: "Execution", roles: ["Personal Assistant", "Administrative Assistant / Virtual Assistant"] },
-  { level: "orchestration", label: "Orchestration", roles: ["Executive Assistant", "Senior Executive Assistant"] },
-  { level: "strategic", label: "Strategic", roles: ["Chief of Staff", "Chief Integrator", "COO / Strategic Operating Leadership"] },
-];
-
 function ArchitectureVisual({
   highlighted,
   secondaryHighlighted,
@@ -290,44 +284,14 @@ function ArchitectureVisual({
   return (
     <Card>
       <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Executive Support Architecture</p>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {TIERS.map((tier) => (
-          <div
-            key={tier.level}
-            className={cn(
-              "rounded-lg border p-3",
-              highlighted.has(tier.level)
-                ? "border-(--color-accent) bg-(--color-accent-soft)"
-                : secondaryHighlighted.has(tier.level)
-                  ? "border-(--color-accent)"
-                  : "border-(--color-hairline)",
-            )}
-          >
-            <p className="text-sm font-medium text-(--color-ink)">{tier.label}</p>
-            <ul className="mt-1.5 space-y-0.5">
-              {tier.roles.map((role) => (
-                <li key={role} className="text-xs text-(--color-ink-muted)">
-                  {role}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div
-        className={cn(
-          "mt-3 rounded-lg border p-3",
-          highlighted.has("systems")
-            ? "border-(--color-accent) bg-(--color-accent-soft)"
-            : secondaryHighlighted.has("systems")
-              ? "border-(--color-accent)"
-              : "border-(--color-hairline)",
-        )}
-      >
-        <p className="text-sm font-medium text-(--color-ink)">Systems -- operating across the architecture</p>
-        <p className="mt-1 text-xs text-(--color-ink-muted)">
-          AI agents · Automated workflows · Supporting technology infrastructure
-        </p>
+      <p className="mt-1 text-sm text-(--color-accent)">
+        An integrated support ecosystem designed to create capacity, accelerate impact and unlock leverage.
+      </p>
+      <p className="mt-3 text-sm text-(--color-ink)">
+        Define the ownership <span className="underline underline-offset-2">before</span> you define the role.
+      </p>
+      <div className="mt-6">
+        <ArchitecturePyramid highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
       </div>
     </Card>
   );
