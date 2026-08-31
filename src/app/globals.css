@@ -16,6 +16,14 @@
   --color-accent-soft: #efe9dd;
   --color-locked: #c9c5bc;
   --color-success: #3f6650;
+  /* Dedicated to the Competency/Passion rating pair only, so the two
+   * halves of a rating card read as distinct at a glance (client request,
+   * 2026-08-31) -- kept separate from --color-success/--color-accent so
+   * meaning doesn't overlap with "complete"/primary-action elsewhere. */
+  --color-competency: #4d6a86;
+  --color-competency-soft: #e7edf2;
+  --color-passion: #6e7f4a;
+  --color-passion-soft: #eef0e2;
 }
 
 @theme inline {

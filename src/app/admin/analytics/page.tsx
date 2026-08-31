@@ -110,7 +110,7 @@ export default async function CrossSessionAnalyticsPage() {
           </Card>
 
           <Card>
-            <h2 className="font-serif text-lg">Visionary / Integrator / Hybrid</h2>
+            <h2 className="font-serif text-lg">Leadership Wiring</h2>
             <div className="mt-4">
               <CountBarList rows={aggregates.selfIdentificationDistribution} emptyLabel="No self-identifications yet." />
             </div>

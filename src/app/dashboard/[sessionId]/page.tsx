@@ -76,7 +76,9 @@ export default async function ParticipantDashboardPage({
                   {trackedModules.find((m) => m.key === destination.moduleKey)?.name}
                 </p>
                 <p className="mt-1 text-sm text-(--color-ink-muted)">
-                  Pick up where you left off.
+                  {trackedModules.find((m) => m.key === destination.moduleKey)?.state === "IN_PROGRESS"
+                    ? "Pick up where you left off."
+                    : "Get started!"}
                 </p>
                 <Link
                   href={`/dashboard/${sessionId}/modules/${destination.moduleKey}`}

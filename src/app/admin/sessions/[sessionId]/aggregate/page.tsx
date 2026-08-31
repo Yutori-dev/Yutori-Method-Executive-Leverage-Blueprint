@@ -170,7 +170,7 @@ export default async function SessionAggregatePage({
           </Card>
 
           <Card>
-            <h2 className="font-serif text-lg">Visionary / Integrator / Hybrid</h2>
+            <h2 className="font-serif text-lg">Leadership Wiring</h2>
             <p className="mt-1 text-xs text-(--color-ink-muted)">
               Leadership Wiring completion: {aggregates.leadershipWiringCompletionCount} of{" "}
               {aggregates.registeredCount} / {aggregates.leadershipWiringCompletionRate}%

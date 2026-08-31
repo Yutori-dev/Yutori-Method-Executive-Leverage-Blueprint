@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { SessionForm } from "@/components/admin/SessionForm";
+import { DeleteSessionControl } from "@/components/admin/DeleteSessionControl";
 import type { SessionFormat } from "@/types/database";
 
 export default async function EditSessionPage({
@@ -38,6 +39,13 @@ export default async function EditSessionPage({
               }}
             />
           </Card>
+        </div>
+
+        <div className="mt-8">
+          <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Danger zone</p>
+          <div className="mt-3">
+            <DeleteSessionControl sessionId={sessionId} sessionName={session.name} />
+          </div>
         </div>
       </Container>
     </main>

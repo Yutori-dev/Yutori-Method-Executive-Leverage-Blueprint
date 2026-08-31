@@ -9,7 +9,7 @@ const PANELS = [
   { key: "leverage", label: "Priority Leverage" },
   { key: "signal", label: "Primary Signal" },
   { key: "reaction", label: "Architecture Reaction" },
-  { key: "identification", label: "Visionary / Integrator / Hybrid" },
+  { key: "identification", label: "Leadership Wiring" },
 ] as const;
 
 type PanelKey = (typeof PANELS)[number]["key"];

@@ -44,6 +44,17 @@ export function ZoneOfInvestmentFlow({
   const [ratings, setRatings] = useState<Record<string, Rating>>(() =>
     Object.fromEntries(data.ratings.map((r) => [r.responsibilityId, { competency: r.competency, passion: r.passion }])),
   );
+  // Which activities currently show a rating card -- a client-only concept,
+  // not a separate stored step (rating is still the only server write).
+  // Initialized from anything with an existing partial/full rating so a
+  // returning participant resumes with their prior selections intact.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const r of data.ratings) {
+      if (r.competency !== null || r.passion !== null) ids.add(r.responsibilityId);
+    }
+    return ids;
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -52,19 +63,42 @@ export function ZoneOfInvestmentFlow({
     .map(([id]) => id);
   const mappedCount = mappedIds.length;
   const canContinue = mappedCount >= ZONE_OF_INVESTMENT_MIN_MAPPED;
+  const canSelectMore = selectedIds.size < ZONE_OF_INVESTMENT_MAX_MAPPED;
+
+  function toggleSelected(id: string) {
+    setErrorMessage(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        // Deselecting hides the rating card -- clear any stored rating too,
+        // rather than leaving it silently counted while out of view.
+        const current = ratings[id];
+        if (current && (current.competency !== null || current.passion !== null)) {
+          startTransition(async () => {
+            await rateResponsibility({
+              participantSessionId,
+              responsibilityId: id,
+              competency: null,
+              passion: null,
+              sessionPath,
+            });
+          });
+          setRatings((prev) => ({ ...prev, [id]: { competency: null, passion: null } }));
+        }
+      } else {
+        if (next.size >= ZONE_OF_INVESTMENT_MAX_MAPPED) return prev;
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   function handleRate(id: string, field: "competency" | "passion", value: RatingLevel) {
     const current = ratings[id] ?? { competency: null, passion: null };
     // Clicking the already-selected level clears that dimension.
     const nextValue = current[field] === value ? null : value;
     const next = { ...current, [field]: nextValue };
-
-    const wasMapped = current.competency !== null && current.passion !== null;
-    const willBeMapped = next.competency !== null && next.passion !== null;
-    if (willBeMapped && !wasMapped && mappedCount >= ZONE_OF_INVESTMENT_MAX_MAPPED) {
-      setErrorMessage(`You can map at most ${ZONE_OF_INVESTMENT_MAX_MAPPED} responsibilities.`);
-      return;
-    }
 
     setErrorMessage(null);
     setRatings((prev) => ({ ...prev, [id]: next }));
@@ -101,6 +135,8 @@ export function ZoneOfInvestmentFlow({
   }
 
   if (phase === "mapping") {
+    const selectedResponsibilities = data.library.filter((r) => selectedIds.has(r.id));
+
     return (
       <div className="space-y-4">
         <Card>
@@ -113,30 +149,84 @@ export function ZoneOfInvestmentFlow({
           <RatingReference config={data.config} />
         </Card>
 
-        {data.library.map((r) => {
-          const rating = ratings[r.id] ?? { competency: null, passion: null };
-          return (
-            <Card key={r.id}>
-              <p className="text-(--color-ink)">{r.label}</p>
-              <div className="mt-4 grid grid-cols-1 divide-y divide-(--color-hairline) sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-                <div className="pb-4 sm:pr-6 sm:pb-0">
-                  <RatingPicker
-                    label="Competency"
-                    value={rating.competency}
-                    onChange={(v) => handleRate(r.id, "competency", v)}
-                  />
-                </div>
-                <div className="pt-4 sm:pt-0 sm:pl-6">
-                  <RatingPicker
-                    label="Passion"
-                    value={rating.passion}
-                    onChange={(v) => handleRate(r.id, "passion", v)}
-                  />
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+        <Card>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-(--color-ink)">
+              1. Choose the activities you want to grade.
+            </p>
+            <p
+              className={cn(
+                "shrink-0 text-xs font-medium tracking-wide uppercase",
+                selectedIds.size >= ZONE_OF_INVESTMENT_MIN_MAPPED ? "text-(--color-ink-muted)" : "text-(--color-accent)",
+              )}
+            >
+              {selectedIds.size} of 10–12 selected
+            </p>
+          </div>
+          <p className="mt-1 text-xs text-(--color-ink-muted)">
+            Select 10-12 activities. Choosing one adds it to the rating list below.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {data.library.map((r) => {
+              const isSelected = selectedIds.has(r.id);
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => toggleSelected(r.id)}
+                  disabled={!isSelected && !canSelectMore}
+                  className={cn(
+                    "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                    isSelected
+                      ? "border-(--color-accent) bg-(--color-accent-soft) text-(--color-ink)"
+                      : "border-(--color-hairline) text-(--color-ink) hover:border-(--color-accent)",
+                  )}
+                >
+                  {r.label}
+                  {isSelected ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-(--color-accent)">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
+        {selectedResponsibilities.length > 0 ? (
+          <>
+            <p className="pt-2 text-sm font-medium text-(--color-ink)">
+              2. Now rate the activities you selected.
+            </p>
+            {selectedResponsibilities.map((r) => {
+              const rating = ratings[r.id] ?? { competency: null, passion: null };
+              return (
+                <Card key={r.id}>
+                  <p className="text-(--color-ink)">{r.label}</p>
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg bg-(--color-competency-soft) p-3">
+                      <RatingPicker
+                        label="Competency"
+                        tone="competency"
+                        value={rating.competency}
+                        onChange={(v) => handleRate(r.id, "competency", v)}
+                      />
+                    </div>
+                    <div className="rounded-lg bg-(--color-passion-soft) p-3">
+                      <RatingPicker
+                        label="Passion"
+                        tone="passion"
+                        value={rating.passion}
+                        onChange={(v) => handleRate(r.id, "passion", v)}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </>
+        ) : null}
 
         {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
 
@@ -273,17 +363,24 @@ function RatingReference({ config }: { config: ZoneOfInvestmentConfig }) {
 
 function RatingPicker({
   label,
+  tone,
   value,
   onChange,
 }: {
   label: string;
+  tone: "competency" | "passion";
   value: RatingLevel | null;
   onChange: (value: RatingLevel) => void;
 }) {
   const levels: RatingLevel[] = ["low", "medium", "high"];
+  const labelClass = tone === "competency" ? "text-(--color-competency)" : "text-(--color-passion)";
+  const selectedClass =
+    tone === "competency"
+      ? "border-(--color-competency) bg-(--color-competency) text-(--color-paper)"
+      : "border-(--color-passion) bg-(--color-passion) text-(--color-paper)";
   return (
     <div>
-      <p className="text-xs font-medium text-(--color-ink-muted)">{label}</p>
+      <p className={cn("text-xs font-semibold tracking-wide uppercase", labelClass)}>{label}</p>
       <div className="mt-1.5 flex gap-2">
         {levels.map((level) => (
           <button
@@ -291,10 +388,8 @@ function RatingPicker({
             type="button"
             onClick={() => onChange(level)}
             className={cn(
-              "flex-1 rounded-lg border px-3 py-1.5 text-sm capitalize transition-colors",
-              value === level
-                ? "border-(--color-accent) bg-(--color-accent) text-(--color-paper)"
-                : "border-(--color-hairline) hover:border-(--color-accent)",
+              "flex-1 rounded-lg border bg-(--color-paper-raised) px-3 py-1.5 text-sm capitalize transition-colors",
+              value === level ? selectedClass : "border-(--color-hairline) hover:border-(--color-accent)",
             )}
           >
             {level}

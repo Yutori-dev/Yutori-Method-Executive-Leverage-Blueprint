@@ -149,3 +149,18 @@ export async function updateFollowUpStatus(params: {
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/sessions/${params.sessionId}/follow-up`);
 }
+
+/** Permanent delete, admin-only via RLS (sessions_write_admin covers `for
+ * all`, no separate RPC needed -- matches the "plain authenticated write"
+ * pattern already used for admin config saves elsewhere in this app).
+ * Every dependent row (participant_sessions and everything cascading from
+ * that -- ratings, PDOs, architecture recommendations, etc.) already has
+ * `on delete cascade` back to sessions.id. The UI requires typing DELETE
+ * before this is callable -- see DeleteSessionControl.tsx. */
+export async function deleteSession(sessionId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("sessions").delete().eq("id", sessionId);
+  if (error) return { ok: false as const, message: error.message };
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
