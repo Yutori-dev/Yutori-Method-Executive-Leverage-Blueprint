@@ -105,52 +105,52 @@ export default async function SessionControlPanelPage({
               <code className="rounded bg-(--color-accent-soft) px-1.5 py-0.5">{joinUrl}</code>
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`/admin/sessions/${sessionId}/aggregate`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Aggregate results
             </Link>
             <Link
               href={`/admin/sessions/${sessionId}/diagnostic`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Executive Leverage Diagnostic
             </Link>
             <Link
               href={`/admin/sessions/${sessionId}/zone-of-investment`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Zone of Investment
             </Link>
             <Link
               href={`/admin/sessions/${sessionId}/present`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Presentation mode
             </Link>
             <Link
               href={`/admin/sessions/${sessionId}/follow-up`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Follow-up queue
             </Link>
             <Link
               href={`/admin/sessions/${sessionId}/feedback`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Workshop feedback
             </Link>
             <a
               href={`/admin/sessions/${sessionId}/export`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Export CSV
             </a>
             <Link
               href={`/admin/sessions/${sessionId}/edit`}
-              className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Edit
             </Link>

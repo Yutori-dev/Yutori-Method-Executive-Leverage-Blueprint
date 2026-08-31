@@ -29,7 +29,7 @@ export default async function BlueprintPage({
           </Link>
           <a
             href={`/api/blueprint/${dashboard.participantSessionId}/pdf`}
-            className="text-xs text-(--color-accent) underline underline-offset-4"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-soft) px-5 py-2.5 text-sm font-medium tracking-wide text-(--color-ink) transition-colors hover:bg-(--color-accent-soft)/70"
           >
             Download PDF
           </a>
