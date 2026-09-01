@@ -1517,6 +1517,7 @@ export type Database = {
       responsibilities: {
         Row: {
           active: boolean
+          blueprint_description: string | null
           created_at: string
           description: string | null
           id: string
@@ -1530,6 +1531,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          blueprint_description?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1543,6 +1545,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          blueprint_description?: string | null
           created_at?: string
           description?: string | null
           id?: string

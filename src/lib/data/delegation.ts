@@ -70,6 +70,7 @@ export async function getPriorityDelegationConfig(): Promise<PriorityDelegationC
 export interface PrioritySelection {
   responsibilityId: string;
   label: string;
+  blueprintDescription: string | null;
   selectionOrder: number;
   /** Fetched unconditionally (it's cheap, already in this row) but only
    * meant to be shown once architecture has been revealed for the
@@ -102,7 +103,7 @@ export async function getDelegationCandidates(
       .in("macro_zone", ["ambiguity", "vulnerability"]),
     supabase
       .from("priority_delegation_opportunities")
-      .select("responsibility_id, selection_order, leverage_level_snapshot, responsibilities(label)")
+      .select("responsibility_id, selection_order, leverage_level_snapshot, responsibilities(label, blueprint_description)")
       .eq("participant_session_id", participantSessionId)
       .order("selection_order", { ascending: true }),
     supabase
@@ -114,6 +115,8 @@ export async function getDelegationCandidates(
 
   const labelOf = (row: { responsibilities: unknown }) =>
     (row.responsibilities as { label: string } | null)?.label ?? "[Removed responsibility]";
+  const blueprintDescriptionOf = (row: { responsibilities: unknown }) =>
+    (row.responsibilities as { blueprint_description: string | null } | null)?.blueprint_description ?? null;
 
   return {
     eligible: (rated ?? []).map((r) => ({
@@ -125,6 +128,7 @@ export async function getDelegationCandidates(
     currentSelections: (priorities ?? []).map((p) => ({
       responsibilityId: p.responsibility_id,
       label: labelOf(p),
+      blueprintDescription: blueprintDescriptionOf(p),
       selectionOrder: p.selection_order,
       leverageLevelSnapshot: p.leverage_level_snapshot as LeverageLevel,
     })),

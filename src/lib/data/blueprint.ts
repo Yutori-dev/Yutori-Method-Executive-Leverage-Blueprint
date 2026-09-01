@@ -5,19 +5,25 @@ import { getExecutiveLeverageDiagnosticData, type ExecutiveLeverageProfileResult
 import { getDelegationCandidates } from "@/lib/data/delegation";
 import { getArchitectureData, type ArchitectureData } from "@/lib/data/architecture";
 import type { CurrentSupportFlags } from "@/lib/currentSupportLabels";
-import {
-  getDelegationBeliefsData,
-  getPrimaryDelegationBarriers,
-  getPriorityOwnershipTransferOpportunity,
-  type DelegationBarrier,
-} from "@/lib/data/delegationBeliefs";
+import { getDelegationBeliefsData, getPriorityOwnershipTransferOpportunity } from "@/lib/data/delegationBeliefs";
 import { getExecutiveSupportAuditData, getExecutiveSupportAuditSummary } from "@/lib/data/executiveSupportAudit";
 import { getExecutiveSupportArchitectureConfig } from "@/lib/data/executiveSupportArchitectureConfig";
 import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
+import type { DelegationDomain } from "@/lib/delegationBeliefsConstants";
+import {
+  normalizeZonePercentages,
+  classifyCapacityMapPattern,
+  LEADERSHIP_WIRING_COPY,
+  classifyBiggestImpediment,
+  rankDelegationBeliefStatuses,
+  selectHighestValueFocus,
+  type DelegationStatusLabel,
+} from "@/lib/blueprintCopy";
 import type { LeverageLevel, SelfIdentification } from "@/types/database";
 
 export interface BlueprintDelegationOpportunity {
   label: string;
+  blueprintDescription: string | null;
   selectionOrder: number;
   /** Only present once the Priority Leverage Opportunities Reveal has
    * fired for this session -- hidden before then, same as everywhere else
@@ -37,12 +43,26 @@ export interface BlueprintData {
   modules: { key: string; name: string; state: string; requiresLiveWorkshop: boolean }[];
   executiveLeverageProfile: ExecutiveLeverageProfileResult | null;
   selfIdentification: SelfIdentification | null;
+  /** Section 01 -- Leadership Wiring: wiring + the locked short description
+   * + pattern insight, resolved server-side from LEADERSHIP_WIRING_COPY.
+   * Null only when self-identification hasn't been captured yet. */
+  leadershipWiring: { wiring: SelfIdentification; shortDescription: string; patternInsight: string } | null;
   zone: ZoneOfInvestmentData;
+  /** Section 01 -- Leadership Capacity Map Distribution: normalized
+   * percentages (always sum to 100) + the deterministic pattern insight.
+   * Null when nothing has been mapped yet. */
+  capacityMap: { investmentPct: number; ambiguityPct: number; vulnerabilityPct: number; patternInsight: string } | null;
   delegation: {
-    primaryBarriers: DelegationBarrier[];
     priorityOwnershipTransferOpportunity: { label: string; interpretation: string } | null;
     priorityOpportunities: BlueprintDelegationOpportunity[];
   };
+  /** Section 01 -- Delegation Beliefs: relative bars (avg kept only for bar
+   * width, never rendered as digits) + the Biggest Impediment
+   * classification. Null until the assessment has produced a result. */
+  delegationBeliefs: {
+    dimensions: { domain: DelegationDomain; avg: number; statusLabel: DelegationStatusLabel | null }[];
+    biggestImpediment: { kind: "single" | "two_way" | "none_dominant"; headline: string; interpretation: string };
+  } | null;
   priorityLeverage: {
     revealed: boolean;
     pattern: { level: LeverageLevel; count: number }[];
@@ -54,8 +74,15 @@ export interface BlueprintData {
   } | null;
   architecture: ArchitectureData;
   architectureConfig: ExecutiveSupportArchitectureConfigInput | null;
+  /** Section 04 -- Highest Value Focus: up to 4 Zone of Investment
+   * responsibilities, ranked Genius > Strength > Potential, reusing
+   * capacityMap.investmentPct rather than recomputing it. */
+  highestValueFocus: { investmentPct: number; items: { responsibilityId: string; label: string; blueprintDescription: string | null }[] };
   followUpRequested: boolean;
   reflections: { whiteWhale: string | null; successVision: string | null; successVisionFollowup: string | null };
+  /** Section 05 -- always "PREVIEW" for the current virtual product; models
+   * the future live-workshop-completed state without requiring it now. */
+  characterFitStatus: "PREVIEW" | "COMPLETE";
 }
 
 /**
@@ -150,6 +177,7 @@ export async function getBlueprintData(
   // everywhere else this classification appears.
   const priorityOpportunities: BlueprintDelegationOpportunity[] = delegationCandidates.currentSelections.map((s) => ({
     label: s.label,
+    blueprintDescription: s.blueprintDescription,
     selectionOrder: s.selectionOrder,
     leverageLevel: session.priority_leverage_reveal_unlocked ? s.leverageLevelSnapshot : null,
   }));
@@ -162,6 +190,53 @@ export async function getBlueprintData(
   const priorityLeveragePattern = (["execution", "orchestration", "strategic", "systems"] as LeverageLevel[])
     .filter((level) => priorityLeverageCounts.has(level))
     .map((level) => ({ level, count: priorityLeverageCounts.get(level)! }));
+
+  const selfIdentification = (participantSession?.self_identification as SelfIdentification | null) ?? null;
+  const leadershipWiring = selfIdentification
+    ? { wiring: selfIdentification, ...LEADERSHIP_WIRING_COPY[selfIdentification] }
+    : null;
+
+  const zonePcts = normalizeZonePercentages(zone.macroZoneDistribution);
+  const capacityMap = zonePcts
+    ? {
+        investmentPct: zonePcts.investmentPct,
+        ambiguityPct: zonePcts.ambiguityPct,
+        vulnerabilityPct: zonePcts.vulnerabilityPct,
+        patternInsight: classifyCapacityMapPattern(zonePcts).insight,
+      }
+    : null;
+
+  let delegationBeliefs: BlueprintData["delegationBeliefs"] = null;
+  if (delegationBeliefsData?.result) {
+    const avgs: Record<DelegationDomain, number> = {
+      trust_control: delegationBeliefsData.result.trustControlAvg,
+      team_outcomes: delegationBeliefsData.result.teamOutcomesAvg,
+      workload_resources: delegationBeliefsData.result.workloadResourcesAvg,
+    };
+    const biggestImpediment = classifyBiggestImpediment(delegationBeliefsData.result.strongestBarrierDomains);
+    const statuses = rankDelegationBeliefStatuses(avgs, biggestImpediment);
+    delegationBeliefs = {
+      dimensions: (["trust_control", "team_outcomes", "workload_resources"] as DelegationDomain[]).map((domain) => ({
+        domain,
+        avg: avgs[domain],
+        statusLabel: statuses[domain],
+      })),
+      biggestImpediment: {
+        kind: biggestImpediment.kind,
+        headline: biggestImpediment.headline,
+        interpretation: biggestImpediment.interpretation,
+      },
+    };
+  }
+
+  const highestValueFocus = {
+    investmentPct: capacityMap?.investmentPct ?? 0,
+    items: selectHighestValueFocus(zone.personalizedPlacements).map((p) => ({
+      responsibilityId: p.responsibilityId,
+      label: p.label,
+      blueprintDescription: p.blueprintDescription,
+    })),
+  };
 
   return {
     session: { name: session.name, organization: session.organization },
@@ -192,15 +267,17 @@ export async function getBlueprintData(
       requiresLiveWorkshop: m.requires_live_workshop,
     })),
     executiveLeverageProfile: diagnostic.result,
-    selfIdentification: (participantSession?.self_identification as SelfIdentification | null) ?? null,
+    selfIdentification,
+    leadershipWiring,
     zone,
+    capacityMap,
     delegation: {
-      primaryBarriers: delegationBeliefsData ? getPrimaryDelegationBarriers(delegationBeliefsData) : [],
       priorityOwnershipTransferOpportunity: priorityOwnershipTransferOpportunity
         ? { label: priorityOwnershipTransferOpportunity.label, interpretation: priorityOwnershipTransferOpportunity.interpretation }
         : null,
       priorityOpportunities,
     },
+    delegationBeliefs,
     priorityLeverage: {
       revealed: session.priority_leverage_reveal_unlocked,
       pattern: priorityLeveragePattern,
@@ -208,11 +285,13 @@ export async function getBlueprintData(
     executiveSupportAudit,
     architecture,
     architectureConfig,
+    highestValueFocus,
     followUpRequested: !!followUp,
     reflections: {
       whiteWhale: reflectionRow?.white_whale ?? null,
       successVision: reflectionRow?.success_vision ?? null,
       successVisionFollowup: reflectionRow?.success_vision_white_whale_followup ?? null,
     },
+    characterFitStatus: "PREVIEW",
   };
 }

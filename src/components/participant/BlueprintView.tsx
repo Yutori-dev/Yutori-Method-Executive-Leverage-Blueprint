@@ -1,10 +1,20 @@
 import { Card } from "@/components/ui/Card";
-import { ZoneMatrix } from "@/components/participant/ZoneMatrix";
-import { CharacterPreview } from "@/components/participant/CharacterPreview";
 import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
+import { HemisphereIcon } from "@/components/participant/HemisphereIcon";
+import { WhiteWhaleIcon } from "@/components/participant/WhiteWhaleIcon";
+import { DelegationBeliefBars } from "@/components/participant/DelegationBeliefBars";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 import { whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
 import { ArchitecturePyramid } from "@/components/participant/ArchitecturePyramid";
+import {
+  LEVEL_TAGLINE,
+  LEVEL_ROLES,
+  CHARACTER_FIT_CARDS,
+  CHARACTER_FIT_MARKER,
+  WHITE_WHALE_SUPPORTING_COPY,
+  BLUEPRINT_FOOTER_PRIMARY,
+  BLUEPRINT_FOOTER_SECONDARY,
+} from "@/lib/blueprintCopy";
 import type { BlueprintData } from "@/lib/data/blueprint";
 import type { ArchitectureRecommendationView } from "@/lib/data/architecture";
 import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
@@ -26,8 +36,10 @@ export function BlueprintView({
   participantName: string;
   participantSessionId: string;
 }) {
+  const sortedOpportunities = [...data.delegation.priorityOpportunities].sort((a, b) => a.selectionOrder - b.selectionOrder);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
         <p className="font-serif text-sm italic text-(--color-ink-muted)">
           Yutori Method™ Executive Leverage Blueprint
@@ -47,194 +59,208 @@ export function BlueprintView({
         </p>
       </div>
 
-      <section>
-        <h2 className="font-serif text-xl">Fit</h2>
-        <p className="mt-1 text-sm text-(--color-ink-muted)">
-          Unlocked in the live workshop.
-        </p>
-        <div className="mt-3">
-          <CharacterPreview leadershipWiring={data.selfIdentification} />
-        </div>
-      </section>
-
-      {data.executiveLeverageProfile ? (
+      {/* 01 -- Your Operating Altitude */}
+      {data.executiveLeverageProfile || data.leadershipWiring || data.capacityMap || data.delegationBeliefs ? (
         <section>
-          <h2 className="font-serif text-xl">Executive Leverage Profile</h2>
-          <Card className="mt-3">
-            <p className="text-sm text-(--color-ink)">{data.executiveLeverageProfile.profileLabel}</p>
-            {data.executiveLeverageProfile.profileDescription ? (
-              <p className="mt-2 text-sm text-(--color-ink-muted)">
-                {data.executiveLeverageProfile.profileDescription}
-              </p>
-            ) : null}
-            {data.executiveLeverageProfile.strongestConstraints.length > 0 ? (
-              <div className="mt-4 space-y-3 border-t border-(--color-hairline) pt-4">
-                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
-                  Strongest Leverage Constraints
-                </p>
-                {data.executiveLeverageProfile.strongestConstraints.map((c) => (
-                  <div key={c.label}>
-                    <p className="text-sm font-medium text-(--color-ink)">{c.label}</p>
-                    <p className="mt-0.5 text-sm text-(--color-ink-muted)">{c.interpretation}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </Card>
-        </section>
-      ) : null}
-
-      {data.zone.personalizedPlacements.length > 0 ? (
-        <section>
-          <h2 className="font-serif text-xl">Investment</h2>
-          <p className="mt-1 text-sm text-(--color-ink-muted)">
-            Being outside your Zone of Investment does not mean something must be delegated -- it
-            identifies a candidate worth examining further.
-          </p>
-          <Card className="mt-3">
-            <ZoneMatrix cells={data.zone.zoneCells} placements={data.zone.personalizedPlacements} />
-          </Card>
-        </section>
-      ) : null}
-
-      {data.delegation.primaryBarriers.length > 0 ||
-      data.delegation.priorityOwnershipTransferOpportunity ||
-      data.delegation.priorityOpportunities.length > 0 ? (
-        <section>
-          <h2 className="font-serif text-xl">Delegation</h2>
-          {data.delegation.primaryBarriers.length > 0 ? (
-            <Card className="mt-3">
-              <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
-                Primary Delegation Barrier
-              </p>
-              <div className="mt-2 space-y-3">
-                {data.delegation.primaryBarriers.map((b) => (
-                  <div key={b.domain}>
-                    <p className="text-sm text-(--color-ink)">
-                      {b.domainLabel} — {b.avg.toFixed(1)} / 5
-                    </p>
-                    <p className="mt-1 text-sm text-(--color-ink-muted)">{b.interpretation}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ) : null}
-          {data.delegation.priorityOwnershipTransferOpportunity ? (
-            <Card className="mt-3">
-              <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
-                Priority Ownership Transfer Opportunity
-              </p>
-              <p className="mt-2 text-sm text-(--color-ink)">{data.delegation.priorityOwnershipTransferOpportunity.label}</p>
-              <p className="mt-1 text-sm text-(--color-ink-muted)">
-                {data.delegation.priorityOwnershipTransferOpportunity.interpretation}
-              </p>
-            </Card>
-          ) : null}
-          {data.delegation.priorityOpportunities.length > 0 ? (
-            <Card className="mt-3">
-              <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
-                Priority Delegation Opportunities
-              </p>
-              <ol className="mt-2 space-y-1.5">
-                {data.delegation.priorityOpportunities
-                  .sort((a, b) => a.selectionOrder - b.selectionOrder)
-                  .map((o) => (
-                    <li key={o.selectionOrder} className="flex items-center justify-between text-sm">
-                      <span className="text-(--color-ink)">
-                        {o.selectionOrder}. {o.label}
-                      </span>
-                      {o.leverageLevel ? (
-                        <span className="text-(--color-ink-muted)">{LEVEL_LABEL[o.leverageLevel]}</span>
-                      ) : null}
-                    </li>
-                  ))}
-              </ol>
-              {data.priorityLeverage.revealed && data.priorityLeverage.pattern.length > 0 ? (
-                <p className="mt-3 border-t border-(--color-hairline) pt-3 text-xs text-(--color-ink-muted)">
-                  Leverage pattern:{" "}
-                  {data.priorityLeverage.pattern.map((p) => `${p.count} ${LEVEL_LABEL[p.level]}`).join(" · ")}
-                </p>
-              ) : null}
-            </Card>
-          ) : null}
-        </section>
-      ) : null}
-
-      {data.executiveSupportAudit ? (
-        <section>
-          <h2 className="font-serif text-xl">Executive Support Audit</h2>
-          <Card className="mt-3">
-            <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
-              {data.executiveSupportAudit.primary.length > 1 ? "Your most prominent leverage gaps" : "Primary leverage gap"}
-            </p>
-            <div className="mt-2 space-y-3">
-              {data.executiveSupportAudit.primary.map((p) => (
-                <div key={p.layer}>
-                  <p className="text-sm text-(--color-ink)">{LEVEL_LABEL[p.layer]}</p>
-                  <p className="mt-1 text-sm text-(--color-ink-muted)">{p.interpretation}</p>
-                </div>
-              ))}
-            </div>
-            {data.executiveSupportAudit.primary.length === 1 ? (
-              <div className="mt-4 border-t border-(--color-hairline) pt-4">
+          <h2 className="font-serif text-xl">01 · Your Operating Altitude</h2>
+          <div className="mt-3 grid gap-4 lg:grid-cols-4">
+            {data.executiveLeverageProfile ? (
+              <Card>
                 <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
-                  {data.executiveSupportAudit.secondary.length > 1 ? "Secondary leverage gaps" : "Secondary leverage gap"}
+                  Executive Leverage Profile
                 </p>
-                {data.executiveSupportAudit.secondary.length > 0 ? (
-                  <div className="mt-2 space-y-3">
-                    {data.executiveSupportAudit.secondary.map((s) => (
-                      <div key={s.layer}>
-                        <p className="text-sm text-(--color-ink)">{LEVEL_LABEL[s.layer]}</p>
-                        <p className="mt-1 text-sm text-(--color-ink-muted)">{s.interpretation}</p>
+                <p className="mt-2 text-sm font-medium text-(--color-ink)">{data.executiveLeverageProfile.profileLabel}</p>
+                {data.executiveLeverageProfile.profileDescription ? (
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">{data.executiveLeverageProfile.profileDescription}</p>
+                ) : null}
+                {data.executiveLeverageProfile.strongestConstraints.length > 0 ? (
+                  <div className="mt-4 space-y-3 border-t border-(--color-hairline) pt-4">
+                    <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Strongest Leverage Constraints</p>
+                    {data.executiveLeverageProfile.strongestConstraints.map((c) => (
+                      <div key={c.label}>
+                        <p className="text-sm font-medium text-(--color-ink)">{c.label}</p>
+                        <p className="mt-0.5 text-sm text-(--color-ink-muted)">{c.interpretation}</p>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="mt-2 text-sm text-(--color-ink-muted)">{data.executiveSupportAudit.noSecondaryCopy}</p>
-                )}
-              </div>
+                ) : null}
+              </Card>
             ) : null}
-          </Card>
+
+            {data.leadershipWiring ? (
+              <Card>
+                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Leadership Wiring</p>
+                <div className="mt-2 flex items-center gap-3">
+                  <HemisphereIcon wiring={data.leadershipWiring.wiring} size={36} />
+                  <p className="text-sm font-medium text-(--color-ink) capitalize">{data.leadershipWiring.wiring}</p>
+                </div>
+                <p className="mt-2 text-sm text-(--color-ink-muted)">{data.leadershipWiring.shortDescription}</p>
+                <div className="mt-4 border-t border-(--color-hairline) pt-4">
+                  <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Pattern Insight</p>
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">{data.leadershipWiring.patternInsight}</p>
+                </div>
+              </Card>
+            ) : null}
+
+            {data.capacityMap ? (
+              <Card>
+                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+                  Leadership Capacity Map
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-(--color-ink)">Zone of Investment</span>
+                    <span className="text-(--color-ink-muted)">{data.capacityMap.investmentPct}%</span>
+                  </div>
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-(--color-ink)">Zone of Ambiguity</span>
+                    <span className="text-(--color-ink-muted)">{data.capacityMap.ambiguityPct}%</span>
+                  </div>
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-(--color-ink)">Zone of Vulnerability</span>
+                    <span className="text-(--color-ink-muted)">{data.capacityMap.vulnerabilityPct}%</span>
+                  </div>
+                </div>
+                <p className="mt-4 border-t border-(--color-hairline) pt-4 text-sm text-(--color-ink-muted)">
+                  {data.capacityMap.patternInsight}
+                </p>
+              </Card>
+            ) : null}
+
+            {data.delegationBeliefs ? (
+              <Card>
+                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Delegation Beliefs</p>
+                <div className="mt-3">
+                  <DelegationBeliefBars dimensions={data.delegationBeliefs.dimensions} />
+                </div>
+                <div className="mt-4 border-t border-(--color-hairline) pt-4">
+                  <p className="text-sm font-medium text-(--color-ink)">{data.delegationBeliefs.biggestImpediment.headline}</p>
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">{data.delegationBeliefs.biggestImpediment.interpretation}</p>
+                </div>
+                {data.delegation.priorityOwnershipTransferOpportunity ? (
+                  <div className="mt-4 border-t border-(--color-hairline) pt-4">
+                    <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
+                      Priority Ownership Transfer Opportunity
+                    </p>
+                    <p className="mt-1 text-sm text-(--color-ink)">{data.delegation.priorityOwnershipTransferOpportunity.label}</p>
+                    <p className="mt-1 text-sm text-(--color-ink-muted)">
+                      {data.delegation.priorityOwnershipTransferOpportunity.interpretation}
+                    </p>
+                  </div>
+                ) : null}
+              </Card>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
+      {/* 02 -- The Ownership to Transfer */}
+      {sortedOpportunities.length > 0 ? (
+        <section>
+          <h2 className="font-serif text-xl">02 · The Ownership to Transfer</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            {sortedOpportunities.map((o) => (
+              <Card key={o.selectionOrder}>
+                <p className="text-xs text-(--color-ink-muted)">{o.selectionOrder}</p>
+                <p className="mt-1 text-sm font-medium text-(--color-ink)">{o.label}</p>
+                {o.blueprintDescription ? (
+                  <p className="mt-2 text-sm text-(--color-ink-muted)">{o.blueprintDescription}</p>
+                ) : null}
+                {o.leverageLevel ? (
+                  <p className="mt-3 text-xs font-medium tracking-wide text-(--color-accent) uppercase">
+                    {LEVEL_LABEL[o.leverageLevel]}
+                  </p>
+                ) : null}
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* 03 -- Your Office of the CEO */}
       <section>
-        <h2 className="font-serif text-xl">Executive Support Architecture</h2>
+        <h2 className="font-serif text-xl">03 · Your Office of the CEO</h2>
         <Card className="mt-3">
           {data.architecture.revealed && data.architecture.recommendation && data.architectureConfig ? (
             <ArchitectureSummary rec={data.architecture.recommendation} config={data.architectureConfig} />
           ) : (
-            <p className="text-sm text-(--color-ink-muted)">
-              Awaiting facilitator reveal.
-            </p>
+            <p className="text-sm text-(--color-ink-muted)">Awaiting facilitator reveal.</p>
           )}
         </Card>
       </section>
 
-      {data.reflections.successVision || data.reflections.whiteWhale ? (
+      {/* 04 -- What This Makes Possible */}
+      {data.reflections.whiteWhale || data.highestValueFocus.items.length > 0 || data.reflections.successVision ? (
         <section>
-          <h2 className="font-serif text-xl">What This Could Unlock</h2>
-          <p className="mt-1 text-xs text-(--color-ink-muted)">
-            Private to you and your facilitator.
-          </p>
-          <Card className="mt-3 space-y-4">
+          <h2 className="font-serif text-xl">04 · What This Makes Possible</h2>
+          <div className="mt-3 space-y-4">
             {data.reflections.whiteWhale ? (
-              <div>
-                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Your White Whale</p>
-                <p className="mt-1 text-sm text-(--color-ink)">{data.reflections.whiteWhale}</p>
-              </div>
+              <Card>
+                <div className="flex items-start gap-3">
+                  <WhiteWhaleIcon size={28} />
+                  <div>
+                    <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">White Whale</p>
+                    <p className="mt-1 text-sm text-(--color-ink)">{data.reflections.whiteWhale}</p>
+                    <p className="mt-2 text-sm text-(--color-ink-muted)">{WHITE_WHALE_SUPPORTING_COPY}</p>
+                  </div>
+                </div>
+              </Card>
             ) : null}
+
+            {data.highestValueFocus.items.length > 0 ? (
+              <Card>
+                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
+                  Highest Value Focus
+                </p>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
+                  Zone of Investment · {data.highestValueFocus.investmentPct}%
+                </p>
+                <div className="mt-3 space-y-3">
+                  {data.highestValueFocus.items.map((item) => (
+                    <div key={item.responsibilityId} className="border-t border-(--color-hairline) pt-3 first:border-t-0 first:pt-0">
+                      <p className="text-sm font-medium text-(--color-ink)">{item.label}</p>
+                      {item.blueprintDescription ? (
+                        <p className="mt-0.5 text-sm text-(--color-ink-muted)">{item.blueprintDescription}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+
             {data.reflections.successVision ? (
-              <p className="text-sm text-(--color-ink)">{data.reflections.successVision}</p>
+              <Card>
+                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Success Vision</p>
+                <p className="mt-2 text-sm font-medium text-(--color-ink)">With greater capacity, I will:</p>
+                <p className="mt-2 text-sm text-(--color-ink)">{data.reflections.successVision}</p>
+                {data.reflections.successVisionFollowup ? (
+                  <p className="mt-2 text-sm text-(--color-ink)">{data.reflections.successVisionFollowup}</p>
+                ) : null}
+              </Card>
             ) : null}
-            {data.reflections.successVisionFollowup ? (
-              <p className="text-sm text-(--color-ink-muted)">{data.reflections.successVisionFollowup}</p>
-            ) : null}
-          </Card>
+          </div>
         </section>
       ) : null}
 
-      <section className="border-t border-(--color-hairline) pt-6">
+      {/* 05 -- Character Profile & Future Fit */}
+      <section>
+        <h2 className="font-serif text-xl">05 · Character Profile & Future Fit</h2>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {CHARACTER_FIT_CARDS.map((c) => (
+            <Card key={c.title}>
+              <p className="text-xs font-medium tracking-wide text-(--color-accent) uppercase">{c.title}</p>
+              <p className="mt-2 text-sm text-(--color-ink-muted)">{c.body}</p>
+            </Card>
+          ))}
+        </div>
+        <p className="mt-4 text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">{CHARACTER_FIT_MARKER}</p>
+      </section>
+
+      <section className="space-y-6 border-t border-(--color-hairline) pt-6">
+        <div>
+          <p className="text-sm font-medium tracking-wide text-(--color-ink) uppercase">{BLUEPRINT_FOOTER_PRIMARY}</p>
+          <p className="mt-1 text-xs tracking-wide text-(--color-ink-muted) uppercase">{BLUEPRINT_FOOTER_SECONDARY}</p>
+        </div>
         <DiscussBlueprintButton
           participantSessionId={participantSessionId}
           alreadyRequested={data.followUpRequested}
@@ -244,6 +270,15 @@ export function BlueprintView({
   );
 }
 
+/**
+ * "Recommended Architecture" vs "Next Move" split (client spec sections
+ * 15-16): no v5 visual reference was available to copy an exact layout
+ * from, so this uses the two distinct existing copy sources that already
+ * carry the right meaning -- whatThisMeansCopy (what this leverage layer
+ * generically means) + the level's role/support family for "Recommended
+ * Architecture", and actionCopy (the specific, current-support-aware
+ * recommendation) for "Next Move". Flag against v5 once it's available.
+ */
 function ArchitectureSummary({
   rec,
   config,
@@ -258,44 +293,61 @@ function ArchitectureSummary({
     ),
   );
   const secondaryHighlighted = new Set<LeverageLevel>(rec.secondaryLeverageNeeds);
-
-  if (rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel)) {
-    return (
-      <div>
-        <p className="text-sm text-(--color-ink)">
-          {rec.multiLayerLevels.map((l) => LEVEL_LABEL[l]).join(" · ")} Leverage
-        </p>
-        {rec.leadingLeverageNeed ? (
-          <p className="mt-2 text-sm text-(--color-ink-muted)">
-            {withLevel(config.leadingNeedBody, rec.leadingLeverageNeed)}
-          </p>
-        ) : null}
-        <div className="mt-6">
-          <ArchitecturePyramid highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
-        </div>
-      </div>
-    );
-  }
+  const isMultiLayer = rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel);
 
   return (
-    <div>
-      <p className="text-sm text-(--color-ink)">{LEVEL_LABEL[headlineLevel!]} Leverage</p>
-      <p className="mt-2 text-sm text-(--color-ink-muted)">{whatThisMeansCopy(headlineLevel!, config)}</p>
-      {rec.primaryRecommendedAction ? (
-        <p className="mt-3 text-sm text-(--color-ink-muted)">{actionCopy(rec.primaryRecommendedAction, config)}</p>
-      ) : null}
-      {rec.auditCorroboration === "strong" && rec.primaryLeverageNeed ? (
-        <p className="mt-3 text-sm text-(--color-ink-muted)">
-          {withLevel(config.corroborationStrongBody, rec.primaryLeverageNeed)}
-        </p>
-      ) : null}
-      {rec.secondaryLeverageNeeds.length > 0 ? (
-        <p className="mt-3 text-sm text-(--color-ink-muted)">
-          Secondary: {rec.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(" · ")}
-        </p>
-      ) : null}
-      <div className="mt-6">
-        <ArchitecturePyramid highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
+    <div className="grid gap-6 sm:grid-cols-[minmax(0,180px)_1fr] sm:items-start">
+      <ArchitecturePyramid variant="mini" highlighted={highlighted} secondaryHighlighted={secondaryHighlighted} />
+
+      <div>
+        {isMultiLayer ? (
+          <>
+            <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary</p>
+            <p className="mt-1 text-sm font-medium text-(--color-ink)">
+              {rec.multiLayerLevels.map((l) => LEVEL_LABEL[l]).join(" · ")} Leverage
+            </p>
+            {rec.leadingLeverageNeed ? (
+              <p className="mt-2 text-sm text-(--color-ink-muted)">{withLevel(config.leadingNeedBody, rec.leadingLeverageNeed)}</p>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary</p>
+            <p className="mt-1 text-sm font-medium text-(--color-ink)">{LEVEL_LABEL[headlineLevel!]}</p>
+            <p className="text-sm text-(--color-ink-muted)">{LEVEL_TAGLINE[headlineLevel!]}</p>
+
+            {rec.secondaryLeverageNeeds.length > 0 ? (
+              <div className="mt-3">
+                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Secondary</p>
+                <p className="mt-1 text-sm font-medium text-(--color-ink)">
+                  {rec.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(" · ")}
+                </p>
+                <p className="text-sm text-(--color-ink-muted)">
+                  {rec.secondaryLeverageNeeds.map((l) => LEVEL_TAGLINE[l]).join(" · ")}
+                </p>
+              </div>
+            ) : null}
+
+            <div className="mt-4 border-t border-(--color-hairline) pt-4">
+              <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Recommended Architecture</p>
+              <p className="mt-1 text-sm text-(--color-ink-muted)">{whatThisMeansCopy(headlineLevel!, config)}</p>
+              <p className="mt-2 text-sm text-(--color-ink-muted)">{LEVEL_ROLES[headlineLevel!].join(" · ")}</p>
+            </div>
+
+            {rec.primaryRecommendedAction ? (
+              <div className="mt-4 border-t border-(--color-hairline) pt-4">
+                <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Next Move</p>
+                <p className="mt-1 text-sm text-(--color-ink-muted)">{actionCopy(rec.primaryRecommendedAction, config)}</p>
+              </div>
+            ) : null}
+
+            {rec.auditCorroboration === "strong" && rec.primaryLeverageNeed ? (
+              <p className="mt-4 text-sm text-(--color-ink-muted)">
+                {withLevel(config.corroborationStrongBody, rec.primaryLeverageNeed)}
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   );

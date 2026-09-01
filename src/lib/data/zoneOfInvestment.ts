@@ -21,6 +21,7 @@ export interface RatedResponsibility {
 export interface PersonalizedPlacement {
   responsibilityId: string;
   label: string;
+  blueprintDescription: string | null;
   competencyLevel: RatingLevel;
   passionLevel: RatingLevel;
   cellName: string;
@@ -76,7 +77,7 @@ export async function getZoneOfInvestmentData(
       .order("sort_order", { ascending: true }),
     supabase
       .from("participant_responsibilities")
-      .select("responsibility_id, competency, passion, matrix_cell, macro_zone, responsibilities(label)")
+      .select("responsibility_id, competency, passion, matrix_cell, macro_zone, responsibilities(label, blueprint_description)")
       .eq("participant_session_id", participantSessionId),
     supabase.from("sessions").select("zone_of_investment_revealed").eq("id", sessionId).maybeSingle(),
     supabase
@@ -111,6 +112,7 @@ export async function getZoneOfInvestmentData(
         .map((r) => ({
           responsibilityId: r.responsibility_id,
           label: (r.responsibilities as { label: string } | null)?.label ?? "[Removed responsibility]",
+          blueprintDescription: (r.responsibilities as { blueprint_description: string | null } | null)?.blueprint_description ?? null,
           competencyLevel: r.competency as RatingLevel,
           passionLevel: r.passion as RatingLevel,
           cellName: r.matrix_cell as string,

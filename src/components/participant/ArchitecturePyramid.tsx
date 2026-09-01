@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { LEVEL_TAGLINE, LEVEL_ROLES } from "@/lib/blueprintCopy";
 import type { LeverageLevel } from "@/types/database";
 
 const LEVEL_LABEL: Record<LeverageLevel, string> = {
@@ -10,9 +11,7 @@ const LEVEL_LABEL: Record<LeverageLevel, string> = {
 
 const PYRAMID_LAYERS: {
   level: Exclude<LeverageLevel, "systems">;
-  tagline: string;
   description: string;
-  roles: string[];
   /** This band's own container width, and the width of the band directly
    * above it (0 for the apex, which has no band above it) -- both as a
    * percent of the whole pyramid. The three stack (1/3, 2/3, 3/3 widths)
@@ -24,39 +23,29 @@ const PYRAMID_LAYERS: {
 }[] = [
   {
     level: "strategic",
-    tagline: "Leadership Leverage",
     description: "Owns work that requires meaningful judgment, decision-making and leadership authority.",
-    roles: ["Chief of Staff", "Chief Integrator", "COO"],
     containerWidthPct: 100 / 3,
     previousBandWidthPct: 0,
   },
   {
     level: "orchestration",
-    tagline: "Coordination Leverage",
     description: "Owns the flow of information, priorities, commitments and activity around the executive.",
-    roles: ["Executive Assistant", "Senior Executive Assistant"],
     containerWidthPct: (100 * 2) / 3,
     previousBandWidthPct: 100 / 3,
   },
   {
     level: "execution",
-    tagline: "Task Leverage",
     description: "Owns defined tasks and outputs that can be reliably executed by others.",
-    roles: ["Personal Assistant", "Administrative Assistant / Virtual Assistant"],
     containerWidthPct: 100,
     previousBandWidthPct: (100 * 2) / 3,
   },
 ];
 
-const SYSTEMS_LAYER = {
-  tagline: "Leverage that amplifies every layer",
-  description: "Uses AI and automation to absorb, automate and accelerate recurring work across the architecture.",
-  roles: ["AI agents", "Automated workflows", "Supporting technology infrastructure"],
-};
+const SYSTEMS_DESCRIPTION = "Uses AI and automation to absorb, automate and accelerate recurring work across the architecture.";
 
-const LEGEND_LAYERS: { level: LeverageLevel; tagline: string; description: string; roles: string[] }[] = [
-  ...PYRAMID_LAYERS.map((l) => ({ level: l.level as LeverageLevel, tagline: l.tagline, description: l.description, roles: l.roles })),
-  { level: "systems", ...SYSTEMS_LAYER },
+const LEGEND_LAYERS: { level: LeverageLevel; description: string }[] = [
+  ...PYRAMID_LAYERS.map((l) => ({ level: l.level as LeverageLevel, description: l.description })),
+  { level: "systems", description: SYSTEMS_DESCRIPTION },
 ];
 
 /** Renders each trapezoid band's shape via clip-path, sized so the three
@@ -79,10 +68,18 @@ function bandClipPath(containerWidthPct: number, previousBandWidthPct: number): 
 export function ArchitecturePyramid({
   highlighted,
   secondaryHighlighted,
+  variant = "full",
 }: {
   highlighted: Set<LeverageLevel>;
   secondaryHighlighted: Set<LeverageLevel>;
+  /** "mini" drops the legend text block and shrinks the graphic -- used by
+   * the Blueprint's "Your Office of the CEO" section, which pairs the
+   * pyramid with its own separate Primary/Secondary summary panel instead
+   * of this component's full description/roles legend. */
+  variant?: "full" | "mini";
 }) {
+  const isMini = variant === "mini";
+
   function bandStateClasses(level: LeverageLevel) {
     if (highlighted.has(level)) return "bg-(--color-accent) text-(--color-paper)";
     if (secondaryHighlighted.has(level)) return "bg-(--color-accent-soft) text-(--color-ink)";
@@ -91,45 +88,61 @@ export function ArchitecturePyramid({
     return "bg-(--color-hairline) text-(--color-ink-muted)";
   }
 
+  const maxWidthClass = isMini ? "max-w-[180px]" : "max-w-sm";
+  const bandHeight = isMini ? "40px" : "72px";
+
   return (
     <div>
-      <div className="mx-auto flex max-w-sm flex-col items-center">
+      <div className={cn("mx-auto flex flex-col items-center", maxWidthClass)}>
         {PYRAMID_LAYERS.map((layer) => (
           <div
             key={layer.level}
             className="flex items-center justify-center"
             style={{
               width: `${layer.containerWidthPct}%`,
-              height: "72px",
+              height: bandHeight,
               clipPath: bandClipPath(layer.containerWidthPct, layer.previousBandWidthPct),
               marginTop: layer.level === "strategic" ? 0 : "3px",
             }}
           >
-            <div className={cn("flex h-full w-full items-end justify-center pb-2.5 transition-colors", bandStateClasses(layer.level))}>
-              <p className="text-xs font-semibold tracking-wide uppercase">{LEVEL_LABEL[layer.level]}</p>
+            <div
+              className={cn(
+                "flex h-full w-full items-end justify-center transition-colors",
+                isMini ? "pb-1.5" : "pb-2.5",
+                bandStateClasses(layer.level),
+              )}
+            >
+              <p className={cn("font-semibold tracking-wide uppercase", isMini ? "text-[9px]" : "text-xs")}>
+                {LEVEL_LABEL[layer.level]}
+              </p>
             </div>
           </div>
         ))}
       </div>
       <div
         className={cn(
-          "mx-auto mt-1 flex max-w-sm items-center justify-center rounded-lg py-2.5 transition-colors",
+          "mx-auto mt-1 flex items-center justify-center rounded-lg transition-colors",
+          maxWidthClass,
+          isMini ? "py-1.5" : "py-2.5",
           bandStateClasses("systems"),
         )}
       >
-        <p className="text-xs font-semibold tracking-wide uppercase">{LEVEL_LABEL.systems}</p>
+        <p className={cn("font-semibold tracking-wide uppercase", isMini ? "text-[9px]" : "text-xs")}>{LEVEL_LABEL.systems}</p>
       </div>
 
-      <div className="mt-6 space-y-4">
-        {LEGEND_LAYERS.map(
-          (layer) => (
-            <div key={layer.level} className="flex items-start justify-between gap-3 border-t border-(--color-hairline) pt-3 first:border-t-0 first:pt-0">
+      {!isMini && (
+        <div className="mt-6 space-y-4">
+          {LEGEND_LAYERS.map((layer) => (
+            <div
+              key={layer.level}
+              className="flex items-start justify-between gap-3 border-t border-(--color-hairline) pt-3 first:border-t-0 first:pt-0"
+            >
               <div>
                 <p className="text-sm font-medium text-(--color-ink)">
-                  {LEVEL_LABEL[layer.level]} — {layer.tagline}
+                  {LEVEL_LABEL[layer.level]} — {LEVEL_TAGLINE[layer.level]}
                 </p>
                 <p className="mt-0.5 text-xs text-(--color-ink-muted)">{layer.description}</p>
-                <p className="mt-1 text-xs text-(--color-ink-muted)">{layer.roles.join(" · ")}</p>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">{LEVEL_ROLES[layer.level].join(" · ")}</p>
               </div>
               {highlighted.has(layer.level) ? (
                 <span className="shrink-0 rounded-full bg-(--color-accent) px-2.5 py-0.5 text-xs font-medium text-(--color-paper)">
@@ -141,9 +154,9 @@ export function ArchitecturePyramid({
                 </span>
               ) : null}
             </div>
-          ),
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
