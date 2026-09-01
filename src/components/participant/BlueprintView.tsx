@@ -1,19 +1,26 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
+import { cn } from "@/lib/cn";
 import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
 import { HemisphereIcon } from "@/components/participant/HemisphereIcon";
 import { WhiteWhaleIcon } from "@/components/participant/WhiteWhaleIcon";
 import { DelegationBeliefBars } from "@/components/participant/DelegationBeliefBars";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
-import { whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
+import { actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
 import { ArchitecturePyramid } from "@/components/participant/ArchitecturePyramid";
 import {
   LEVEL_TAGLINE,
   LEVEL_ROLES,
+  ACTION_SHORT_LABEL,
+  summaryLevelDisplay,
+  LEADERSHIP_WIRING_EYEBROW,
+  DELEGATION_BELIEFS_EYEBROW,
   CHARACTER_FIT_CARDS,
   CHARACTER_FIT_MARKER,
   WHITE_WHALE_SUPPORTING_COPY,
   BLUEPRINT_FOOTER_PRIMARY,
   BLUEPRINT_FOOTER_SECONDARY,
+  SECTION_SUBTITLE,
 } from "@/lib/blueprintCopy";
 import type { BlueprintData } from "@/lib/data/blueprint";
 import type { ArchitectureRecommendationView } from "@/lib/data/architecture";
@@ -27,6 +34,55 @@ const LEVEL_LABEL: Record<string, string> = {
   systems: "Systems",
 };
 
+/**
+ * Numbered-badge + label-column band, matching the v5 visual reference's
+ * layout: a square number badge and title/subtitle sit to the left, the
+ * section's cards fill the rest of the band. `tint` gives section 03 its
+ * distinct "visual center of gravity" background per the client spec.
+ */
+function SectionBand({
+  number,
+  title,
+  subtitle,
+  tint,
+  striped,
+  children,
+}: {
+  number: string;
+  title: string;
+  subtitle: string;
+  tint?: "accent" | "competency";
+  striped?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-2xl p-6 sm:p-8",
+        tint === "accent" && "bg-(--color-accent-soft)",
+        tint === "competency" && "bg-(--color-competency-soft)",
+        !tint && "border border-(--color-hairline)",
+      )}
+      style={
+        striped
+          ? { backgroundImage: "repeating-linear-gradient(135deg, var(--color-hairline) 0 2px, transparent 2px 14px)" }
+          : undefined
+      }
+    >
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="lg:w-52 lg:shrink-0">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-(--color-ink) text-sm font-medium text-(--color-paper)">
+            {number}
+          </span>
+          <h2 className="mt-3 font-serif text-xl leading-tight tracking-wide uppercase">{title}</h2>
+          <p className="mt-1 text-xs text-(--color-ink-muted)">{subtitle}</p>
+        </div>
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    </section>
+  );
+}
+
 export function BlueprintView({
   data,
   participantName,
@@ -39,7 +95,7 @@ export function BlueprintView({
   const sortedOpportunities = [...data.delegation.priorityOpportunities].sort((a, b) => a.selectionOrder - b.selectionOrder);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div>
         <p className="font-serif text-sm italic text-(--color-ink-muted)">
           Yutori Method™ Executive Leverage Blueprint
@@ -61,9 +117,8 @@ export function BlueprintView({
 
       {/* 01 -- Your Operating Altitude */}
       {data.executiveLeverageProfile || data.leadershipWiring || data.capacityMap || data.delegationBeliefs ? (
-        <section>
-          <h2 className="font-serif text-xl">01 · Your Operating Altitude</h2>
-          <div className="mt-3 grid gap-4 lg:grid-cols-4">
+        <SectionBand number="1" title="Your Operating Altitude" subtitle={SECTION_SUBTITLE.operatingAltitude}>
+          <div className="grid gap-4 lg:grid-cols-4">
             {data.executiveLeverageProfile ? (
               <Card>
                 <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">
@@ -89,7 +144,12 @@ export function BlueprintView({
 
             {data.leadershipWiring ? (
               <Card>
-                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Leadership Wiring</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Leadership Wiring</p>
+                  <p className="text-right text-[10px] font-medium tracking-wide text-(--color-success) uppercase">
+                    {LEADERSHIP_WIRING_EYEBROW}
+                  </p>
+                </div>
                 <div className="mt-2 flex items-center gap-3">
                   <HemisphereIcon wiring={data.leadershipWiring.wiring} size={36} />
                   <p className="text-sm font-medium text-(--color-ink) capitalize">{data.leadershipWiring.wiring}</p>
@@ -113,12 +173,12 @@ export function BlueprintView({
                     <span className="text-(--color-ink-muted)">{data.capacityMap.investmentPct}%</span>
                   </div>
                   <div className="flex items-baseline justify-between text-sm">
-                    <span className="text-(--color-ink)">Zone of Ambiguity</span>
-                    <span className="text-(--color-ink-muted)">{data.capacityMap.ambiguityPct}%</span>
-                  </div>
-                  <div className="flex items-baseline justify-between text-sm">
                     <span className="text-(--color-ink)">Zone of Vulnerability</span>
                     <span className="text-(--color-ink-muted)">{data.capacityMap.vulnerabilityPct}%</span>
+                  </div>
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-(--color-ink)">Zone of Ambiguity</span>
+                    <span className="text-(--color-ink-muted)">{data.capacityMap.ambiguityPct}%</span>
                   </div>
                 </div>
                 <p className="mt-4 border-t border-(--color-hairline) pt-4 text-sm text-(--color-ink-muted)">
@@ -129,7 +189,12 @@ export function BlueprintView({
 
             {data.delegationBeliefs ? (
               <Card>
-                <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Delegation Beliefs</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Delegation Beliefs</p>
+                  <p className="text-right text-[10px] font-medium tracking-wide text-(--color-accent) uppercase">
+                    {DELEGATION_BELIEFS_EYEBROW}
+                  </p>
+                </div>
                 <div className="mt-3">
                   <DelegationBeliefBars dimensions={data.delegationBeliefs.dimensions} />
                 </div>
@@ -151,18 +216,19 @@ export function BlueprintView({
               </Card>
             ) : null}
           </div>
-        </section>
+        </SectionBand>
       ) : null}
 
       {/* 02 -- The Ownership to Transfer */}
       {sortedOpportunities.length > 0 ? (
-        <section>
-          <h2 className="font-serif text-xl">02 · The Ownership to Transfer</h2>
-          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+        <SectionBand number="2" title="The Ownership to Transfer" subtitle={SECTION_SUBTITLE.ownershipToTransfer}>
+          <div className="grid gap-4 sm:grid-cols-3">
             {sortedOpportunities.map((o) => (
               <Card key={o.selectionOrder}>
-                <p className="text-xs text-(--color-ink-muted)">{o.selectionOrder}</p>
-                <p className="mt-1 text-sm font-medium text-(--color-ink)">{o.label}</p>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent-soft) text-xs font-medium text-(--color-accent)">
+                  {o.selectionOrder}
+                </span>
+                <p className="mt-2 text-sm font-medium text-(--color-ink)">{o.label}</p>
                 {o.blueprintDescription ? (
                   <p className="mt-2 text-sm text-(--color-ink-muted)">{o.blueprintDescription}</p>
                 ) : null}
@@ -174,26 +240,24 @@ export function BlueprintView({
               </Card>
             ))}
           </div>
-        </section>
+        </SectionBand>
       ) : null}
 
       {/* 03 -- Your Office of the CEO */}
-      <section>
-        <h2 className="font-serif text-xl">03 · Your Office of the CEO</h2>
-        <Card className="mt-3">
+      <SectionBand number="3" title="Your Office of the CEO" subtitle={SECTION_SUBTITLE.officeOfTheCeo} tint="competency">
+        <Card>
           {data.architecture.revealed && data.architecture.recommendation && data.architectureConfig ? (
             <ArchitectureSummary rec={data.architecture.recommendation} config={data.architectureConfig} />
           ) : (
             <p className="text-sm text-(--color-ink-muted)">Awaiting facilitator reveal.</p>
           )}
         </Card>
-      </section>
+      </SectionBand>
 
       {/* 04 -- What This Makes Possible */}
       {data.reflections.whiteWhale || data.highestValueFocus.items.length > 0 || data.reflections.successVision ? (
-        <section>
-          <h2 className="font-serif text-xl">04 · What This Makes Possible</h2>
-          <div className="mt-3 space-y-4">
+        <SectionBand number="4" title="What This Makes Possible" subtitle={SECTION_SUBTITLE.whatThisMakesPossible} tint="accent">
+          <div className="grid gap-4 lg:grid-cols-3">
             {data.reflections.whiteWhale ? (
               <Card>
                 <div className="flex items-start gap-3">
@@ -232,20 +296,19 @@ export function BlueprintView({
               <Card>
                 <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Success Vision</p>
                 <p className="mt-2 text-sm font-medium text-(--color-ink)">With greater capacity, I will:</p>
-                <p className="mt-2 text-sm text-(--color-ink)">{data.reflections.successVision}</p>
+                <p className="mt-2 text-sm whitespace-pre-line text-(--color-ink)">{data.reflections.successVision}</p>
                 {data.reflections.successVisionFollowup ? (
-                  <p className="mt-2 text-sm text-(--color-ink)">{data.reflections.successVisionFollowup}</p>
+                  <p className="mt-2 text-sm whitespace-pre-line text-(--color-ink)">{data.reflections.successVisionFollowup}</p>
                 ) : null}
               </Card>
             ) : null}
           </div>
-        </section>
+        </SectionBand>
       ) : null}
 
       {/* 05 -- Character Profile & Future Fit */}
-      <section>
-        <h2 className="font-serif text-xl">05 · Character Profile & Future Fit</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <SectionBand number="5" title="Character Profile & Future Fit" subtitle={SECTION_SUBTITLE.characterFit} striped>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {CHARACTER_FIT_CARDS.map((c) => (
             <Card key={c.title}>
               <p className="text-xs font-medium tracking-wide text-(--color-accent) uppercase">{c.title}</p>
@@ -254,7 +317,7 @@ export function BlueprintView({
           ))}
         </div>
         <p className="mt-4 text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">{CHARACTER_FIT_MARKER}</p>
-      </section>
+      </SectionBand>
 
       <section className="space-y-6 border-t border-(--color-hairline) pt-6">
         <div>
@@ -271,13 +334,12 @@ export function BlueprintView({
 }
 
 /**
- * "Recommended Architecture" vs "Next Move" split (client spec sections
- * 15-16): no v5 visual reference was available to copy an exact layout
- * from, so this uses the two distinct existing copy sources that already
- * carry the right meaning -- whatThisMeansCopy (what this leverage layer
- * generically means) + the level's role/support family for "Recommended
- * Architecture", and actionCopy (the specific, current-support-aware
- * recommendation) for "Next Move". Flag against v5 once it's available.
+ * Recommended Architecture vs Next Move (client spec sections 15-16),
+ * confirmed against the v5 visual reference: "Recommended Architecture"
+ * carries a short deterministic action label (ACTION_SHORT_LABEL) + the
+ * level's role/support family; "Next Move" carries the longer, current-
+ * support-aware recommendation-engine copy (actionCopy). These are two
+ * genuinely different strings, not the same content shown twice.
  */
 function ArchitectureSummary({
   rec,
@@ -294,6 +356,8 @@ function ArchitectureSummary({
   );
   const secondaryHighlighted = new Set<LeverageLevel>(rec.secondaryLeverageNeeds);
   const isMultiLayer = rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel);
+  const secondaryLevel = rec.secondaryLeverageNeeds[0] ?? null;
+  const secondaryAction = rec.secondaryRecommendedActions[0] ?? null;
 
   return (
     <div className="grid gap-6 sm:grid-cols-[minmax(0,180px)_1fr] sm:items-start">
@@ -313,25 +377,36 @@ function ArchitectureSummary({
         ) : (
           <>
             <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary</p>
-            <p className="mt-1 text-sm font-medium text-(--color-ink)">{LEVEL_LABEL[headlineLevel!]}</p>
+            <p className="mt-1 text-sm font-medium text-(--color-ink)">{summaryLevelDisplay(headlineLevel!)}</p>
             <p className="text-sm text-(--color-ink-muted)">{LEVEL_TAGLINE[headlineLevel!]}</p>
 
-            {rec.secondaryLeverageNeeds.length > 0 ? (
+            {secondaryLevel ? (
               <div className="mt-3">
                 <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Secondary</p>
-                <p className="mt-1 text-sm font-medium text-(--color-ink)">
-                  {rec.secondaryLeverageNeeds.map((l) => LEVEL_LABEL[l]).join(" · ")}
-                </p>
-                <p className="text-sm text-(--color-ink-muted)">
-                  {rec.secondaryLeverageNeeds.map((l) => LEVEL_TAGLINE[l]).join(" · ")}
-                </p>
+                <p className="mt-1 text-sm font-medium text-(--color-ink)">{summaryLevelDisplay(secondaryLevel)}</p>
+                <p className="text-sm text-(--color-ink-muted)">{LEVEL_TAGLINE[secondaryLevel]}</p>
               </div>
             ) : null}
 
             <div className="mt-4 border-t border-(--color-hairline) pt-4">
               <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Recommended Architecture</p>
-              <p className="mt-1 text-sm text-(--color-ink-muted)">{whatThisMeansCopy(headlineLevel!, config)}</p>
-              <p className="mt-2 text-sm text-(--color-ink-muted)">{LEVEL_ROLES[headlineLevel!].join(" · ")}</p>
+              <p className="mt-2 text-xs tracking-wide text-(--color-ink-muted) uppercase">Primary Leverage Need</p>
+              <p className="text-sm font-medium text-(--color-ink)">{LEVEL_LABEL[headlineLevel!]}</p>
+              {rec.primaryRecommendedAction ? (
+                <p className="mt-1 text-sm text-(--color-ink)">{ACTION_SHORT_LABEL[rec.primaryRecommendedAction] ?? ""}</p>
+              ) : null}
+              <p className="text-sm text-(--color-ink-muted)">{LEVEL_ROLES[headlineLevel!].join(" · ")}</p>
+
+              {secondaryLevel ? (
+                <div className="mt-3 border-t border-(--color-hairline) pt-3">
+                  <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Secondary Need</p>
+                  <p className="text-sm font-medium text-(--color-ink)">{LEVEL_LABEL[secondaryLevel]}</p>
+                  {secondaryAction ? (
+                    <p className="mt-1 text-sm text-(--color-ink)">{ACTION_SHORT_LABEL[secondaryAction] ?? ""}</p>
+                  ) : null}
+                  <p className="text-sm text-(--color-ink-muted)">{LEVEL_ROLES[secondaryLevel].join(" · ")}</p>
+                </div>
+              ) : null}
             </div>
 
             {rec.primaryRecommendedAction ? (

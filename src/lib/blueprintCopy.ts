@@ -195,6 +195,21 @@ const TWO_WAY_IMPEDIMENT_COPY: Record<string, string> = {
 const NONE_DOMINANT_INTERPRETATION =
   "No single belief stands out as the primary constraint. Your delegation pattern is likely shaped by a combination of trust, team confidence and available resources.";
 
+/** One-line explainer under each Delegation Beliefs bar -- from the v5
+ * visual reference (not in the original text spec), verbatim. */
+export const DOMAIN_CAPTION: Record<DelegationDomain, string> = {
+  trust_control: "How readily you hand over judgment calls, not just tasks.",
+  team_outcomes: "How much you trust the team to deliver the standard you expect.",
+  workload_resources: "Whether you believe the capacity and budget exist to delegate.",
+};
+
+/** Fixed framing tags on two of Section 01's four cards -- from the v5
+ * visual reference. Leadership Wiring is framed as an asset already in
+ * place; Delegation Beliefs as the area to work on. Not present on the
+ * Executive Leverage Profile or Capacity Map cards in that reference. */
+export const LEADERSHIP_WIRING_EYEBROW = "WORKING FOR YOU";
+export const DELEGATION_BELIEFS_EYEBROW = "NEEDS ATTENTION";
+
 /**
  * Pure switch on the existing `strongest_barrier_domains` SQL output
  * (calculate_delegation_beliefs_results, already handles ties). Length 0
@@ -320,6 +335,39 @@ export const LEVEL_ROLES: Record<LeverageLevel, string[]> = {
   systems: ["AI agents", "Automated workflows", "Supporting technology infrastructure"],
 };
 
+/**
+ * Section 03's "Recommended Architecture" card shows a short deterministic
+ * action label ("Strengthen Orchestration Leverage") next to the role
+ * family -- distinct from the longer recommendation-engine action copy
+ * (`actionCopy()` in executiveSupportArchitectureCopy.ts, e.g. "You already
+ * have support positioned at the Orchestration layer...") which belongs to
+ * "Next Move" instead. Confirmed against the v5 visual reference: the two
+ * headings show genuinely different copy, not the same string twice.
+ * Keyed by the same action codes calculate_executive_support_architecture
+ * already returns as primary/secondaryRecommendedActions.
+ */
+export const ACTION_SHORT_LABEL: Record<string, string> = {
+  strengthen_execution: "Strengthen Execution Leverage",
+  add_execution: "Add Execution Leverage",
+  strengthen_orchestration: "Strengthen Orchestration Leverage",
+  evolve_or_add_orchestration: "Evolve or Add Orchestration Leverage",
+  add_orchestration: "Add Orchestration Leverage",
+  strengthen_strategic: "Strengthen Strategic Leverage",
+  add_strategic_from_orchestration: "Add Strategic Leverage",
+  add_strategic: "Add Strategic Leverage",
+  strengthen_systems: "Strengthen Systems Leverage",
+  add_systems: "Add Systems Leverage",
+};
+
+/** Section 03's small Primary/Secondary summary panel spells Systems out as
+ * "SYSTEMS LEVERAGE" (matching the client spec's own section-14 example
+ * verbatim), while every other level and the Recommended Architecture
+ * panel's headline show the plain level name -- an intentional, narrow
+ * exception, not a general renaming of LEVEL_LABEL. */
+export function summaryLevelDisplay(level: LeverageLevel): string {
+  return level === "systems" ? "SYSTEMS LEVERAGE" : level.toUpperCase();
+}
+
 // ---------------------------------------------------------------------------
 // Section 04 / 05 / footer -- fixed copy
 // ---------------------------------------------------------------------------
@@ -349,3 +397,13 @@ export const CHARACTER_FIT_MARKER = "TO BE COMPLETED IN THE IN-PERSON WORKSHOP";
 
 export const BLUEPRINT_FOOTER_PRIMARY = "DEFINE THE OWNERSHIP BEFORE YOU DEFINE THE ROLE.";
 export const BLUEPRINT_FOOTER_SECONDARY = "RIGHT OWNERSHIP. RIGHT SUPPORT. MAXIMUM LEVERAGE.";
+
+/** The 5 section subtitles, verbatim from the v5 visual reference (not in
+ * the original text spec). */
+export const SECTION_SUBTITLE = {
+  operatingAltitude: "Your current reality.",
+  ownershipToTransfer: "The three opportunities with the greatest potential to create near-term capacity.",
+  officeOfTheCeo: "The structure to unlock leverage.",
+  whatThisMakesPossible: "The impact of leverage in your life.",
+  characterFit: "The next step: your ideal right-hand role.",
+} as const;

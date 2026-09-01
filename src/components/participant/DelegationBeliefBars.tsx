@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 import { DOMAIN_LABEL, type DelegationDomain } from "@/lib/delegationBeliefsConstants";
-import type { DelegationStatusLabel } from "@/lib/blueprintCopy";
+import { DOMAIN_CAPTION, type DelegationStatusLabel } from "@/lib/blueprintCopy";
 
 const SCALE_MAX = 5;
 const DOMAIN_ORDER: DelegationDomain[] = ["trust_control", "team_outcomes", "workload_resources"];
@@ -36,6 +36,7 @@ export function DelegationBeliefBars({
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-(--color-accent-soft)">
               <div className="h-full rounded-full bg-(--color-accent) transition-[width]" style={{ width: `${pct}%` }} />
             </div>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">{DOMAIN_CAPTION[domain]}</p>
           </div>
         );
       })}

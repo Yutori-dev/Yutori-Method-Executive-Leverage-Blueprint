@@ -19,7 +19,7 @@ export default async function BlueprintPage({
 
   return (
     <main className="flex-1 py-16">
-      <Container narrow>
+      <Container wide>
         <div className="flex items-center justify-between">
           <Link
             href={`/dashboard/${sessionId}`}

@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
-import { whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
+import { actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
 import { HemisphereIconPdf } from "@/components/pdf/HemisphereIconPdf";
 import { WhiteWhaleIconPdf } from "@/components/pdf/WhiteWhaleIconPdf";
 import { DelegationBeliefBarsPdf } from "@/components/pdf/DelegationBeliefBarsPdf";
@@ -8,11 +8,16 @@ import { ArchitecturePyramidPdf } from "@/components/pdf/ArchitecturePyramidPdf"
 import {
   LEVEL_TAGLINE,
   LEVEL_ROLES,
+  ACTION_SHORT_LABEL,
+  summaryLevelDisplay,
+  LEADERSHIP_WIRING_EYEBROW,
+  DELEGATION_BELIEFS_EYEBROW,
   CHARACTER_FIT_CARDS,
   CHARACTER_FIT_MARKER,
   WHITE_WHALE_SUPPORTING_COPY,
   BLUEPRINT_FOOTER_PRIMARY,
   BLUEPRINT_FOOTER_SECONDARY,
+  SECTION_SUBTITLE,
 } from "@/lib/blueprintCopy";
 import type { BlueprintData } from "@/lib/data/blueprint";
 import type { ArchitectureRecommendationView } from "@/lib/data/architecture";
@@ -23,13 +28,17 @@ const INK = "#1c1f26";
 const INK_MUTED = "#5b6270";
 const ACCENT = "#6b5a3e";
 const HAIRLINE = "#e4e1da";
+const SUCCESS = "#3f6650";
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 9, color: INK, fontFamily: "Helvetica" },
   eyebrow: { fontSize: 9, color: INK_MUTED, marginBottom: 4, fontStyle: "italic" },
   title: { fontSize: 20, marginBottom: 4 },
   subtitle: { fontSize: 9, color: INK_MUTED, marginBottom: 16 },
-  sectionTitle: { fontSize: 12, marginTop: 14, marginBottom: 8, color: INK },
+  sectionTitle: { fontSize: 12, marginTop: 14, marginBottom: 2, color: INK, textTransform: "uppercase" },
+  sectionSubtitle: { fontSize: 8, color: INK_MUTED, marginBottom: 8 },
+  cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
+  eyebrowAccent: { fontSize: 7, color: ACCENT, textTransform: "uppercase" },
   card: { borderWidth: 1, borderColor: HAIRLINE, borderRadius: 6, padding: 10 },
   label: { fontSize: 8, color: INK_MUTED, marginBottom: 2, textTransform: "uppercase" },
   value: { fontSize: 9, color: INK, marginBottom: 6 },
@@ -76,7 +85,8 @@ export function BlueprintPdfDocument({
         {/* 01 -- Your Operating Altitude */}
         {data.executiveLeverageProfile || data.leadershipWiring || data.capacityMap || data.delegationBeliefs ? (
           <>
-            <Text style={styles.sectionTitle}>01 · Your Operating Altitude</Text>
+            <Text style={styles.sectionTitle}>1 · Your Operating Altitude</Text>
+            <Text style={styles.sectionSubtitle}>{SECTION_SUBTITLE.operatingAltitude}</Text>
             <View style={styles.grid4}>
               {data.executiveLeverageProfile ? (
                 <View style={styles.gridCard4}>
@@ -90,7 +100,10 @@ export function BlueprintPdfDocument({
 
               {data.leadershipWiring ? (
                 <View style={styles.gridCard4}>
-                  <Text style={styles.label}>Leadership Wiring</Text>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.label}>Leadership Wiring</Text>
+                    <Text style={{ ...styles.eyebrowAccent, color: SUCCESS }}>{LEADERSHIP_WIRING_EYEBROW}</Text>
+                  </View>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
                     <HemisphereIconPdf wiring={data.leadershipWiring.wiring} size={22} />
                     <Text style={styles.value}>
@@ -113,7 +126,10 @@ export function BlueprintPdfDocument({
 
               {data.delegationBeliefs ? (
                 <View style={styles.gridCard4}>
-                  <Text style={styles.label}>Delegation Beliefs</Text>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.label}>Delegation Beliefs</Text>
+                    <Text style={styles.eyebrowAccent}>{DELEGATION_BELIEFS_EYEBROW}</Text>
+                  </View>
                   <DelegationBeliefBarsPdf dimensions={data.delegationBeliefs.dimensions} />
                   <Text style={{ ...styles.value, marginTop: 4 }}>{data.delegationBeliefs.biggestImpediment.headline}</Text>
                   <Text style={styles.label}>{data.delegationBeliefs.biggestImpediment.interpretation}</Text>
@@ -132,7 +148,8 @@ export function BlueprintPdfDocument({
         {/* 02 -- The Ownership to Transfer */}
         {sortedOpportunities.length > 0 ? (
           <>
-            <Text style={styles.sectionTitle}>02 · The Ownership to Transfer</Text>
+            <Text style={styles.sectionTitle}>2 · The Ownership to Transfer</Text>
+            <Text style={styles.sectionSubtitle}>{SECTION_SUBTITLE.ownershipToTransfer}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {sortedOpportunities.map((o) => (
                 <View key={o.selectionOrder} style={styles.gridCard3}>
@@ -147,7 +164,8 @@ export function BlueprintPdfDocument({
         ) : null}
 
         {/* 03 -- Your Office of the CEO */}
-        <Text style={styles.sectionTitle}>03 · Your Office of the CEO</Text>
+        <Text style={styles.sectionTitle}>3 · Your Office of the CEO</Text>
+        <Text style={styles.sectionSubtitle}>{SECTION_SUBTITLE.officeOfTheCeo}</Text>
         <View style={styles.card}>
           {data.architecture.revealed && data.architecture.recommendation && data.architectureConfig ? (
             <ArchitectureSummary rec={data.architecture.recommendation} config={data.architectureConfig} />
@@ -159,7 +177,8 @@ export function BlueprintPdfDocument({
         {/* 04 -- What This Makes Possible */}
         {data.reflections.whiteWhale || data.highestValueFocus.items.length > 0 || data.reflections.successVision ? (
           <>
-            <Text style={styles.sectionTitle}>04 · What This Makes Possible</Text>
+            <Text style={styles.sectionTitle}>4 · What This Makes Possible</Text>
+            <Text style={styles.sectionSubtitle}>{SECTION_SUBTITLE.whatThisMakesPossible}</Text>
             <View style={styles.colsRow}>
               {data.reflections.whiteWhale ? (
                 <View style={{ ...styles.card, ...styles.col }}>
@@ -195,7 +214,8 @@ export function BlueprintPdfDocument({
         ) : null}
 
         {/* 05 -- Character Profile & Future Fit */}
-        <Text style={styles.sectionTitle}>05 · Character Profile & Future Fit</Text>
+        <Text style={styles.sectionTitle}>5 · Character Profile & Future Fit</Text>
+        <Text style={styles.sectionSubtitle}>{SECTION_SUBTITLE.characterFit}</Text>
         <View style={styles.grid4}>
           {CHARACTER_FIT_CARDS.map((c) => (
             <View key={c.title} style={styles.gridCard4}>
@@ -229,6 +249,8 @@ function ArchitectureSummary({
   );
   const secondaryHighlighted = new Set<LeverageLevel>(rec.secondaryLeverageNeeds);
   const isMultiLayer = rec.signalType === "multi_layer" || (rec.signalType === "audit_only" && !headlineLevel);
+  const secondaryLevel = rec.secondaryLeverageNeeds[0] ?? null;
+  const secondaryAction = rec.secondaryRecommendedActions[0] ?? null;
 
   return (
     <View style={{ flexDirection: "row", gap: 16 }}>
@@ -244,19 +266,32 @@ function ArchitectureSummary({
           <>
             <Text style={styles.label}>Primary</Text>
             <Text style={styles.value}>
-              {LEVEL_LABEL[headlineLevel!]} — {LEVEL_TAGLINE[headlineLevel!]}
+              {summaryLevelDisplay(headlineLevel!)} — {LEVEL_TAGLINE[headlineLevel!]}
             </Text>
-            {rec.secondaryLeverageNeeds.length > 0 ? (
+            {secondaryLevel ? (
               <>
                 <Text style={{ ...styles.label, marginTop: 4 }}>Secondary</Text>
                 <Text style={styles.value}>
-                  {rec.secondaryLeverageNeeds.map((l) => `${LEVEL_LABEL[l]} — ${LEVEL_TAGLINE[l]}`).join(" · ")}
+                  {summaryLevelDisplay(secondaryLevel)} — {LEVEL_TAGLINE[secondaryLevel]}
                 </Text>
               </>
             ) : null}
+
             <Text style={{ ...styles.label, marginTop: 4 }}>Recommended Architecture</Text>
-            <Text style={styles.label}>{whatThisMeansCopy(headlineLevel!, config)}</Text>
-            <Text style={styles.value}>{LEVEL_ROLES[headlineLevel!].join(" · ")}</Text>
+            <Text style={{ ...styles.label, marginBottom: 0 }}>Primary Leverage Need</Text>
+            <Text style={styles.value}>{LEVEL_LABEL[headlineLevel!]}</Text>
+            {rec.primaryRecommendedAction ? <Text style={styles.value}>{ACTION_SHORT_LABEL[rec.primaryRecommendedAction] ?? ""}</Text> : null}
+            <Text style={styles.label}>{LEVEL_ROLES[headlineLevel!].join(" · ")}</Text>
+
+            {secondaryLevel ? (
+              <>
+                <Text style={{ ...styles.label, marginTop: 4, marginBottom: 0 }}>Secondary Need</Text>
+                <Text style={styles.value}>{LEVEL_LABEL[secondaryLevel]}</Text>
+                {secondaryAction ? <Text style={styles.value}>{ACTION_SHORT_LABEL[secondaryAction] ?? ""}</Text> : null}
+                <Text style={styles.label}>{LEVEL_ROLES[secondaryLevel].join(" · ")}</Text>
+              </>
+            ) : null}
+
             {rec.primaryRecommendedAction ? (
               <>
                 <Text style={{ ...styles.label, marginTop: 4 }}>Next Move</Text>

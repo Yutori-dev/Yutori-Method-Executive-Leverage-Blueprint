@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
 import { DOMAIN_LABEL, type DelegationDomain } from "@/lib/delegationBeliefsConstants";
-import type { DelegationStatusLabel } from "@/lib/blueprintCopy";
+import { DOMAIN_CAPTION, type DelegationStatusLabel } from "@/lib/blueprintCopy";
 
 const SCALE_MAX = 5;
 const DOMAIN_ORDER: DelegationDomain[] = ["trust_control", "team_outcomes", "workload_resources"];
@@ -17,6 +17,7 @@ const styles = StyleSheet.create({
   statusLabel: { fontSize: 8, color: INK_MUTED, textTransform: "uppercase" },
   track: { height: 4, borderRadius: 2, backgroundColor: ACCENT_SOFT },
   fill: { height: 4, borderRadius: 2, backgroundColor: ACCENT },
+  caption: { fontSize: 7, color: INK_MUTED, marginTop: 3 },
 });
 
 /** PDF sibling of DelegationBeliefBars.tsx -- same never-render-the-avg-as-
@@ -43,6 +44,7 @@ export function DelegationBeliefBarsPdf({
             <View style={styles.track}>
               <View style={{ ...styles.fill, width: `${pct}%` }} />
             </View>
+            <Text style={styles.caption}>{DOMAIN_CAPTION[domain]}</Text>
           </View>
         );
       })}
