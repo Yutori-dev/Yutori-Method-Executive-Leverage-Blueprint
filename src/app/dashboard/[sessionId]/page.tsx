@@ -100,25 +100,22 @@ export default async function ParticipantDashboardPage({
             ) : (
               <>
                 <p className="text-sm text-(--color-ink)">You&apos;ve completed every module.</p>
-                <Link
-                  href={`/dashboard/${sessionId}/blueprint`}
-                  className="mt-3 inline-block text-sm text-(--color-accent) underline underline-offset-4"
-                >
-                  View my Blueprint
-                </Link>
+                {dashboard.session.blueprintRevealed ? (
+                  <Link
+                    href={`/dashboard/${sessionId}/blueprint`}
+                    className="mt-3 inline-block text-sm text-(--color-accent) underline underline-offset-4"
+                  >
+                    View my Blueprint
+                  </Link>
+                ) : (
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">
+                    Your Blueprint is being finalized.
+                  </p>
+                )}
               </>
             )}
           </Card>
         )}
-
-        {destination.type !== "all-done" ? (
-          <Link
-            href={`/dashboard/${sessionId}/blueprint`}
-            className="mt-4 inline-block text-xs text-(--color-accent) underline underline-offset-4"
-          >
-            View my Blueprint
-          </Link>
-        ) : null}
 
         <div className="mt-10 space-y-3">
           {dashboard.modules.map((module, index) => (

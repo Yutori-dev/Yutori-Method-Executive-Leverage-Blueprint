@@ -26,8 +26,7 @@ export function PriorityLeverageReveal({ data }: { data: PriorityLeverageRevealD
     );
   }
 
-  const { config, opportunities, leveragePattern, auditPrimaryLayers, auditSecondaryLayers, auditCalculated } = data;
-  const isPrimaryTied = auditPrimaryLayers.length > 1;
+  const { config, opportunities } = data;
 
   return (
     <div className="space-y-6">
@@ -53,48 +52,6 @@ export function PriorityLeverageReveal({ data }: { data: PriorityLeverageRevealD
             You did not confirm any Priority Delegation Opportunities.
           </p>
         )}
-      </Card>
-
-      {leveragePattern.length > 0 ? (
-        <Card>
-          <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">{config.leveragePatternHeader}</p>
-          <p className="mt-3 text-sm text-(--color-ink)">
-            {leveragePattern.map((p) => `${p.count} ${LEVEL_LABEL[p.level]}`).join(" · ")}
-          </p>
-        </Card>
-      ) : null}
-
-      {auditCalculated ? (
-        <Card>
-          <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">{config.auditContextHeader}</p>
-          <div className="mt-3 space-y-3">
-            <div>
-              <p className="text-xs text-(--color-ink-muted)">
-                {isPrimaryTied ? "Primary Leverage Gaps" : "Primary Leverage Gap"}
-              </p>
-              <p className="mt-0.5 text-sm text-(--color-ink)">
-                {auditPrimaryLayers.map((l) => LEVEL_LABEL[l]).join(" · ")}
-              </p>
-            </div>
-            {!isPrimaryTied ? (
-              <div>
-                <p className="text-xs text-(--color-ink-muted)">
-                  {auditSecondaryLayers.length > 1 ? "Secondary Leverage Gaps" : "Secondary Leverage Gap"}
-                </p>
-                <p className="mt-0.5 text-sm text-(--color-ink)">
-                  {auditSecondaryLayers.length > 0
-                    ? auditSecondaryLayers.map((l) => LEVEL_LABEL[l]).join(" · ")
-                    : config.noSecondaryGapLabel}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </Card>
-      ) : null}
-
-      <Card>
-        <p className="text-sm font-medium text-(--color-ink)">{config.interpretationHeadline}</p>
-        <p className="mt-2 text-sm text-(--color-ink-muted)">{config.interpretationBody}</p>
       </Card>
     </div>
   );

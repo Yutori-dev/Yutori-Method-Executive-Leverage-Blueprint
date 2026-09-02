@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LEVEL_LABEL, whatThisMeansCopy, actionCopy, withLevel } from "@/lib/executiveSupportArchitectureCopy";
 import { ArchitecturePyramid } from "@/components/participant/ArchitecturePyramid";
+import { cn } from "@/lib/cn";
 import type { ArchitectureData, ArchitectureRecommendationView } from "@/lib/data/architecture";
 import type { ExecutiveSupportArchitectureConfigInput } from "@/lib/actions/executiveSupportArchitectureConfig";
 import type { ArchitectureReaction, LeverageLevel } from "@/types/database";
@@ -38,12 +39,16 @@ export function ArchitectureFlow({
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [note, setNote] = useState(data.recommendation?.reactionNote ?? "");
-  // Optimistic: set immediately on click so the three reaction buttons never
-  // sit inert waiting on a round-trip (client feedback 2026-09 -- "30+
-  // seconds couldn't select any of the answers"). Reverted on a failed save.
-  const [localReaction, setLocalReaction] = useState<ArchitectureReaction | null>(
+  // Selecting a reaction only highlights it -- it does not submit or hide
+  // the note field. A separate explicit Submit does that (client feedback
+  // 2026-09: selecting used to auto-submit and immediately swap to a
+  // read-only state, so there was never a chance to type a note).
+  const [selectedReaction, setSelectedReaction] = useState<ArchitectureReaction | null>(
     data.recommendation?.reaction ?? null,
   );
+  // Optimistic on the Submit click specifically (not on selection) -- the
+  // click that matters shouldn't feel like it's waiting on a round-trip.
+  const [submitted, setSubmitted] = useState(data.recommendation?.reaction != null);
 
   function handleCalculate() {
     setErrorMessage(null);
@@ -57,33 +62,33 @@ export function ArchitectureFlow({
     });
   }
 
-  function handleReaction(reaction: ArchitectureReaction) {
+  function handleSubmitReaction() {
+    if (!selectedReaction) return;
     setErrorMessage(null);
-    setLocalReaction(reaction);
+    setSubmitted(true);
     startTransition(async () => {
       const result = await submitArchitectureReaction({
         participantSessionId,
-        reaction,
+        reaction: selectedReaction,
         note: note.trim() || null,
         sessionPath,
       });
       if (!result.ok) {
-        setLocalReaction(null);
+        setSubmitted(false);
         setErrorMessage(result.message);
       }
       // No router.refresh() on success -- local state already reflects the
       // answer, and a full page-data refetch here was the actual source of
-      // the multi-second stall (it shared one isPending flag with the RPC
-      // itself, disabling all three buttons for the combined duration).
+      // the earlier multi-second stall (it shared one isPending flag with
+      // the RPC itself, disabling all three buttons for the combined
+      // duration).
     });
   }
 
   function handleMarkComplete() {
     startTransition(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey: "architecture", sessionPath });
-      // "Generate My Blueprint" should do what it says -- land directly on
-      // the Blueprint, not the session dashboard (client feedback 2026-09).
-      router.push(`${sessionPath}/blueprint`);
+      router.push(sessionPath);
     });
   }
 
@@ -91,11 +96,11 @@ export function ArchitectureFlow({
     return (
       <Card>
         <p className="text-sm text-(--color-ink-muted)">
-          When you&apos;re ready, calculate your Executive Support Architecture.
+          When you&apos;re ready, explore your Executive Support Architecture.
         </p>
         <div className="mt-4">
           <Button onClick={handleCalculate} disabled={isPending}>
-            {isPending ? "Calculating..." : "Calculate my Blueprint"}
+            {isPending ? "Loading..." : "Continue"}
           </Button>
         </div>
         {errorMessage ? <p className="mt-3 text-sm text-[#8a3324]">{errorMessage}</p> : null}
@@ -106,10 +111,9 @@ export function ArchitectureFlow({
   if (!data.revealed) {
     return (
       <Card>
-        <p className="font-serif text-xl text-(--color-ink)">Your Blueprint is ready.</p>
+        <p className="font-serif text-xl text-(--color-ink)">Your Executive Support Architecture is ready.</p>
         <p className="mt-2 text-sm text-(--color-ink-muted)">
-          Your facilitator will reveal your Executive Support Architecture to the group during the
-          session.
+          Your facilitator will reveal it to the group during the session.
         </p>
       </Card>
     );
@@ -145,9 +149,9 @@ export function ArchitectureFlow({
           the work you most want to transfer?
         </p>
 
-        {localReaction ? (
+        {submitted ? (
           <p className="mt-4 text-sm text-(--color-ink-muted)">
-            You responded: <span className="text-(--color-ink)">{REACTIONS.find((r) => r.value === localReaction)?.label}</span>
+            You responded: <span className="text-(--color-ink)">{REACTIONS.find((r) => r.value === selectedReaction)?.label}</span>
           </p>
         ) : (
           <>
@@ -156,8 +160,13 @@ export function ArchitectureFlow({
                 <button
                   key={r.value}
                   type="button"
-                  onClick={() => handleReaction(r.value)}
-                  className="flex-1 rounded-lg border border-(--color-hairline) px-3 py-2 text-sm transition-colors hover:border-(--color-accent)"
+                  onClick={() => setSelectedReaction(r.value)}
+                  className={cn(
+                    "flex-1 rounded-lg border px-3 py-2 text-sm transition-colors",
+                    selectedReaction === r.value
+                      ? "border-(--color-accent) bg-(--color-accent-soft)"
+                      : "border-(--color-hairline) hover:border-(--color-accent)",
+                  )}
                 >
                   {r.label}
                 </button>
@@ -170,13 +179,18 @@ export function ArchitectureFlow({
               onChange={(e) => setNote(e.target.value)}
               className="mt-3 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
             />
+            <div className="mt-3">
+              <Button onClick={handleSubmitReaction} disabled={!selectedReaction}>
+                Submit
+              </Button>
+            </div>
           </>
         )}
         {errorMessage ? <p className="mt-3 text-sm text-[#8a3324]">{errorMessage}</p> : null}
       </Card>
 
-      <Button onClick={handleMarkComplete} disabled={!localReaction || isPending || alreadyComplete}>
-        {alreadyComplete ? "Module complete" : "GENERATE MY BLUEPRINT"}
+      <Button onClick={handleMarkComplete} disabled={!submitted || isPending || alreadyComplete}>
+        {alreadyComplete ? "Module complete" : "Continue"}
       </Button>
     </div>
   );
@@ -294,7 +308,7 @@ function ArchitectureVisual({
 }) {
   return (
     <Card>
-      <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Executive Support Architecture</p>
+      <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Your Recommended Roles</p>
       <p className="mt-1 text-sm text-(--color-accent)">
         An integrated support ecosystem designed to create capacity, accelerate impact and unlock leverage.
       </p>

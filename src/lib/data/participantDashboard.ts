@@ -15,7 +15,14 @@ export interface DashboardModule {
 
 export interface ParticipantDashboardData {
   participant: { firstName: string; lastName: string };
-  session: { id: string; name: string; organization: string | null; status: string; workshopFeedbackReleased: boolean };
+  session: {
+    id: string;
+    name: string;
+    organization: string | null;
+    status: string;
+    workshopFeedbackReleased: boolean;
+    blueprintRevealed: boolean;
+  };
   participantSessionId: string;
   feedbackSubmitted: boolean;
   intakeCompleted: boolean;
@@ -46,7 +53,7 @@ export async function getParticipantDashboard(
       supabase.from("participants").select("first_name, last_name, intake_completed_at").eq("id", user.id).maybeSingle(),
       supabase
         .from("sessions")
-        .select("id, name, organization, status, active_module_id, workshop_feedback_released")
+        .select("id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed")
         .eq("id", sessionId)
         .maybeSingle(),
       supabase.from("modules").select("*").eq("active", true).order("sort_order", { ascending: true }),
@@ -105,6 +112,7 @@ export async function getParticipantDashboard(
       organization: session.organization,
       status: session.status,
       workshopFeedbackReleased: session.workshop_feedback_released,
+      blueprintRevealed: session.blueprint_revealed,
     },
     participantSessionId: participantSession.id,
     feedbackSubmitted,

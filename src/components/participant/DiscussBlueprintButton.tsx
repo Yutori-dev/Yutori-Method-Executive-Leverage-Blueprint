@@ -32,7 +32,7 @@ export function DiscussBlueprintButton({
       </p>
       <div className="mt-3">
         <Button
-          variant="ghost"
+          variant="info"
           disabled={isPending}
           onClick={() =>
             startTransition(async () => {
@@ -41,7 +41,7 @@ export function DiscussBlueprintButton({
             })
           }
         >
-          {isPending ? "Sending..." : "Discuss My Blueprint"}
+          {isPending ? "Sending..." : "Contact me about my results"}
         </Button>
       </div>
     </div>

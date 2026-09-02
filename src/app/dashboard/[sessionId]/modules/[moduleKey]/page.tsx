@@ -201,7 +201,7 @@ export default async function ModulePage({
           href={sessionPath}
           className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
         >
-          ← Back to Blueprint
+          ← Back to dashboard
         </Link>
 
         <div className="mt-4 flex items-center justify-between">

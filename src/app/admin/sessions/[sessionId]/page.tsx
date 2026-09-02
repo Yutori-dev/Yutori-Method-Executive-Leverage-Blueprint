@@ -6,12 +6,12 @@ import { Card } from "@/components/ui/Card";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
-import { RevealArchitectureControl } from "@/components/admin/RevealArchitectureControl";
 import { RevealPriorityLeverageControl } from "@/components/admin/RevealPriorityLeverageControl";
 import { RevealZoneOfInvestmentControl } from "@/components/admin/RevealZoneOfInvestmentControl";
 import { UnlockWhiteWhaleControl } from "@/components/admin/UnlockWhiteWhaleControl";
 import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadershipWiringControl";
 import { ReleaseWorkshopFeedbackControl } from "@/components/admin/ReleaseWorkshopFeedbackControl";
+import { RevealBlueprintControl } from "@/components/admin/RevealBlueprintControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
@@ -249,18 +249,15 @@ export default async function SessionControlPanelPage({
               </div>
             ) : null}
 
-            {architectureUnlocked || session.architecture_revealed ? (
+            {architectureUnlocked ? (
               <div className="mt-6 border-t border-(--color-hairline) pt-6">
-                <h3 className="text-sm font-medium">Architecture reveal</h3>
+                <h3 className="text-sm font-medium">Blueprint reveal</h3>
                 <p className="mt-1 text-xs text-(--color-ink-muted)">
-                  Separate from module unlocking -- reveals each participant&apos;s calculated
-                  recommendation.
+                  Separate from module unlocking -- reveals the &quot;View my Blueprint&quot; link on
+                  each eligible participant&apos;s dashboard.
                 </p>
                 <div className="mt-3">
-                  <RevealArchitectureControl
-                    sessionId={sessionId}
-                    alreadyRevealed={session.architecture_revealed}
-                  />
+                  <RevealBlueprintControl sessionId={sessionId} alreadyRevealed={session.blueprint_revealed} />
                 </div>
               </div>
             ) : null}
