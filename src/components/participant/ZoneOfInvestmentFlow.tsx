@@ -374,10 +374,22 @@ function RatingPicker({
 }) {
   const levels: RatingLevel[] = ["low", "medium", "high"];
   const labelClass = tone === "competency" ? "text-(--color-competency)" : "text-(--color-passion)";
+  // Selected and unselected states each set their own bg-* utility below --
+  // `cn()` is a plain string join (see src/lib/cn.ts), not tailwind-merge,
+  // so it never dedupes conflicting utilities. A bg-* in the always-applied
+  // base string here previously coexisted with the selected state's own
+  // bg-* on the same element; which one painted came down to Tailwind's
+  // generated CSS order, not the intended selected color -- on this build
+  // the base's bg-(--color-paper-raised) (white) was winning over the
+  // selected fill, leaving the near-white selected label text unreadable
+  // against a white background (client screenshot, 2026-09). Each branch
+  // below is a complete, self-contained class string so only one bg-*
+  // utility is ever present on the element at a time.
   const selectedClass =
     tone === "competency"
       ? "border-(--color-competency) bg-(--color-competency) text-(--color-paper)"
       : "border-(--color-passion) bg-(--color-passion) text-(--color-paper)";
+  const unselectedClass = "border-(--color-hairline) bg-(--color-paper-raised) hover:border-(--color-accent)";
   return (
     <div>
       <p className={cn("text-xs font-semibold tracking-wide uppercase", labelClass)}>{label}</p>
@@ -388,8 +400,8 @@ function RatingPicker({
             type="button"
             onClick={() => onChange(level)}
             className={cn(
-              "flex-1 rounded-lg border bg-(--color-paper-raised) px-3 py-1.5 text-sm capitalize transition-colors",
-              value === level ? selectedClass : "border-(--color-hairline) hover:border-(--color-accent)",
+              "flex-1 rounded-lg border px-3 py-1.5 text-sm capitalize transition-colors",
+              value === level ? selectedClass : unselectedClass,
             )}
           >
             {level}

@@ -178,13 +178,20 @@ Use, and any YPO-specific requirements are all still open per the brief.
 privacy notice and requires an explicit checkbox before continuing, and
 `participants.privacy_consent_given_at` / `privacy_consent_version` record
 when and against which copy version consent was given. The copy shown is
-still the brief's own **draft** language, explicitly labeled
-"pending Yutori approval" in the UI itself — it must not go in front of a
-real (non-dev) participant until Yutori's actual privacy policy, retention
-term, deletion policy, research consent, and Terms of Use are approved and
-swapped in. Because consent is versioned, swapping in the real copy and
-bumping the version string is a content change, not a code change, and
-won't invalidate or misrepresent consent already recorded under the draft.
+still the brief's own **draft** language, not Yutori's approved privacy
+policy — it must not stay in front of real participants until Yutori's
+actual privacy policy, retention term, deletion policy, research consent,
+and Terms of Use are approved and swapped in. (The "pending Yutori
+approval" qualifier that previously flagged this in the UI itself was
+removed 2026-09 per client feedback — real participants were already
+seeing it on the first screen of the app, which read as broken/unfinished
+regardless of the underlying copy's approval status. The gap itself is
+unchanged and still tracked here, plus in a code comment on
+`CompleteProfileForm.tsx`.) Because consent is versioned, swapping in the
+real copy and bumping the version string is a content change, not a code
+change, and won't invalidate or misrepresent consent already recorded
+under the draft. **Still need from Yutori: the actual approved privacy
+notice text to swap in.**
 
 ## Google Sheets sync (brief — explicitly nice-to-have)
 

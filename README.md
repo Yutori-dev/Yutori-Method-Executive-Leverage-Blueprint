@@ -163,9 +163,9 @@ in earlier delivery messages. All of it is now built:
   the per-session screen, generalized across every session for Yutori's own
   program-wide reporting.
 - Privacy consent capture at registration, versioned so historical consent
-  stays interpretable if the copy changes. The consent copy itself is the
-  brief's own draft language and is explicitly labeled
-  "pending Yutori approval" in the UI — see `docs/CLIENT_QUESTIONS.md`.
+  stays interpretable if the copy changes. The consent copy itself is still
+  the brief's own draft language, not Yutori's approved text — see
+  `docs/CLIENT_QUESTIONS.md`.
 - A secondary leverage signal on the Architecture Recommendation (the
   minority level in a 2-1 split across the three Priority Delegation
   Opportunities), surfaced next to the primary signal.
