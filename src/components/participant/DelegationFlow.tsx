@@ -84,9 +84,18 @@ export function DelegationFlow({
         </section>
       ) : null}
 
-      <Button onClick={handleMarkComplete} disabled={!canComplete || isPending || alreadyComplete}>
-        {alreadyComplete ? "Module complete" : "CONTINUE"}
-      </Button>
+      {/*
+       * Only mount this once the Beliefs stepper is done -- it can't be
+       * enabled until then anyway, and rendering it disabled underneath a
+       * 15-question stepper that has its own "Next"/"See my results"
+       * button read as two competing, half-broken controls on the same
+       * screen (client screenshot, 2026-09).
+       */}
+      {beliefsComplete ? (
+        <Button onClick={handleMarkComplete} disabled={!canComplete || isPending || alreadyComplete}>
+          {alreadyComplete ? "Module complete" : "CONTINUE"}
+        </Button>
+      ) : null}
     </div>
   );
 }
