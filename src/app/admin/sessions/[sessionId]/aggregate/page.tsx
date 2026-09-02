@@ -48,14 +48,23 @@ export default async function SessionAggregatePage({
                   </tr>
                 </thead>
                 <tbody>
-                  {aggregates.moduleCompletion.map((m) => (
-                    <tr key={m.key} className="border-b border-(--color-hairline)/60">
-                      <td className="py-2 pr-4">{m.name}</td>
-                      <td className="py-2 pr-4 text-(--color-ink-muted)">{m.notStarted}</td>
-                      <td className="py-2 pr-4 text-(--color-ink-muted)">{m.inProgress}</td>
-                      <td className="py-2">{m.complete}</td>
-                    </tr>
-                  ))}
+                  {aggregates.moduleCompletion.map((m) => {
+                    // Visual cue that a module has cleared enough of the
+                    // room to move on and start explaining it (client
+                    // feedback 2026-09: highlight at 75%+ completion).
+                    const isMostlyDone =
+                      aggregates.registeredCount > 0 && m.complete / aggregates.registeredCount >= 0.75;
+                    return (
+                      <tr key={m.key} className="border-b border-(--color-hairline)/60">
+                        <td className="py-2 pr-4">{m.name}</td>
+                        <td className="py-2 pr-4 text-(--color-ink-muted)">{m.notStarted}</td>
+                        <td className="py-2 pr-4 text-(--color-ink-muted)">{m.inProgress}</td>
+                        <td className={isMostlyDone ? "py-2 font-medium text-(--color-success)" : "py-2"}>
+                          {m.complete}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

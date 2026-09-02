@@ -49,6 +49,8 @@ export default async function AdminParticipantProfilePage({
             companyName={profile.participant.companyName}
             currentRoleTitle={profile.participant.currentRoleTitle}
             currentSupport={profile.participant.currentSupport}
+            wholeBusinessOs={profile.participant.wholeBusinessOs}
+            wholeBusinessOsOtherText={profile.participant.wholeBusinessOsOtherText}
             adminPath={`/admin/sessions/${sessionId}/participants/${participantSessionId}`}
           />
 

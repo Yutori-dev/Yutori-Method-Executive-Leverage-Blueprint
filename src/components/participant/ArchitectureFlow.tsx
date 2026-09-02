@@ -38,6 +38,12 @@ export function ArchitectureFlow({
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [note, setNote] = useState(data.recommendation?.reactionNote ?? "");
+  // Optimistic: set immediately on click so the three reaction buttons never
+  // sit inert waiting on a round-trip (client feedback 2026-09 -- "30+
+  // seconds couldn't select any of the answers"). Reverted on a failed save.
+  const [localReaction, setLocalReaction] = useState<ArchitectureReaction | null>(
+    data.recommendation?.reaction ?? null,
+  );
 
   function handleCalculate() {
     setErrorMessage(null);
@@ -53,6 +59,7 @@ export function ArchitectureFlow({
 
   function handleReaction(reaction: ArchitectureReaction) {
     setErrorMessage(null);
+    setLocalReaction(reaction);
     startTransition(async () => {
       const result = await submitArchitectureReaction({
         participantSessionId,
@@ -61,17 +68,22 @@ export function ArchitectureFlow({
         sessionPath,
       });
       if (!result.ok) {
+        setLocalReaction(null);
         setErrorMessage(result.message);
-        return;
       }
-      router.refresh();
+      // No router.refresh() on success -- local state already reflects the
+      // answer, and a full page-data refetch here was the actual source of
+      // the multi-second stall (it shared one isPending flag with the RPC
+      // itself, disabling all three buttons for the combined duration).
     });
   }
 
   function handleMarkComplete() {
     startTransition(async () => {
       await markModuleComplete({ participantSessionId, moduleId, moduleKey: "architecture", sessionPath });
-      router.push(sessionPath);
+      // "Generate My Blueprint" should do what it says -- land directly on
+      // the Blueprint, not the session dashboard (client feedback 2026-09).
+      router.push(`${sessionPath}/blueprint`);
     });
   }
 
@@ -133,9 +145,9 @@ export function ArchitectureFlow({
           the work you most want to transfer?
         </p>
 
-        {rec.reaction ? (
+        {localReaction ? (
           <p className="mt-4 text-sm text-(--color-ink-muted)">
-            You responded: <span className="text-(--color-ink)">{REACTIONS.find((r) => r.value === rec.reaction)?.label}</span>
+            You responded: <span className="text-(--color-ink)">{REACTIONS.find((r) => r.value === localReaction)?.label}</span>
           </p>
         ) : (
           <>
@@ -145,7 +157,6 @@ export function ArchitectureFlow({
                   key={r.value}
                   type="button"
                   onClick={() => handleReaction(r.value)}
-                  disabled={isPending}
                   className="flex-1 rounded-lg border border-(--color-hairline) px-3 py-2 text-sm transition-colors hover:border-(--color-accent)"
                 >
                   {r.label}
@@ -164,7 +175,7 @@ export function ArchitectureFlow({
         {errorMessage ? <p className="mt-3 text-sm text-[#8a3324]">{errorMessage}</p> : null}
       </Card>
 
-      <Button onClick={handleMarkComplete} disabled={!rec.reaction || isPending || alreadyComplete}>
+      <Button onClick={handleMarkComplete} disabled={!localReaction || isPending || alreadyComplete}>
         {alreadyComplete ? "Module complete" : "GENERATE MY BLUEPRINT"}
       </Button>
     </div>

@@ -20,6 +20,8 @@ export interface IntakeInput {
   currentSupportOther: boolean;
   currentSupportOtherText: string;
   currentSupportNone: boolean;
+  wholeBusinessOs: "no" | "eos" | "bloom" | "other" | null;
+  wholeBusinessOsOtherText: string;
   sessionPath: string;
 }
 
@@ -43,6 +45,13 @@ export async function saveParticipantIntake(input: IntakeInput) {
     p_current_support_other: input.currentSupportOther,
     p_current_support_other_text: input.currentSupportOtherText,
     p_current_support_none: input.currentSupportNone,
+    // The RPC's generated arg type is non-null `string` (Postgres function
+    // params have no way to express "required but nullable" here) -- an
+    // empty string still fails the RPC's own not-a-valid-value check with a
+    // clear message when nothing's been selected yet, same end result as
+    // passing null.
+    p_whole_business_os: input.wholeBusinessOs ?? "",
+    p_whole_business_os_other_text: input.wholeBusinessOsOtherText,
   });
 
   if (error) return { ok: false as const, message: error.message };
@@ -82,6 +91,13 @@ export async function adminUpdateParticipantIntake(input: AdminIntakeInput) {
     p_current_support_other: input.currentSupportOther,
     p_current_support_other_text: input.currentSupportOtherText,
     p_current_support_none: input.currentSupportNone,
+    // The RPC's generated arg type is non-null `string` (Postgres function
+    // params have no way to express "required but nullable" here) -- an
+    // empty string still fails the RPC's own not-a-valid-value check with a
+    // clear message when nothing's been selected yet, same end result as
+    // passing null.
+    p_whole_business_os: input.wholeBusinessOs ?? "",
+    p_whole_business_os_other_text: input.wholeBusinessOsOtherText,
   });
 
   if (error) return { ok: false as const, message: error.message };

@@ -19,6 +19,8 @@ export interface ParticipantIntakeData {
   currentSupportOther: boolean;
   currentSupportOtherText: string;
   currentSupportNone: boolean;
+  wholeBusinessOs: "no" | "eos" | "bloom" | "other" | null;
+  wholeBusinessOsOtherText: string;
 }
 
 /** The caller's own intake answers, for prefilling the form on re-entry
@@ -37,7 +39,7 @@ export async function getParticipantIntake(): Promise<ParticipantIntakeData | nu
   const { data } = await supabase
     .from("participants")
     .select(
-      "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none",
+      "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none, whole_business_os, whole_business_os_other_text",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -62,5 +64,7 @@ export async function getParticipantIntake(): Promise<ParticipantIntakeData | nu
     currentSupportOther: data.current_support_other,
     currentSupportOtherText: data.current_support_other_text ?? "",
     currentSupportNone: data.current_support_none,
+    wholeBusinessOs: data.whole_business_os as "no" | "eos" | "bloom" | "other" | null,
+    wholeBusinessOsOtherText: data.whole_business_os_other_text ?? "",
   };
 }

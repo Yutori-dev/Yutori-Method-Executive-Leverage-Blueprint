@@ -8,7 +8,6 @@ import {
 import type { DelegationBeliefsData } from "@/lib/data/delegationBeliefs";
 import { DOMAIN_LABEL, type DelegationDomain } from "@/lib/delegationBeliefsConstants";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
 const BELIEF_SCALE = [
@@ -41,7 +40,6 @@ export function DelegationBeliefsFlow({
   const [answers, setAnswers] = useState<Record<string, number>>(data.responses);
   const [index, setIndex] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [calculating, setCalculating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (data.result) {
@@ -53,26 +51,31 @@ export function DelegationBeliefsFlow({
   const scale = question.section === "belief" ? BELIEF_SCALE : OWNERSHIP_SCALE;
   const isLast = index === data.questions.length - 1;
 
+  // Auto-advances on selection instead of requiring a separate "Next" click
+  // -- matches the Executive Support Audit flow's pattern (client feedback
+  // 2026-09: "make it the same as the leverage exercise").
   async function handleSelect(score: number) {
     setErrorMessage(null);
     setAnswers((prev) => ({ ...prev, [question.id]: score }));
     setSaving(true);
-    const result = await saveDelegationBeliefResponse({ participantSessionId, questionId: question.id, score });
-    setSaving(false);
-    if (!result.ok) setErrorMessage(result.message);
-  }
 
-  async function handleNext() {
+    const result = await saveDelegationBeliefResponse({ participantSessionId, questionId: question.id, score });
+    if (!result.ok) {
+      setSaving(false);
+      setErrorMessage(result.message);
+      return;
+    }
+
     if (!isLast) {
+      setSaving(false);
       setIndex((i) => i + 1);
       return;
     }
-    setCalculating(true);
-    setErrorMessage(null);
-    const result = await calculateDelegationBeliefsResults({ participantSessionId, sessionPath });
-    setCalculating(false);
-    if (!result.ok) {
-      setErrorMessage(result.message);
+
+    const calcResult = await calculateDelegationBeliefsResults({ participantSessionId, sessionPath });
+    setSaving(false);
+    if (!calcResult.ok) {
+      setErrorMessage(calcResult.message);
       return;
     }
     onComplete();
@@ -88,10 +91,14 @@ export function DelegationBeliefsFlow({
       ) : null}
 
       {isFirstOfOwnershipTransfer ? (
-        <Card>
-          <h2 className="font-serif text-xl">How Ownership Transfers Today</h2>
-          <p className="mt-3 text-sm text-(--color-ink-muted)">{data.config.ownershipTransferIntro}</p>
-        </Card>
+        // Not <Card> -- Card's own bg-(--color-paper-raised) would coexist
+        // with a second bg-* utility here via cn()'s plain string join (no
+        // dedupe), the exact class of bug just fixed in the Zone of
+        // Investment rating picker. A standalone element sidesteps it.
+        <div className="rounded-2xl border border-(--color-info) bg-(--color-info-soft) p-6 sm:p-8">
+          <h2 className="font-serif text-xl text-(--color-ink)">How Ownership Transfers Today</h2>
+          <p className="mt-3 text-sm text-(--color-ink)">{data.config.ownershipTransferIntro}</p>
+        </div>
       ) : null}
 
       <Card>
@@ -105,8 +112,9 @@ export function DelegationBeliefsFlow({
               key={option.score}
               type="button"
               onClick={() => handleSelect(option.score)}
+              disabled={saving}
               className={cn(
-                "w-full rounded-lg border px-4 py-2.5 text-left text-sm transition-colors",
+                "w-full rounded-lg border px-4 py-2.5 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                 answers[question.id] === option.score
                   ? "border-(--color-accent) bg-(--color-accent-soft)"
                   : "border-(--color-hairline) hover:border-(--color-accent)",
@@ -119,10 +127,6 @@ export function DelegationBeliefsFlow({
       </Card>
 
       {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
-
-      <Button onClick={handleNext} disabled={!answers[question.id] || saving || calculating}>
-        {calculating ? "Calculating..." : isLast ? "See my results" : "Next"}
-      </Button>
     </div>
   );
 }

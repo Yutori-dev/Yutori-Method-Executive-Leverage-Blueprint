@@ -39,6 +39,8 @@ export interface AdminParticipantProfile {
     companyName: string | null;
     currentRoleTitle: string | null;
     currentSupport: CurrentSupportFlags;
+    wholeBusinessOs: "no" | "eos" | "bloom" | "other" | null;
+    wholeBusinessOsOtherText: string | null;
   };
   enrollment: { completionState: string; startedAt: string | null; lastActiveAt: string };
   modules: { key: string; name: string; status: string }[];
@@ -94,7 +96,7 @@ export async function getAdminParticipantProfile(
     supabase
       .from("participants")
       .select(
-        "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none",
+        "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none, whole_business_os, whole_business_os_other_text",
       )
       .eq("id", enrollment.participant_id)
       .maybeSingle(),
@@ -185,6 +187,8 @@ export async function getAdminParticipantProfile(
         currentSupportOtherText: participant.current_support_other_text,
         currentSupportNone: participant.current_support_none,
       },
+      wholeBusinessOs: participant.whole_business_os as "no" | "eos" | "bloom" | "other" | null,
+      wholeBusinessOsOtherText: participant.whole_business_os_other_text,
     },
     enrollment: {
       completionState: enrollment.completion_state,

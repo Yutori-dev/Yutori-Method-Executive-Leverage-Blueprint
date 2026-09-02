@@ -171,7 +171,14 @@ additional_redirect_urls = [
   "http://localhost:3000/**",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
-jwt_expiry = 3600
+# Bumped to 2h (client feedback 2026-09: participants/facilitators were
+# getting signed out well before a full ~2h live workshop session). Note:
+# this is the only session-lifetime knob tracked in this repo -- if a
+# ~20-minute cutoff persists after this ships, it's likely a Supabase
+# dashboard-only "session timebox/inactivity timeout" setting that was
+# never round-tripped into config.toml (no [auth.sessions] section exists
+# here) -- check Auth -> Sessions directly in the Supabase dashboard.
+jwt_expiry = 7200
 # JWT issuer URL. If not set, defaults to auth.external_url.
 # jwt_issuer = ""
 # Path to JWT signing key. DO NOT commit your signing keys file to git.

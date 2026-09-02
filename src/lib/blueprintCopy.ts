@@ -330,8 +330,8 @@ export const LEVEL_TAGLINE: Record<LeverageLevel, string> = {
  * ArchitecturePyramid.tsx (a web-DOM component the PDF renderer can't use). */
 export const LEVEL_ROLES: Record<LeverageLevel, string[]> = {
   strategic: ["Chief of Staff", "Chief Integrator", "COO"],
-  orchestration: ["Executive Assistant", "Senior Executive Assistant"],
-  execution: ["Personal Assistant", "Administrative Assistant / Virtual Assistant"],
+  orchestration: ["Personal Assistant", "Executive Assistant", "Senior Executive Assistant"],
+  execution: ["Administrative Assistant / Virtual Assistant"],
   systems: ["AI agents", "Automated workflows", "Supporting technology infrastructure"],
 };
 

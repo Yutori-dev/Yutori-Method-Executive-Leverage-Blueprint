@@ -11,6 +11,13 @@ const LEVEL_LABEL: Record<string, string> = {
   systems: "Systems",
 };
 
+const WHOLE_BUSINESS_OS_LABEL: Record<string, string> = {
+  no: "No",
+  eos: "EOS",
+  bloom: "Bloom",
+  other: "Other",
+};
+
 /**
  * One row per registered participant. RLS (is_admin()) is the real
  * authorization boundary on every query below; this route additionally
@@ -45,7 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         supabase
           .from("participants")
           .select(
-            "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none",
+            "first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none, whole_business_os, whole_business_os_other_text",
           )
           .eq("id", enrollment.participant_id)
           .maybeSingle(),
@@ -102,6 +109,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         currentSupportOtherText: participant.current_support_other_text,
         currentSupportNone: participant.current_support_none,
       }) : "",
+      participant?.whole_business_os
+        ? (WHOLE_BUSINESS_OS_LABEL[participant.whole_business_os] ?? participant.whole_business_os) +
+          (participant.whole_business_os === "other" && participant.whole_business_os_other_text
+            ? ` (${participant.whole_business_os_other_text})`
+            : "")
+        : "",
       enrollment.completion_state,
       enrollment.started_at,
       enrollment.completed_at,
@@ -134,6 +147,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       "Company",
       "Role / title",
       "Current executive support",
+      "Whole-business operating system",
       "Completion state",
       "Started at",
       "Completed at",

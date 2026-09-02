@@ -24,6 +24,13 @@
   --color-competency-soft: #e7edf2;
   --color-passion: #6e7f4a;
   --color-passion-soft: #eef0e2;
+  /* A new-instructions marker (e.g. "How Ownership Transfers Today" mid-
+   * assessment) needs to visually interrupt the page so it isn't missed --
+   * deliberately a different blue than --color-competency so it doesn't
+   * read as related to the Competency/Passion pairing (client request,
+   * 2026-09). */
+  --color-info: #2f5f8a;
+  --color-info-soft: #e5eef5;
 }
 
 @theme inline {

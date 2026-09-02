@@ -9,6 +9,13 @@ import { cn } from "@/lib/cn";
 
 type SupportKey = Exclude<keyof CurrentSupportFlags, "currentSupportOtherText">;
 
+const WHOLE_BUSINESS_OS_OPTIONS: { value: "no" | "eos" | "bloom" | "other"; label: string }[] = [
+  { value: "no", label: "No" },
+  { value: "eos", label: "EOS" },
+  { value: "bloom", label: "Bloom" },
+  { value: "other", label: "Other" },
+];
+
 const SUPPORT_OPTIONS: { key: SupportKey; label: string }[] = [
   { key: "currentSupportPersonalAssistant", label: "Personal Assistant" },
   { key: "currentSupportAdminOrVa", label: "Administrative Assistant / Virtual Assistant" },
@@ -29,6 +36,8 @@ export function AdminIntakeForm({
   companyName,
   currentRoleTitle,
   currentSupport,
+  wholeBusinessOs,
+  wholeBusinessOsOtherText,
   adminPath,
   onDone,
 }: {
@@ -38,6 +47,8 @@ export function AdminIntakeForm({
   companyName: string | null;
   currentRoleTitle: string | null;
   currentSupport: CurrentSupportFlags;
+  wholeBusinessOs: "no" | "eos" | "bloom" | "other" | null;
+  wholeBusinessOsOtherText: string | null;
   adminPath: string;
   onDone: () => void;
 }) {
@@ -50,6 +61,8 @@ export function AdminIntakeForm({
     ...currentSupport,
     currentSupportOtherText: currentSupport.currentSupportOtherText ?? "",
   });
+  const [os, setOs] = useState<"no" | "eos" | "bloom" | "other" | null>(wholeBusinessOs);
+  const [osOtherText, setOsOtherText] = useState(wholeBusinessOsOtherText ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -78,6 +91,8 @@ export function AdminIntakeForm({
       currentRoleTitle: role,
       ...support,
       currentSupportOtherText: support.currentSupportOtherText ?? "",
+      wholeBusinessOs: os,
+      wholeBusinessOsOtherText: osOtherText,
       sessionPath: adminPath,
       adminPath,
     });
@@ -142,6 +157,41 @@ export function AdminIntakeForm({
           onChange={(e) => setRole(e.target.value)}
           className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
         />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-(--color-ink-muted)">Whole-business operating system</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {WHOLE_BUSINESS_OS_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setOs(option.value)}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+                os === option.value
+                  ? "border-(--color-accent) bg-(--color-accent-soft)"
+                  : "border-(--color-hairline) hover:border-(--color-accent)",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {os === "other" ? (
+          <div className="mt-2">
+            <label htmlFor="admin-os-other-text" className="block text-xs font-medium text-(--color-ink-muted)">
+              Which operating system?
+            </label>
+            <input
+              id="admin-os-other-text"
+              required
+              value={osOtherText}
+              onChange={(e) => setOsOtherText(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div>

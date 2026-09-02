@@ -1149,6 +1149,8 @@ export type Database = {
           last_name: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
+          whole_business_os: string | null
+          whole_business_os_other_text: string | null
         }
         Insert: {
           company_name?: string | null
@@ -1175,6 +1177,8 @@ export type Database = {
           last_name: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
+          whole_business_os?: string | null
+          whole_business_os_other_text?: string | null
         }
         Update: {
           company_name?: string | null
@@ -1201,6 +1205,8 @@ export type Database = {
           last_name?: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
+          whole_business_os?: string | null
+          whole_business_os_other_text?: string | null
         }
         Relationships: []
       }
@@ -2000,6 +2006,8 @@ export type Database = {
           p_first_name: string
           p_last_name: string
           p_participant_id: string
+          p_whole_business_os: string
+          p_whole_business_os_other_text: string
         }
         Returns: {
           company_name: string | null
@@ -2026,6 +2034,8 @@ export type Database = {
           last_name: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
+          whole_business_os: string | null
+          whole_business_os_other_text: string | null
         }
         SetofOptions: {
           from: "*"
@@ -2223,6 +2233,8 @@ export type Database = {
           last_name: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
+          whole_business_os: string | null
+          whole_business_os_other_text: string | null
         }
         SetofOptions: {
           from: "*"
@@ -2346,6 +2358,8 @@ export type Database = {
           p_current_support_senior_executive_assistant: boolean
           p_first_name: string
           p_last_name: string
+          p_whole_business_os: string
+          p_whole_business_os_other_text: string
         }
         Returns: {
           company_name: string | null
@@ -2372,6 +2386,8 @@ export type Database = {
           last_name: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
+          whole_business_os: string | null
+          whole_business_os_other_text: string | null
         }
         SetofOptions: {
           from: "*"

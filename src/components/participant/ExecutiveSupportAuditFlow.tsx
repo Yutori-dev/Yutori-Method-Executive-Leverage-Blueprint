@@ -10,6 +10,7 @@ import { markModuleComplete } from "@/lib/actions/participant";
 import type { ExecutiveSupportAuditData } from "@/lib/data/executiveSupportAudit";
 import type { PriorityLeverageRevealData } from "@/lib/data/priorityLeverageReveal";
 import { PriorityLeverageReveal } from "@/components/participant/PriorityLeverageReveal";
+import { SessionGateWatcher } from "@/components/participant/SessionGateWatcher";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -27,6 +28,7 @@ export function ExecutiveSupportAuditFlow({
   priorityLeverageData,
   participantSessionId,
   moduleId,
+  sessionId,
   sessionPath,
   alreadyComplete,
 }: {
@@ -34,6 +36,7 @@ export function ExecutiveSupportAuditFlow({
   priorityLeverageData: PriorityLeverageRevealData | null;
   participantSessionId: string;
   moduleId: string;
+  sessionId: string;
   sessionPath: string;
   alreadyComplete: boolean;
 }) {
@@ -58,6 +61,15 @@ export function ExecutiveSupportAuditFlow({
   if (data.result) {
     return (
       <div className="space-y-6">
+        {/* In-place mode (advanceHref omitted) -- if the admin reveals
+         * Priority Leverage while the participant is already sitting on
+         * this exact results screen, this refreshes it in place instead of
+         * requiring them to leave (dashboard) and re-enter the module to
+         * see it (client feedback 2026-09). Same pattern already used for
+         * the White Whale / Leadership Wiring / Zone of Investment gates. */}
+        {priorityLeverageData && !priorityLeverageData.revealed ? (
+          <SessionGateWatcher sessionId={sessionId} />
+        ) : null}
         <ExecutiveSupportAuditResults data={data} />
         {priorityLeverageData ? <PriorityLeverageReveal data={priorityLeverageData} /> : null}
         <Button onClick={handleMarkComplete} disabled={isPending || alreadyComplete}>

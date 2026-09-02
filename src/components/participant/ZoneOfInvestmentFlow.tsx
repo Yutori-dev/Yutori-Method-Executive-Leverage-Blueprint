@@ -277,18 +277,22 @@ export function ZoneOfInvestmentFlow({
       <Card>
         <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">Your current distribution</p>
         <div className="mt-3 space-y-1 text-sm text-(--color-ink)">
-          <p>
-            Zone of Investment — {data.macroZoneDistribution.investment} of {total} /{" "}
-            {pct(data.macroZoneDistribution.investment)}%
-          </p>
-          <p>
-            Zone of Ambiguity — {data.macroZoneDistribution.ambiguity} of {total} /{" "}
-            {pct(data.macroZoneDistribution.ambiguity)}%
-          </p>
-          <p>
-            Zone of Vulnerability — {data.macroZoneDistribution.vulnerability} of {total} /{" "}
-            {pct(data.macroZoneDistribution.vulnerability)}%
-          </p>
+          {/* Highest percentage first (client feedback 2026-09), not the
+           * fixed Investment/Ambiguity/Vulnerability order. */}
+          {(
+            [
+              ["Zone of Investment", data.macroZoneDistribution.investment],
+              ["Zone of Ambiguity", data.macroZoneDistribution.ambiguity],
+              ["Zone of Vulnerability", data.macroZoneDistribution.vulnerability],
+            ] as const
+          )
+            .slice()
+            .sort((a, b) => pct(b[1]) - pct(a[1]))
+            .map(([label, count]) => (
+              <p key={label}>
+                {label} — {count} of {total} / {pct(count)}%
+              </p>
+            ))}
         </div>
       </Card>
 

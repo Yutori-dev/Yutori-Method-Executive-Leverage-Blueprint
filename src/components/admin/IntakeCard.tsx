@@ -6,6 +6,13 @@ import { formatCurrentSupport, type CurrentSupportFlags } from "@/lib/currentSup
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
+const WHOLE_BUSINESS_OS_LABEL: Record<"no" | "eos" | "bloom" | "other", string> = {
+  no: "No",
+  eos: "EOS",
+  bloom: "Bloom",
+  other: "Other",
+};
+
 export function IntakeCard({
   participantId,
   firstName,
@@ -13,6 +20,8 @@ export function IntakeCard({
   companyName,
   currentRoleTitle,
   currentSupport,
+  wholeBusinessOs,
+  wholeBusinessOsOtherText,
   adminPath,
 }: {
   participantId: string;
@@ -21,6 +30,8 @@ export function IntakeCard({
   companyName: string | null;
   currentRoleTitle: string | null;
   currentSupport: CurrentSupportFlags;
+  wholeBusinessOs: "no" | "eos" | "bloom" | "other" | null;
+  wholeBusinessOsOtherText: string | null;
   adminPath: string;
 }) {
   const [editing, setEditing] = useState(false);
@@ -45,6 +56,8 @@ export function IntakeCard({
             companyName={companyName}
             currentRoleTitle={currentRoleTitle}
             currentSupport={currentSupport}
+            wholeBusinessOs={wholeBusinessOs}
+            wholeBusinessOsOtherText={wholeBusinessOsOtherText}
             adminPath={adminPath}
             onDone={() => setEditing(false)}
           />
@@ -62,6 +75,15 @@ export function IntakeCard({
           <div>
             <dt className="text-xs text-(--color-ink-muted)">Current executive support</dt>
             <dd className="mt-0.5">{formatCurrentSupport(currentSupport)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-(--color-ink-muted)">Whole-business operating system</dt>
+            <dd className="mt-0.5">
+              {wholeBusinessOs
+                ? WHOLE_BUSINESS_OS_LABEL[wholeBusinessOs] +
+                  (wholeBusinessOs === "other" && wholeBusinessOsOtherText ? ` (${wholeBusinessOsOtherText})` : "")
+                : "Not yet provided"}
+            </dd>
           </div>
         </dl>
       )}

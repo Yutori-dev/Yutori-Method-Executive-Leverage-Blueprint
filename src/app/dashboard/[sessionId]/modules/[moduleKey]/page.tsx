@@ -133,6 +133,7 @@ export default async function ModulePage({
         priorityLeverageData={priorityLeverageData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
+        sessionId={sessionId}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
       />

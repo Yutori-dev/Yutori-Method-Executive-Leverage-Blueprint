@@ -109,7 +109,7 @@ export function ExecutiveLeverageDiagnosticFlow({
               </Card>
             ) : (
               <Button onClick={handleCalculate} disabled={isPending}>
-                {isPending ? "Calculating..." : "See my Executive Leverage Profile"}
+                {isPending ? "Calculating..." : "Submit"}
               </Button>
             )}
           </div>

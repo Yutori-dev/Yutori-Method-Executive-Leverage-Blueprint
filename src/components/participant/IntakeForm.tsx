@@ -25,6 +25,13 @@ const SUPPORT_OPTIONS: { key: SupportKey; label: string }[] = [
   { key: "currentSupportOther", label: "Other executive support" },
 ];
 
+const WHOLE_BUSINESS_OS_OPTIONS: { value: "no" | "eos" | "bloom" | "other"; label: string }[] = [
+  { value: "no", label: "No" },
+  { value: "eos", label: "EOS" },
+  { value: "bloom", label: "Bloom" },
+  { value: "other", label: "Other" },
+];
+
 const EMPTY: ParticipantIntakeData = {
   firstName: "",
   lastName: "",
@@ -43,6 +50,8 @@ const EMPTY: ParticipantIntakeData = {
   currentSupportOther: false,
   currentSupportOtherText: "",
   currentSupportNone: false,
+  wholeBusinessOs: null,
+  wholeBusinessOsOtherText: "",
 };
 
 export function IntakeForm({
@@ -150,6 +159,44 @@ export function IntakeForm({
           onChange={(e) => setForm((prev) => ({ ...prev, currentRoleTitle: e.target.value }))}
           className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
         />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-(--color-ink-muted)">
+          Does your company run on a whole-business operating system?
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {WHOLE_BUSINESS_OS_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, wholeBusinessOs: option.value }))}
+              className={cn(
+                "rounded-lg border px-3 py-2 text-sm transition-colors",
+                form.wholeBusinessOs === option.value
+                  ? "border-(--color-accent) bg-(--color-accent-soft)"
+                  : "border-(--color-hairline) hover:border-(--color-accent)",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {form.wholeBusinessOs === "other" ? (
+          <div className="mt-2">
+            <label htmlFor="wholeBusinessOsOtherText" className="block text-xs font-medium text-(--color-ink-muted)">
+              Which operating system?
+            </label>
+            <input
+              id="wholeBusinessOsOtherText"
+              required
+              value={form.wholeBusinessOsOtherText}
+              onChange={(e) => setForm((prev) => ({ ...prev, wholeBusinessOsOtherText: e.target.value }))}
+              className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div>

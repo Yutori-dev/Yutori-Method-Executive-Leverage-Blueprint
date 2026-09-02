@@ -92,12 +92,12 @@ export function CompleteProfileForm({
       {/*
        * Client feedback 2026-09: "pending Yutori approval" was showing in
        * the UI itself, on the very first screen a real participant sees --
-       * removed from the visible copy. The underlying text is still the
-       * brief's own draft language, not Yutori's approved privacy policy;
-       * that substance gap is unchanged and tracked in
-       * docs/CLIENT_QUESTIONS.md (Legal section) until real copy is
-       * provided. privacy_consent_version exists specifically so swapping
-       * in real copy later is a content update, not a migration.
+       * removed from the visible copy. Nicole later confirmed this same
+       * copy was already approved and just hadn't been actioned, so the
+       * text below is now treated as final, not draft (see
+       * docs/CLIENT_QUESTIONS.md, Legal section). privacy_consent_version
+       * still exists so any future copy change is a content update, not a
+       * migration.
        */}
       <details className="rounded-lg border border-(--color-hairline) px-3 py-2 text-xs text-(--color-ink-muted)">
         <summary className="cursor-pointer select-none">Privacy notice</summary>
