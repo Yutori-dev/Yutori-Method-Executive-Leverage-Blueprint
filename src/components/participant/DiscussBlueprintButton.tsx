@@ -4,8 +4,10 @@ import { useState, useTransition } from "react";
 import { requestFollowUp } from "@/lib/actions/followUp";
 import { Button } from "@/components/ui/Button";
 
-/** Brief section 15: "a quiet final CTA" -- deliberately not repeated
- * elsewhere in the app. */
+/** Brief section 15: "a quiet final CTA." Originally Blueprint-page-only;
+ * client feedback 2026-09-03 asked for the same control on the dashboard
+ * too, once the Blueprint is revealed there -- same follow-up-interest
+ * queue either way, so this one component is reused rather than duplicated. */
 export function DiscussBlueprintButton({
   participantSessionId,
   alreadyRequested,

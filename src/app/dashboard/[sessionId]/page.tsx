@@ -9,6 +9,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ModuleRow } from "@/components/participant/ModuleRow";
 import { HoldingState } from "@/components/participant/HoldingState";
 import { SessionGateWatcher } from "@/components/participant/SessionGateWatcher";
+import { DiscussBlueprintButton } from "@/components/participant/DiscussBlueprintButton";
 
 export default async function ParticipantDashboardPage({
   params,
@@ -101,12 +102,17 @@ export default async function ParticipantDashboardPage({
               <>
                 <p className="text-sm text-(--color-ink)">You&apos;ve completed every module.</p>
                 {dashboard.session.blueprintRevealed ? (
-                  <Link
-                    href={`/dashboard/${sessionId}/blueprint`}
-                    className="mt-3 inline-block text-sm text-(--color-accent) underline underline-offset-4"
-                  >
-                    View my Blueprint
-                  </Link>
+                  <>
+                    <Link href={`/dashboard/${sessionId}/blueprint`} className="mt-3 inline-block">
+                      <Button>View my Blueprint</Button>
+                    </Link>
+                    <div className="mt-4">
+                      <DiscussBlueprintButton
+                        participantSessionId={dashboard.participantSessionId}
+                        alreadyRequested={dashboard.followUpRequested}
+                      />
+                    </div>
+                  </>
                 ) : (
                   <p className="mt-1 text-sm text-(--color-ink-muted)">
                     Your Blueprint is being finalized.

@@ -25,6 +25,7 @@ export interface ParticipantDashboardData {
   };
   participantSessionId: string;
   feedbackSubmitted: boolean;
+  followUpRequested: boolean;
   intakeCompleted: boolean;
   modules: DashboardModule[];
 }
@@ -79,6 +80,19 @@ export async function getParticipantDashboard(
     feedbackSubmitted = !!feedback;
   }
 
+  // Only relevant once the Blueprint itself is revealed -- see
+  // blueprintRevealed below, same "don't add a round trip to every page
+  // load" reasoning as feedbackSubmitted above.
+  let followUpRequested = false;
+  if (session.blueprint_revealed) {
+    const { data: followUp } = await supabase
+      .from("follow_up_interests")
+      .select("id")
+      .eq("participant_session_id", participantSession.id)
+      .maybeSingle();
+    followUpRequested = !!followUp;
+  }
+
   const activeModule = modules.find((m) => m.id === session.active_module_id);
   const cohortActiveModuleSortOrder = activeModule ? activeModule.sort_order : null;
 
@@ -116,6 +130,7 @@ export async function getParticipantDashboard(
     },
     participantSessionId: participantSession.id,
     feedbackSubmitted,
+    followUpRequested,
     intakeCompleted: participant.intake_completed_at != null,
     modules: dashboardModules,
   };
