@@ -31,15 +31,36 @@ export default async function AdminParticipantProfilePage({
           ← Back to session
         </Link>
 
-        <div className="mt-4">
-          <h1 className="font-serif text-3xl">
-            {profile.participant.firstName} {profile.participant.lastName}
-          </h1>
-          <p className="mt-1 text-sm text-(--color-ink-muted)">
-            {profile.participant.email} · {profile.enrollment.completionState.replace("_", " ")} ·
-            last active {new Date(profile.enrollment.lastActiveAt).toLocaleString()}
-          </p>
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl">
+              {profile.participant.firstName} {profile.participant.lastName}
+            </h1>
+            <p className="mt-1 text-sm text-(--color-ink-muted)">
+              {profile.participant.email} · {profile.enrollment.completionState.replace("_", " ")} ·
+              last active {new Date(profile.enrollment.lastActiveAt).toLocaleString()}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              href={`/admin/sessions/${sessionId}/participants/${participantSessionId}/blueprint`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-(--color-ink) px-4 py-2 text-xs font-medium tracking-wide text-(--color-paper) transition-colors hover:bg-(--color-ink)/90"
+            >
+              View full Blueprint
+            </Link>
+            <a
+              href={`/api/blueprint/${participantSessionId}/pdf`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-soft) px-4 py-2 text-xs font-medium tracking-wide text-(--color-ink) transition-colors hover:bg-(--color-accent-soft)/70"
+            >
+              Download PDF
+            </a>
+          </div>
         </div>
+        <p className="mt-2 text-xs text-(--color-ink-muted)">
+          The full Blueprint mirrors exactly what this participant sees -- sections still awaiting
+          a facilitator reveal (Architecture, Priority Leverage) show the same &quot;not yet
+          revealed&quot; placeholder here, not the underlying result early.
+        </p>
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <IntakeCard
