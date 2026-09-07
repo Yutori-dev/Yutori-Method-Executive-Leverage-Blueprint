@@ -19,6 +19,7 @@ export async function createSession(input: {
   organization: string;
   eventDate: string;
   format: SessionFormat;
+  disabledModuleKeys?: string[];
 }) {
   const supabase = await createServerSupabaseClient();
 
@@ -27,15 +28,19 @@ export async function createSession(input: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated.");
 
+  const disabledModuleKeys = input.disabledModuleKeys ?? [];
+
   // Module 1 unlocks automatically for every new session -- only module 2
   // onward requires an explicit admin unlock (client feedback round 4).
+  // Skip any module disabled for this session so a shortened workshop
+  // doesn't open on a module that isn't running.
   const { data: firstModule } = await supabase
     .from("modules")
-    .select("id")
+    .select("id, key")
     .eq("active", true)
-    .order("sort_order", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .eq("requires_live_workshop", false)
+    .order("sort_order", { ascending: true });
+  const firstEnabledModule = (firstModule ?? []).find((m) => !disabledModuleKeys.includes(m.key));
 
   const { data, error } = await supabase
     .from("sessions")
@@ -47,7 +52,8 @@ export async function createSession(input: {
       status: "draft",
       join_code: slugifyJoinCode(input.name),
       created_by: user.id,
-      active_module_id: firstModule?.id ?? null,
+      active_module_id: firstEnabledModule?.id ?? null,
+      disabled_module_keys: disabledModuleKeys,
     })
     .select("id")
     .single();
@@ -62,7 +68,13 @@ export async function createSession(input: {
 
 export async function updateSession(
   sessionId: string,
-  input: { name: string; organization: string; eventDate: string; format: SessionFormat },
+  input: {
+    name: string;
+    organization: string;
+    eventDate: string;
+    format: SessionFormat;
+    disabledModuleKeys?: string[];
+  },
 ) {
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase
@@ -72,6 +84,12 @@ export async function updateSession(
       organization: input.organization || null,
       event_date: input.eventDate || null,
       format: input.format,
+      // Undefined means the edit form didn't touch module selection --
+      // leave whatever was already set rather than wiping it back to "all
+      // enabled".
+      ...(input.disabledModuleKeys !== undefined
+        ? { disabled_module_keys: input.disabledModuleKeys }
+        : {}),
     })
     .eq("id", sessionId);
   if (error) throw new Error(error.message);

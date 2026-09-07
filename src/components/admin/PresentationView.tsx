@@ -4,12 +4,12 @@ import { useState } from "react";
 import type { SessionAggregates, CountRow } from "@/lib/data/sessionAggregates";
 
 const PANELS = [
-  { key: "zone", label: "Zone of Investment" },
-  { key: "responsibilities", label: "Top Responsibilities" },
-  { key: "leverage", label: "Priority Leverage" },
-  { key: "signal", label: "Primary Signal" },
-  { key: "reaction", label: "Architecture Reaction" },
-  { key: "identification", label: "Leadership Wiring" },
+  { key: "zone", label: "Zone of Investment", moduleKey: "current_structure" },
+  { key: "responsibilities", label: "Top Responsibilities", moduleKey: "current_structure" },
+  { key: "leverage", label: "Priority Leverage", moduleKey: "leverage" },
+  { key: "signal", label: "Primary Signal", moduleKey: "architecture" },
+  { key: "reaction", label: "Architecture Reaction", moduleKey: "architecture" },
+  { key: "identification", label: "Leadership Wiring", moduleKey: "operating_altitude" },
 ] as const;
 
 type PanelKey = (typeof PANELS)[number]["key"];
@@ -57,8 +57,19 @@ function BigBarList({ rows }: { rows: CountRow[] }) {
   );
 }
 
-export function PresentationView({ aggregates }: { aggregates: SessionAggregates }) {
-  const [panel, setPanel] = useState<PanelKey>("zone");
+export function PresentationView({
+  aggregates,
+  disabledModuleKeys = [],
+}: {
+  aggregates: SessionAggregates;
+  /** Panels whose module was disabled for this session don't have anything
+   * to show -- filtered out rather than left showing "No data yet." for a
+   * module that was never going to run. */
+  disabledModuleKeys?: string[];
+}) {
+  const disabledSet = new Set(disabledModuleKeys);
+  const visiblePanels = PANELS.filter((p) => !disabledSet.has(p.moduleKey));
+  const [panel, setPanel] = useState<PanelKey>(() => visiblePanels[0]?.key ?? PANELS[0].key);
   const activeLabel = PANELS.find((p) => p.key === panel)?.label ?? "";
 
   return (
@@ -70,7 +81,7 @@ export function PresentationView({ aggregates }: { aggregates: SessionAggregates
         </p>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          {PANELS.map((p) => (
+          {visiblePanels.map((p) => (
             <button
               key={p.key}
               type="button"

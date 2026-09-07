@@ -1572,6 +1572,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -1592,6 +1593,7 @@ export type Database = {
           blueprint_revealed?: boolean
           created_at?: string
           created_by?: string | null
+          disabled_module_keys?: string[]
           event_date?: string | null
           format?: string
           id?: string
@@ -1612,6 +1614,7 @@ export type Database = {
           blueprint_revealed?: boolean
           created_at?: string
           created_by?: string | null
+          disabled_module_keys?: string[]
           event_date?: string | null
           format?: string
           id?: string
@@ -1830,6 +1833,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -1859,6 +1863,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -1888,6 +1893,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -1917,6 +1923,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -1946,6 +1953,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -1975,6 +1983,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string
@@ -2004,6 +2013,7 @@ export type Database = {
           blueprint_revealed: boolean
           created_at: string
           created_by: string | null
+          disabled_module_keys: string[]
           event_date: string | null
           format: string
           id: string

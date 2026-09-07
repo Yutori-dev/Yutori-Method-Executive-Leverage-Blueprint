@@ -54,7 +54,9 @@ export async function getParticipantDashboard(
       supabase.from("participants").select("first_name, last_name, intake_completed_at").eq("id", user.id).maybeSingle(),
       supabase
         .from("sessions")
-        .select("id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed")
+        .select(
+          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys",
+        )
         .eq("id", sessionId)
         .maybeSingle(),
       supabase.from("modules").select("*").eq("active", true).order("sort_order", { ascending: true }),
@@ -93,7 +95,15 @@ export async function getParticipantDashboard(
     followUpRequested = !!followUp;
   }
 
-  const activeModule = modules.find((m) => m.id === session.active_module_id);
+  // Modules disabled for this specific session don't exist as far as the
+  // participant experience is concerned -- filtered out here, once, so
+  // every downstream consumer (guided-progression, the dashboard's module
+  // list, direct module-page navigation) just sees "the modules that exist
+  // for this session" without needing its own disabled-key check.
+  const disabledKeys = new Set(session.disabled_module_keys ?? []);
+  const enabledModules = modules.filter((m) => !disabledKeys.has(m.key));
+
+  const activeModule = enabledModules.find((m) => m.id === session.active_module_id);
   const cohortActiveModuleSortOrder = activeModule ? activeModule.sort_order : null;
 
   const progressByModuleId = new Map<string, ModuleStatus>(
@@ -103,7 +113,7 @@ export async function getParticipantDashboard(
     ]),
   );
 
-  const dashboardModules: DashboardModule[] = modules.map((module) => ({
+  const dashboardModules: DashboardModule[] = enabledModules.map((module) => ({
     id: module.id,
     key: module.key,
     name: module.name,

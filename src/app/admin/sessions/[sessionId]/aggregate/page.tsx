@@ -14,10 +14,16 @@ export default async function SessionAggregatePage({
   const { sessionId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const { data: session } = await supabase.from("sessions").select("name").eq("id", sessionId).maybeSingle();
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("name, disabled_module_keys")
+    .eq("id", sessionId)
+    .maybeSingle();
   if (!session) notFound();
 
   const aggregates = await getSessionAggregates([sessionId]);
+  const disabledModuleKeys = new Set(session.disabled_module_keys ?? []);
+  const moduleCompletion = aggregates.moduleCompletion.filter((m) => !disabledModuleKeys.has(m.key));
 
   return (
     <main className="py-16">
@@ -48,7 +54,7 @@ export default async function SessionAggregatePage({
                   </tr>
                 </thead>
                 <tbody>
-                  {aggregates.moduleCompletion.map((m) => {
+                  {moduleCompletion.map((m) => {
                     // Visual cue that a module has cleared enough of the
                     // room to move on and start explaining it (client
                     // feedback 2026-09: highlight at 75%+ completion).

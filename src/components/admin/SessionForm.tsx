@@ -10,10 +10,21 @@ export function SessionForm({
   mode,
   sessionId,
   initial,
+  availableModules,
 }: {
   mode: "create" | "edit";
   sessionId?: string;
-  initial?: { name: string; organization: string; eventDate: string; format: SessionFormat };
+  initial?: {
+    name: string;
+    organization: string;
+    eventDate: string;
+    format: SessionFormat;
+    disabledModuleKeys?: string[];
+  };
+  /** Toggleable modules for this session -- requires_live_workshop modules
+   * are never included, that gating is separate from this per-session
+   * override. */
+  availableModules: { key: string; name: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -22,17 +33,30 @@ export function SessionForm({
   const [organization, setOrganization] = useState(initial?.organization ?? "");
   const [eventDate, setEventDate] = useState(initial?.eventDate ?? "");
   const [format, setFormat] = useState<SessionFormat>(initial?.format ?? "virtual");
+  const [disabledKeys, setDisabledKeys] = useState<Set<string>>(
+    () => new Set(initial?.disabledModuleKeys ?? []),
+  );
+
+  function toggleModule(key: string) {
+    setDisabledKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   function handleSubmit(formEvent: React.FormEvent) {
     formEvent.preventDefault();
     setErrorMessage(null);
+    const disabledModuleKeys = Array.from(disabledKeys);
     startTransition(async () => {
       try {
         if (mode === "create") {
-          const newId = await createSession({ name, organization, eventDate, format });
+          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys });
           router.push(`/admin/sessions/${newId}`);
         } else if (sessionId) {
-          await updateSession(sessionId, { name, organization, eventDate, format });
+          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys });
           router.push(`/admin/sessions/${sessionId}`);
         }
       } catch (error) {
@@ -93,6 +117,28 @@ export function SessionForm({
             <option value="virtual">Virtual</option>
             <option value="in_person">In person</option>
           </select>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-(--color-ink-muted)">Modules for this session</p>
+        <p className="mt-1 text-xs text-(--color-ink-muted)">
+          Uncheck any module to skip it for this session only -- other sessions are unaffected.
+          Architecture&apos;s recommendation is calculated from Delegation and Investment, so
+          disabling either of those leaves Architecture with nothing to work from.
+        </p>
+        <div className="mt-2 space-y-1.5">
+          {availableModules.map((m) => (
+            <label key={m.key} className="flex items-center gap-2 text-sm text-(--color-ink)">
+              <input
+                type="checkbox"
+                checked={!disabledKeys.has(m.key)}
+                onChange={() => toggleModule(m.key)}
+                className="accent-(--color-accent)"
+              />
+              {m.name}
+            </label>
+          ))}
         </div>
       </div>
 

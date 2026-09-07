@@ -13,6 +13,7 @@ import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadersh
 import { ReleaseWorkshopFeedbackControl } from "@/components/admin/ReleaseWorkshopFeedbackControl";
 import { RevealBlueprintControl } from "@/components/admin/RevealBlueprintControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
+import { cn } from "@/lib/cn";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
 
@@ -67,9 +68,10 @@ export default async function SessionControlPanelPage({
     discussRequested: discussRequestedIds.has(enrollment.id),
   }));
 
+  const disabledModuleKeys = new Set<string>(session.disabled_module_keys ?? []);
   const activeModule = modules.find((m) => m.id === session.active_module_id);
   const nextModule = modules
-    .filter((m) => !m.requires_live_workshop)
+    .filter((m) => !m.requires_live_workshop && !disabledModuleKeys.has(m.key))
     .find((m) => !activeModule || m.sort_order > activeModule.sort_order);
   const architectureModule = modules.find((m) => m.key === "architecture");
   const architectureUnlocked = Boolean(
@@ -77,15 +79,24 @@ export default async function SessionControlPanelPage({
   );
   const currentStructureModule = modules.find((m) => m.key === "current_structure");
   const currentStructureUnlocked = Boolean(
-    currentStructureModule && activeModule && currentStructureModule.sort_order <= activeModule.sort_order,
+    currentStructureModule &&
+      activeModule &&
+      currentStructureModule.sort_order <= activeModule.sort_order &&
+      !disabledModuleKeys.has("current_structure"),
   );
   const operatingAltitudeModule = modules.find((m) => m.key === "operating_altitude");
   const operatingAltitudeUnlocked = Boolean(
-    operatingAltitudeModule && activeModule && operatingAltitudeModule.sort_order <= activeModule.sort_order,
+    operatingAltitudeModule &&
+      activeModule &&
+      operatingAltitudeModule.sort_order <= activeModule.sort_order &&
+      !disabledModuleKeys.has("operating_altitude"),
   );
   const leverageModule = modules.find((m) => m.key === "leverage");
   const leverageUnlocked = Boolean(
-    leverageModule && activeModule && leverageModule.sort_order <= activeModule.sort_order,
+    leverageModule &&
+      activeModule &&
+      leverageModule.sort_order <= activeModule.sort_order &&
+      !disabledModuleKeys.has("leverage"),
   );
 
   const joinUrl =
@@ -167,6 +178,7 @@ export default async function SessionControlPanelPage({
 
             <div className="mt-6 space-y-2">
               {modules.map((module) => {
+                const isDisabled = disabledModuleKeys.has(module.key);
                 const state: ModuleDisplayState = module.requires_live_workshop
                   ? "LOCKED"
                   : activeModule && module.sort_order <= activeModule.sort_order
@@ -175,10 +187,19 @@ export default async function SessionControlPanelPage({
                 return (
                   <div
                     key={module.id}
-                    className="flex items-center justify-between rounded-lg border border-(--color-hairline) px-4 py-2.5"
+                    className={cn(
+                      "flex items-center justify-between rounded-lg border px-4 py-2.5",
+                      isDisabled ? "border-(--color-hairline) opacity-60" : "border-(--color-hairline)",
+                    )}
                   >
                     <span className="text-sm">{module.name}</span>
-                    <ModuleStateBadge state={state} />
+                    {isDisabled ? (
+                      <span className="rounded-full bg-(--color-locked) px-2.5 py-0.5 text-xs font-medium text-(--color-ink-muted)">
+                        Disabled for this session
+                      </span>
+                    ) : (
+                      <ModuleStateBadge state={state} />
+                    )}
                   </div>
                 );
               })}

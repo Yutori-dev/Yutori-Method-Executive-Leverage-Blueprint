@@ -19,7 +19,11 @@ export default async function PresentationModePage({
   const { sessionId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const { data: session } = await supabase.from("sessions").select("name").eq("id", sessionId).maybeSingle();
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("name, disabled_module_keys")
+    .eq("id", sessionId)
+    .maybeSingle();
   if (!session) notFound();
 
   const aggregates = await getSessionAggregates([sessionId]);
@@ -36,7 +40,7 @@ export default async function PresentationModePage({
           Exit
         </Link>
       </div>
-      <PresentationView aggregates={aggregates} />
+      <PresentationView aggregates={aggregates} disabledModuleKeys={session.disabled_module_keys ?? []} />
     </div>
   );
 }

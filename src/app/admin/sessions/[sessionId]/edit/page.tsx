@@ -14,11 +14,19 @@ export default async function EditSessionPage({
   const { sessionId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("name, organization, event_date, format")
-    .eq("id", sessionId)
-    .maybeSingle();
+  const [{ data: session }, { data: modules }] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select("name, organization, event_date, format, disabled_module_keys")
+      .eq("id", sessionId)
+      .maybeSingle(),
+    supabase
+      .from("modules")
+      .select("key, name")
+      .eq("active", true)
+      .eq("requires_live_workshop", false)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   if (!session) notFound();
 
@@ -31,11 +39,13 @@ export default async function EditSessionPage({
             <SessionForm
               mode="edit"
               sessionId={sessionId}
+              availableModules={modules ?? []}
               initial={{
                 name: session.name,
                 organization: session.organization ?? "",
                 eventDate: session.event_date ?? "",
                 format: session.format as SessionFormat,
+                disabledModuleKeys: session.disabled_module_keys ?? [],
               }}
             />
           </Card>
