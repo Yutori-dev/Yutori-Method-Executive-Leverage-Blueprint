@@ -99,6 +99,14 @@ export interface SessionAggregates {
   leadershipWiringDashboardNote: string | null;
   executiveSupportAudit: ExecutiveSupportAuditAggregates;
   priorityLeverage: PriorityLeverageAggregates;
+  delegationBeliefsCompletionCount: number;
+  delegationBeliefsCompletionRate: number;
+  successVisionCompletionCount: number;
+  successVisionCompletionRate: number;
+  architectureCalculatedCount: number;
+  architectureCalculatedRate: number;
+  architectureReactionCount: number;
+  architectureReactionRate: number;
 }
 
 const EMPTY_ZONE_OF_INVESTMENT_AGGREGATES: ZoneOfInvestmentAggregates = {
@@ -237,6 +245,14 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       leadershipWiringDashboardNote,
       executiveSupportAudit: EMPTY_EXECUTIVE_SUPPORT_AUDIT_AGGREGATES,
       priorityLeverage: EMPTY_PRIORITY_LEVERAGE_AGGREGATES,
+      delegationBeliefsCompletionCount: 0,
+      delegationBeliefsCompletionRate: 0,
+      successVisionCompletionCount: 0,
+      successVisionCompletionRate: 0,
+      architectureCalculatedCount: 0,
+      architectureCalculatedRate: 0,
+      architectureReactionCount: 0,
+      architectureReactionRate: 0,
     };
   }
 
@@ -249,6 +265,7 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     { data: pressureTestRows },
     { data: executiveSupportAuditResultRows },
     { data: recommendationRows },
+    { data: delegationBeliefsResultRows },
     { data: diagnosticQuestions },
     { data: diagnosticResponses },
     { data: diagnosticResults },
@@ -278,6 +295,10 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       .from("architecture_recommendations")
       .select("primary_signal_type, primary_leverage_need, leading_leverage_need, reaction")
       .in("participant_session_id", participantSessionIds),
+    supabase
+      .from("delegation_beliefs_results")
+      .select("participant_session_id")
+      .in("participant_session_id", participantSessionIds),
     diagnosticAssessmentId
       ? supabase
           .from("questions")
@@ -301,14 +322,22 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
       : Promise.resolve({ data: [] }),
     supabase
       .from("participant_reflections")
-      .select("participant_session_id, white_whale")
+      .select("participant_session_id, white_whale, success_vision")
       .in("participant_session_id", participantSessionIds),
   ]);
 
   const whiteWhaleCompletedCount = (reflectionRows ?? []).filter(
     (r) => (r.white_whale ?? "").trim().length > 0,
   ).length;
+  const successVisionCompletedCount = (reflectionRows ?? []).filter(
+    (r) => (r.success_vision ?? "").trim().length > 0,
+  ).length;
   const leadershipWiringCompletedCount = (enrollments ?? []).filter((e) => e.self_identification !== null).length;
+  const delegationBeliefsCompletedCount = new Set(
+    (delegationBeliefsResultRows ?? []).map((r) => r.participant_session_id),
+  ).size;
+  const architectureCalculatedCount = (recommendationRows ?? []).length;
+  const architectureReactionCount = (recommendationRows ?? []).filter((r) => r.reaction !== null).length;
 
   const moduleCompletion: ModuleCompletionRow[] = (modules ?? []).map((m) => {
     const rows = (progressRows ?? []).filter((p) => p.module_id === m.id);
@@ -444,6 +473,18 @@ export async function getSessionAggregates(sessionIds?: string[]): Promise<Sessi
     leadershipWiringDashboardNote,
     executiveSupportAudit,
     priorityLeverage,
+    delegationBeliefsCompletionCount: delegationBeliefsCompletedCount,
+    delegationBeliefsCompletionRate:
+      registeredCount > 0 ? Math.round((delegationBeliefsCompletedCount / registeredCount) * 1000) / 10 : 0,
+    successVisionCompletionCount: successVisionCompletedCount,
+    successVisionCompletionRate:
+      registeredCount > 0 ? Math.round((successVisionCompletedCount / registeredCount) * 1000) / 10 : 0,
+    architectureCalculatedCount,
+    architectureCalculatedRate:
+      registeredCount > 0 ? Math.round((architectureCalculatedCount / registeredCount) * 1000) / 10 : 0,
+    architectureReactionCount,
+    architectureReactionRate:
+      registeredCount > 0 ? Math.round((architectureReactionCount / registeredCount) * 1000) / 10 : 0,
   };
 }
 

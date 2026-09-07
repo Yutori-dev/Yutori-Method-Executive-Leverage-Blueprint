@@ -118,6 +118,12 @@ export default async function SessionControlPanelPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
+              href={`/admin/sessions/${sessionId}/facilitator`}
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
+            >
+              Facilitator view
+            </Link>
+            <Link
               href={`/admin/sessions/${sessionId}/aggregate`}
               className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
