@@ -1581,6 +1581,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1602,6 +1603,7 @@ export type Database = {
           name: string
           organization?: string | null
           priority_leverage_reveal_unlocked?: boolean
+          skip_delegation_beliefs?: boolean
           status?: string
           updated_at?: string
           white_whale_unlocked?: boolean
@@ -1623,6 +1625,7 @@ export type Database = {
           name?: string
           organization?: string | null
           priority_leverage_reveal_unlocked?: boolean
+          skip_delegation_beliefs?: boolean
           status?: string
           updated_at?: string
           white_whale_unlocked?: boolean
@@ -1842,6 +1845,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1872,6 +1876,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1902,6 +1907,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1932,6 +1938,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1962,6 +1969,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -1992,6 +2000,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean
@@ -2022,6 +2031,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          skip_delegation_beliefs: boolean
           status: string
           updated_at: string
           white_whale_unlocked: boolean

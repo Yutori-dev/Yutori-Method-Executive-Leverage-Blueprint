@@ -18,6 +18,7 @@ export function DelegationFlow({
   moduleId,
   sessionPath,
   alreadyComplete,
+  skipBeliefs = false,
 }: {
   delegationBeliefsData: DelegationBeliefsData | null;
   candidates: DelegationCandidatesData;
@@ -27,9 +28,16 @@ export function DelegationFlow({
   sessionId: string;
   sessionPath: string;
   alreadyComplete: boolean;
+  /** Per-session override (client request 2026-09): skip the Delegation
+   * Beliefs assessment for a shortened workshop while still requiring the
+   * Priority Delegation Opportunities selection -- Architecture's
+   * calculation never reads Delegation Beliefs at all (verified directly
+   * against calculate_executive_support_architecture), so this has no
+   * effect on that recommendation either way. */
+  skipBeliefs?: boolean;
 }) {
   const router = useRouter();
-  const [beliefsComplete, setBeliefsComplete] = useState(!!delegationBeliefsData?.result);
+  const [beliefsComplete, setBeliefsComplete] = useState(skipBeliefs || !!delegationBeliefsData?.result);
   const requiredSelectionCount = Math.min(3, candidates.eligible.length);
   const [prioritiesComplete, setPrioritiesComplete] = useState(
     requiredSelectionCount === 0 ||
@@ -49,7 +57,13 @@ export function DelegationFlow({
   return (
     <div className="space-y-8">
       <section>
-        {delegationBeliefsData ? (
+        {skipBeliefs ? (
+          <Card>
+            <p className="text-sm text-(--color-ink-muted)">
+              The Delegation Beliefs assessment is skipped for this session.
+            </p>
+          </Card>
+        ) : delegationBeliefsData ? (
           <DelegationBeliefsFlow
             data={delegationBeliefsData}
             participantSessionId={participantSessionId}

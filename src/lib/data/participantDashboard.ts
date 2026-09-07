@@ -22,6 +22,7 @@ export interface ParticipantDashboardData {
     status: string;
     workshopFeedbackReleased: boolean;
     blueprintRevealed: boolean;
+    skipDelegationBeliefs: boolean;
   };
   participantSessionId: string;
   feedbackSubmitted: boolean;
@@ -55,7 +56,7 @@ export async function getParticipantDashboard(
       supabase
         .from("sessions")
         .select(
-          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys",
+          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys, skip_delegation_beliefs",
         )
         .eq("id", sessionId)
         .maybeSingle(),
@@ -137,6 +138,7 @@ export async function getParticipantDashboard(
       status: session.status,
       workshopFeedbackReleased: session.workshop_feedback_released,
       blueprintRevealed: session.blueprint_revealed,
+      skipDelegationBeliefs: session.skip_delegation_beliefs,
     },
     participantSessionId: participantSession.id,
     feedbackSubmitted,

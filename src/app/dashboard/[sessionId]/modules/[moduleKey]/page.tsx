@@ -120,6 +120,7 @@ export default async function ModulePage({
         sessionId={sessionId}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
+        skipBeliefs={dashboard.session.skipDelegationBeliefs}
       />
     );
   } else if (moduleKey === "leverage") {

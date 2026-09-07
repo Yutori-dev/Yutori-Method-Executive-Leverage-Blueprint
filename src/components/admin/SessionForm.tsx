@@ -20,6 +20,7 @@ export function SessionForm({
     eventDate: string;
     format: SessionFormat;
     disabledModuleKeys?: string[];
+    skipDelegationBeliefs?: boolean;
   };
   /** Toggleable modules for this session -- requires_live_workshop modules
    * are never included, that gating is separate from this per-session
@@ -35,6 +36,9 @@ export function SessionForm({
   const [format, setFormat] = useState<SessionFormat>(initial?.format ?? "virtual");
   const [disabledKeys, setDisabledKeys] = useState<Set<string>>(
     () => new Set(initial?.disabledModuleKeys ?? []),
+  );
+  const [skipDelegationBeliefs, setSkipDelegationBeliefs] = useState(
+    initial?.skipDelegationBeliefs ?? false,
   );
 
   function toggleModule(key: string) {
@@ -53,10 +57,10 @@ export function SessionForm({
     startTransition(async () => {
       try {
         if (mode === "create") {
-          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys });
+          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs });
           router.push(`/admin/sessions/${newId}`);
         } else if (sessionId) {
-          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys });
+          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs });
           router.push(`/admin/sessions/${sessionId}`);
         }
       } catch (error) {
@@ -140,6 +144,24 @@ export function SessionForm({
             </label>
           ))}
         </div>
+
+        {!disabledKeys.has("delegation") ? (
+          <label className="mt-3 flex items-start gap-2 border-t border-(--color-hairline) pt-3 text-sm text-(--color-ink)">
+            <input
+              type="checkbox"
+              checked={skipDelegationBeliefs}
+              onChange={(e) => setSkipDelegationBeliefs(e.target.checked)}
+              className="mt-0.5 accent-(--color-accent)"
+            />
+            <span>
+              Skip the Delegation Beliefs assessment
+              <span className="block text-xs text-(--color-ink-muted)">
+                Still requires picking Priority Delegation Opportunities. Doesn&apos;t affect the
+                Architecture recommendation either way -- it never reads Delegation Beliefs.
+              </span>
+            </span>
+          </label>
+        ) : null}
       </div>
 
       {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}

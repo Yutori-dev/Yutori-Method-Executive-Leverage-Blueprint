@@ -101,27 +101,34 @@ export default async function ParticipantDashboardPage({
             ) : (
               <>
                 <p className="text-sm text-(--color-ink)">You&apos;ve completed every module.</p>
-                {dashboard.session.blueprintRevealed ? (
-                  <>
-                    <Link href={`/dashboard/${sessionId}/blueprint`} className="mt-3 inline-block">
-                      <Button>View my Blueprint</Button>
-                    </Link>
-                    <div className="mt-4">
-                      <DiscussBlueprintButton
-                        participantSessionId={dashboard.participantSessionId}
-                        alreadyRequested={dashboard.followUpRequested}
-                      />
-                    </div>
-                  </>
-                ) : (
+                {!dashboard.session.blueprintRevealed ? (
                   <p className="mt-1 text-sm text-(--color-ink-muted)">
                     Your Blueprint is being finalized.
                   </p>
-                )}
+                ) : null}
               </>
             )}
           </Card>
         )}
+
+        {/* Once revealed, these stay on the dashboard permanently -- not
+         * tied to destination.type, which can legitimately be
+         * "final-feedback" (or anything else) even after the Blueprint is
+         * revealed (client feedback 2026-09: they were disappearing behind
+         * a pending workshop-feedback step). */}
+        {dashboard.session.blueprintRevealed ? (
+          <Card className="mt-6">
+            <Link href={`/dashboard/${sessionId}/blueprint`} className="inline-block">
+              <Button>View my Blueprint</Button>
+            </Link>
+            <div className="mt-4">
+              <DiscussBlueprintButton
+                participantSessionId={dashboard.participantSessionId}
+                alreadyRequested={dashboard.followUpRequested}
+              />
+            </div>
+          </Card>
+        ) : null}
 
         <div className="mt-10 space-y-3">
           {dashboard.modules.map((module, index) => (

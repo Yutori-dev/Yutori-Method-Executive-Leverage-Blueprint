@@ -20,6 +20,7 @@ export async function createSession(input: {
   eventDate: string;
   format: SessionFormat;
   disabledModuleKeys?: string[];
+  skipDelegationBeliefs?: boolean;
 }) {
   const supabase = await createServerSupabaseClient();
 
@@ -54,6 +55,7 @@ export async function createSession(input: {
       created_by: user.id,
       active_module_id: firstEnabledModule?.id ?? null,
       disabled_module_keys: disabledModuleKeys,
+      skip_delegation_beliefs: input.skipDelegationBeliefs ?? false,
     })
     .select("id")
     .single();
@@ -74,6 +76,7 @@ export async function updateSession(
     eventDate: string;
     format: SessionFormat;
     disabledModuleKeys?: string[];
+    skipDelegationBeliefs?: boolean;
   },
 ) {
   const supabase = await createServerSupabaseClient();
@@ -89,6 +92,9 @@ export async function updateSession(
       // enabled".
       ...(input.disabledModuleKeys !== undefined
         ? { disabled_module_keys: input.disabledModuleKeys }
+        : {}),
+      ...(input.skipDelegationBeliefs !== undefined
+        ? { skip_delegation_beliefs: input.skipDelegationBeliefs }
         : {}),
     })
     .eq("id", sessionId);
