@@ -85,8 +85,8 @@ export default async function SessionAggregatePage({
       completeRate: rate(moduleRow("operating_altitude")?.complete ?? 0),
       subRows: [
         { label: "Executive Leverage Diagnostic", count: aggregates.executiveLeverageDiagnostic.completedCount, rate: aggregates.executiveLeverageDiagnostic.completionRate },
-        { label: "Leadership Wiring", count: aggregates.leadershipWiringCompletionCount, rate: aggregates.leadershipWiringCompletionRate },
         { label: "White Whale", count: aggregates.whiteWhaleCompletionCount, rate: aggregates.whiteWhaleCompletionRate },
+        { label: "Leadership Wiring", count: aggregates.leadershipWiringCompletionCount, rate: aggregates.leadershipWiringCompletionRate },
       ],
       charts: [{ title: "Leadership Wiring", rows: aggregates.selfIdentificationDistribution, emptyLabel: "No self-identifications yet." }],
     },
@@ -203,6 +203,7 @@ export default async function SessionAggregatePage({
           {sections.map((section) => (
             <Card key={section.key}>
               <Disclosure
+                defaultOpen
                 label={
                   <span className="flex items-center gap-2 normal-case tracking-normal">
                     <span className="font-serif text-lg">{section.name}</span>
@@ -237,7 +238,7 @@ export default async function SessionAggregatePage({
                       <div key={chart.title}>
                         <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">{chart.title}</p>
                         <div className="mt-2">
-                          <CountBarList rows={chart.rows} emptyLabel={chart.emptyLabel} />
+                          <CountBarList rows={chart.rows} emptyLabel={chart.emptyLabel} showPercentage />
                         </div>
                       </div>
                     ))}
