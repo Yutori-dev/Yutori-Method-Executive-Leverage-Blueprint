@@ -103,8 +103,6 @@ export function PriorityDelegationFlow({
   }
 
   if (phase === "select") {
-    const ambiguity = candidates.eligible.filter((c) => c.macroZone === "ambiguity");
-    const vulnerability = candidates.eligible.filter((c) => c.macroZone === "vulnerability");
     const fewerThanThree = candidates.eligible.length < 3;
 
     return (
@@ -114,29 +112,11 @@ export function PriorityDelegationFlow({
           {fewerThanThree ? config.fewerThanThreeCopy : config.introCopy}
         </p>
 
-        {ambiguity.length > 0 ? (
-          <div className="mt-5">
-            <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Zone of Ambiguity</p>
-            <p className="mt-1 text-xs text-(--color-ink-muted)">{config.zoneAmbiguityDescription}</p>
-            <div className="mt-2 space-y-2">
-              {ambiguity.map((c) => (
-                <CandidateOption key={c.responsibilityId} candidate={c} selected={selectedIds.has(c.responsibilityId)} requiredCount={requiredCount} selectedCount={selectedIds.size} onToggle={toggleCandidate} />
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {vulnerability.length > 0 ? (
-          <div className="mt-5">
-            <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Zone of Vulnerability</p>
-            <p className="mt-1 text-xs text-(--color-ink-muted)">{config.zoneVulnerabilityDescription}</p>
-            <div className="mt-2 space-y-2">
-              {vulnerability.map((c) => (
-                <CandidateOption key={c.responsibilityId} candidate={c} selected={selectedIds.has(c.responsibilityId)} requiredCount={requiredCount} selectedCount={selectedIds.size} onToggle={toggleCandidate} />
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <div className="mt-5 space-y-2">
+          {candidates.eligible.map((c) => (
+            <CandidateOption key={c.responsibilityId} candidate={c} selected={selectedIds.has(c.responsibilityId)} requiredCount={requiredCount} selectedCount={selectedIds.size} onToggle={toggleCandidate} />
+          ))}
+        </div>
 
         {errorMessage ? <p className="mt-3 text-sm text-[#8a3324]">{errorMessage}</p> : null}
 

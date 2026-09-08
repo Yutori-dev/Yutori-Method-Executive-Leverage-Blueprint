@@ -11,7 +11,7 @@ export function Disclosure({
   defaultOpen = false,
   children,
 }: {
-  label: string;
+  label: ReactNode;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {

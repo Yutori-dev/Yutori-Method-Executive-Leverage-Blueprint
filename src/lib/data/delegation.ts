@@ -6,7 +6,11 @@ export interface EligibleCandidate {
   responsibilityId: string;
   label: string;
   matrixCell: string | null;
-  macroZone: "ambiguity" | "vulnerability";
+  /** Null when the participant never rated this responsibility during
+   * Zone of Investment -- eligibility is no longer zone-restricted
+   * (client request 2026-09-08: all 21 responsibilities are candidates,
+   * not just Ambiguity/Vulnerability), so this is shown for context only. */
+  macroZone: "investment" | "ambiguity" | "vulnerability" | null;
 }
 
 export interface PressureTestState {
@@ -80,9 +84,10 @@ export interface PrioritySelection {
 }
 
 export interface DelegationCandidatesData {
-  /** Responsibilities rated outside the Zone of Investment (ambiguity or
-   * vulnerability) for this participant_session -- the only ones eligible
-   * for Priority Delegation Opportunity selection (brief section 11). */
+  /** All 21 real (active, non-placeholder) library responsibilities --
+   * every one is eligible for Priority Delegation Opportunity selection
+   * (client request 2026-09-08, reversing the earlier Zone-of-Investment
+   * restriction). Ordered by library sort_order. */
   eligible: EligibleCandidate[];
   currentSelections: PrioritySelection[];
   pressureTest: PressureTestState | null;
@@ -93,14 +98,20 @@ export async function getDelegationCandidates(
 ): Promise<DelegationCandidatesData> {
   const supabase = await createServerSupabaseClient();
 
-  // responsibilities(label) is embedded directly instead of resolved
-  // through a separate batch lookup.
-  const [{ data: rated }, { data: priorities }, { data: pressureTestRow }] = await Promise.all([
+  // All 21 real responsibilities are the candidate list now -- rated
+  // ones are looked up separately and merged in below just to show each
+  // candidate's zone/cell for context, not to filter the list.
+  const [{ data: library }, { data: rated }, { data: priorities }, { data: pressureTestRow }] = await Promise.all([
+    supabase
+      .from("responsibilities")
+      .select("id, label")
+      .eq("active", true)
+      .eq("is_placeholder", false)
+      .order("sort_order", { ascending: true }),
     supabase
       .from("participant_responsibilities")
-      .select("responsibility_id, matrix_cell, macro_zone, responsibilities(label)")
-      .eq("participant_session_id", participantSessionId)
-      .in("macro_zone", ["ambiguity", "vulnerability"]),
+      .select("responsibility_id, matrix_cell, macro_zone")
+      .eq("participant_session_id", participantSessionId),
     supabase
       .from("priority_delegation_opportunities")
       .select("responsibility_id, selection_order, leverage_level_snapshot, responsibilities(label, blueprint_description)")
@@ -117,14 +128,18 @@ export async function getDelegationCandidates(
     (row.responsibilities as { label: string } | null)?.label ?? "[Removed responsibility]";
   const blueprintDescriptionOf = (row: { responsibilities: unknown }) =>
     (row.responsibilities as { blueprint_description: string | null } | null)?.blueprint_description ?? null;
+  const ratingByResponsibilityId = new Map((rated ?? []).map((r) => [r.responsibility_id, r]));
 
   return {
-    eligible: (rated ?? []).map((r) => ({
-      responsibilityId: r.responsibility_id,
-      label: labelOf(r),
-      matrixCell: r.matrix_cell,
-      macroZone: r.macro_zone as "ambiguity" | "vulnerability",
-    })),
+    eligible: (library ?? []).map((r) => {
+      const rating = ratingByResponsibilityId.get(r.id);
+      return {
+        responsibilityId: r.id,
+        label: r.label,
+        matrixCell: rating?.matrix_cell ?? null,
+        macroZone: (rating?.macro_zone as "investment" | "ambiguity" | "vulnerability" | null) ?? null,
+      };
+    }),
     currentSelections: (priorities ?? []).map((p) => ({
       responsibilityId: p.responsibility_id,
       label: labelOf(p),
