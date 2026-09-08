@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getSessionAggregates } from "@/lib/data/sessionAggregates";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
-import { Disclosure } from "@/components/ui/Disclosure";
 import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import { RevealPriorityLeverageControl } from "@/components/admin/RevealPriorityLeverageControl";
@@ -15,30 +13,9 @@ import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadersh
 import { ReleaseWorkshopFeedbackControl } from "@/components/admin/ReleaseWorkshopFeedbackControl";
 import { RevealBlueprintControl } from "@/components/admin/RevealBlueprintControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
-import { CountBarList } from "@/components/admin/CountBarList";
 import { cn } from "@/lib/cn";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
-import type { SessionAggregates } from "@/lib/data/sessionAggregates";
-
-type ColorTier = "green" | "orange" | "red";
-function tierFor(rate: number): ColorTier {
-  if (rate >= 75) return "green";
-  if (rate >= 41) return "orange";
-  return "red";
-}
-const TIER_CLASSES: Record<ColorTier, string> = {
-  green: "bg-(--color-success)/15 text-(--color-success)",
-  orange: "bg-[#8a5a1f]/15 text-[#8a5a1f]",
-  red: "bg-[#8a3324]/15 text-[#8a3324]",
-};
-function CompletionBadge({ count, rate }: { count: number; rate: number }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium", TIER_CLASSES[tierFor(rate)])}>
-      {count} · {rate}%
-    </span>
-  );
-}
 
 export default async function SessionControlPanelPage({
   params,
@@ -54,8 +31,6 @@ export default async function SessionControlPanelPage({
   ]);
 
   if (!session || !modules) notFound();
-
-  const aggregates = await getSessionAggregates([sessionId]);
 
   const { data: enrollments } = await supabase
     .from("participant_sessions")
@@ -123,99 +98,6 @@ export default async function SessionControlPanelPage({
       leverageModule.sort_order <= activeModule.sort_order &&
       !disabledModuleKeys.has("leverage"),
   );
-
-  // Results breakdown per module and per sub-exercise inside it -- lives
-  // on this same page (client feedback 2026-09: unlocks and results in
-  // one screen, not split across two). Reveal toggles aren't repeated
-  // here -- the exact same controls already sit in "Module control"
-  // above; this section is read-only completion visibility + charts.
-  const rate = (count: number) =>
-    aggregates.registeredCount > 0 ? Math.round((count / aggregates.registeredCount) * 1000) / 10 : 0;
-  const moduleRow = (key: string) => aggregates.moduleCompletion.find((m) => m.key === key);
-  interface SubRow {
-    label: string;
-    count: number;
-    rate: number;
-  }
-  interface ResultSection {
-    key: string;
-    name: string;
-    completeCount: number;
-    completeRate: number;
-    subRows: SubRow[];
-    charts: { title: string; rows: SessionAggregates["zoneDistribution"]; emptyLabel: string }[];
-  }
-  const allResultSections: ResultSection[] = [
-    {
-      key: "operating_altitude",
-      name: "Operating Altitude",
-      completeCount: moduleRow("operating_altitude")?.complete ?? 0,
-      completeRate: rate(moduleRow("operating_altitude")?.complete ?? 0),
-      subRows: [
-        { label: "Executive Leverage Diagnostic", count: aggregates.executiveLeverageDiagnostic.completedCount, rate: aggregates.executiveLeverageDiagnostic.completionRate },
-        { label: "Leadership Wiring", count: aggregates.leadershipWiringCompletionCount, rate: aggregates.leadershipWiringCompletionRate },
-        { label: "White Whale", count: aggregates.whiteWhaleCompletionCount, rate: aggregates.whiteWhaleCompletionRate },
-      ],
-      charts: [{ title: "Leadership Wiring", rows: aggregates.selfIdentificationDistribution, emptyLabel: "No self-identifications yet." }],
-    },
-    {
-      key: "current_structure",
-      name: "Investment",
-      completeCount: moduleRow("current_structure")?.complete ?? 0,
-      completeRate: rate(moduleRow("current_structure")?.complete ?? 0),
-      subRows: [
-        { label: "Mapping (10-12 responsibilities rated)", count: aggregates.zoneOfInvestment.mappingCompletionCount, rate: aggregates.zoneOfInvestment.mappingCompletionRate },
-        { label: "Zone of Investment Reveal Viewed", count: aggregates.zoneOfInvestment.revealViewedCount, rate: aggregates.zoneOfInvestment.revealViewedRate },
-      ],
-      charts: [
-        { title: "Zone of Investment Distribution", rows: aggregates.zoneDistribution, emptyLabel: "No ratings yet." },
-        { title: "Most Selected Responsibilities", rows: aggregates.mostSelectedResponsibilities, emptyLabel: "No selections yet." },
-      ],
-    },
-    {
-      key: "delegation",
-      name: "Delegation",
-      completeCount: moduleRow("delegation")?.complete ?? 0,
-      completeRate: rate(moduleRow("delegation")?.complete ?? 0),
-      subRows: [
-        ...(session.skip_delegation_beliefs
-          ? []
-          : [{ label: "Delegation Beliefs", count: aggregates.delegationBeliefsCompletionCount, rate: aggregates.delegationBeliefsCompletionRate }]),
-        { label: "Priority Delegation Opportunities", count: aggregates.priorityLeverage.confirmedCount, rate: aggregates.priorityLeverage.confirmedRate },
-      ],
-      charts: [{ title: "Most Common Priority Opportunities", rows: aggregates.mostCommonPriorityOpportunities, emptyLabel: "No priority opportunities selected yet." }],
-    },
-    {
-      key: "leverage",
-      name: "Leverage",
-      completeCount: moduleRow("leverage")?.complete ?? 0,
-      completeRate: rate(moduleRow("leverage")?.complete ?? 0),
-      subRows: [
-        { label: "Executive Support Audit", count: aggregates.executiveSupportAudit.completedCount, rate: aggregates.executiveSupportAudit.completionRate },
-      ],
-      charts: [{ title: "Primary Leverage Gap Frequency", rows: aggregates.executiveSupportAudit.primaryFrequency, emptyLabel: "No completed audits yet." }],
-    },
-    {
-      key: "architecture",
-      name: "Architecture",
-      completeCount: moduleRow("architecture")?.complete ?? 0,
-      completeRate: rate(moduleRow("architecture")?.complete ?? 0),
-      subRows: [
-        { label: "Calculated", count: aggregates.architectureCalculatedCount, rate: aggregates.architectureCalculatedRate },
-        { label: "Reaction Submitted", count: aggregates.architectureReactionCount, rate: aggregates.architectureReactionRate },
-      ],
-      charts: [{ title: "Primary Recommendation Signal", rows: aggregates.primarySignalDistribution, emptyLabel: "No recommendations calculated yet." }],
-    },
-    {
-      key: "success",
-      name: "Success",
-      completeCount: moduleRow("success")?.complete ?? 0,
-      completeRate: rate(moduleRow("success")?.complete ?? 0),
-      subRows: [{ label: "Success Vision", count: aggregates.successVisionCompletionCount, rate: aggregates.successVisionCompletionRate }],
-      charts: [],
-    },
-  ];
-  const resultSections = allResultSections.filter((s) => !disabledModuleKeys.has(s.key));
 
   const joinUrl =
     typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
@@ -477,74 +359,6 @@ export default async function SessionControlPanelPage({
             </div>
           </Card>
         </div>
-
-        <Card className="mt-8">
-          <h2 className="font-serif text-xl">Results by module</h2>
-          <div className="mt-1 flex flex-wrap items-center gap-4 text-xs text-(--color-ink-muted)">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-(--color-success)" /> 75-100% on track
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#8a5a1f]" /> 41-74% in progress
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#8a3324]" /> 0-40% needs attention
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-(--color-ink-muted)">
-            Showing enabled modules only, based on {aggregates.registeredCount} registered participants. Click a
-            module to see its sub-exercises.
-          </p>
-
-          <div className="mt-5 space-y-4">
-            {resultSections.map((section) => (
-              <div key={section.key} className="border-t border-(--color-hairline) pt-4">
-                <Disclosure
-                  label={
-                    <span className="flex items-center gap-2 normal-case tracking-normal">
-                      {section.name}
-                      <CompletionBadge count={section.completeCount} rate={section.completeRate} />
-                    </span>
-                  }
-                >
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-(--color-hairline) text-xs tracking-wide text-(--color-ink-muted) uppercase">
-                          <th className="pb-2 pr-4">Sub-exercise</th>
-                          <th className="pb-2">Completed / %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {section.subRows.map((sub) => (
-                          <tr key={sub.label} className="border-b border-(--color-hairline)/60">
-                            <td className="py-2 pr-4">{sub.label}</td>
-                            <td className="py-2">
-                              <CompletionBadge count={sub.count} rate={sub.rate} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {section.charts.length > 0 ? (
-                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {section.charts.map((chart) => (
-                        <div key={chart.title}>
-                          <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">{chart.title}</p>
-                          <div className="mt-2">
-                            <CountBarList rows={chart.rows} emptyLabel={chart.emptyLabel} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </Disclosure>
-              </div>
-            ))}
-          </div>
-        </Card>
       </Container>
     </main>
   );
