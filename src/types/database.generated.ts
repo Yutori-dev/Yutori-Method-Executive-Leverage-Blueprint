@@ -2452,6 +2452,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_architecture_revealed_for_session: {
+        Args: { p_participant_session_id: string }
+        Returns: boolean
+      }
       is_module_unlocked_for_session: {
         Args: { p_module_key: string; p_session_id: string }
         Returns: boolean
@@ -2483,6 +2487,7 @@ export type Database = {
         Args: { p_participant_session_id: string }
         Returns: undefined
       }
+      my_master_profile_id: { Args: never; Returns: string }
       rate_responsibility: {
         Args: {
           p_competency: string
