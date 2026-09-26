@@ -996,6 +996,51 @@ export type Database = {
         }
         Relationships: []
       }
+      participant_files: {
+        Row: {
+          file_name: string
+          file_path: string
+          id: string
+          label: string | null
+          master_profile_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          id?: string
+          label?: string | null
+          master_profile_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          id?: string
+          label?: string | null
+          master_profile_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_files_master_profile_id_fkey"
+            columns: ["master_profile_id"]
+            isOneToOne: false
+            referencedRelation: "master_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_module_progress: {
         Row: {
           completed_at: string | null
@@ -2381,10 +2426,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_read_master_profile: {
+        Args: { p_master_profile_id: string }
+        Returns: boolean
+      }
       can_read_participant_session: {
         Args: { p_participant_session_id: string }
         Returns: boolean
       }
+      can_read_session: { Args: { p_session_id: string }; Returns: boolean }
       ensure_participant: {
         Args: {
           p_first_name: string

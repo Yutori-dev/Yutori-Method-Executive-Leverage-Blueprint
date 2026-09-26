@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMasterProfileDetail } from "@/lib/data/masterProfile";
+import { getParticipantFiles, getSignedFileUrl } from "@/lib/data/participantFiles";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { MergeParticipantControl } from "@/components/admin/MergeParticipantControl";
 import { PairProfileControl } from "@/components/admin/PairProfileControl";
 import { RoleOverrideControl } from "@/components/admin/RoleOverrideControl";
+import { ParticipantFilesControl } from "@/components/admin/ParticipantFilesControl";
 
 const COMPLETION_LABEL: Record<string, string> = {
   not_started: "Not started",
@@ -23,6 +25,10 @@ export default async function MasterProfilePage({
   if (!profile) notFound();
 
   const primary = profile.participants[0];
+  const files = await getParticipantFiles(masterProfileId);
+  const fileRows = await Promise.all(
+    files.map(async (f) => ({ ...f, downloadUrl: await getSignedFileUrl(f.filePath) })),
+  );
 
   return (
     <main className="py-16">
@@ -97,6 +103,16 @@ export default async function MasterProfilePage({
               <div className="mt-3">
                 <PairProfileControl masterProfileId={profile.masterProfileId} paired={profile.pairedProfileSummary} />
               </div>
+            </div>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <h2 className="font-serif text-lg">Files</h2>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">
+              Uploaded files show up in this person&apos;s portal alongside their Blueprints.
+            </p>
+            <div className="mt-4">
+              <ParticipantFilesControl masterProfileId={profile.masterProfileId} files={fileRows} />
             </div>
           </Card>
 

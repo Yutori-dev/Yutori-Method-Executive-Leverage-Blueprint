@@ -1,12 +1,18 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getPortalSessions } from "@/lib/data/participantArtifacts";
+import { getMyFiles, getSignedFileUrl } from "@/lib/data/participantFiles";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 
 export default async function DashboardIndexPage() {
   const portalSessions = await getPortalSessions();
   if (!portalSessions) redirect("/");
+
+  const files = await getMyFiles();
+  const fileLinks = await Promise.all(
+    files.map(async (f) => ({ ...f, downloadUrl: await getSignedFileUrl(f.filePath) })),
+  );
 
   // Archived sessions hide their Q&A entirely -- only the finished
   // Blueprint stays reachable, and only once it was actually revealed.
@@ -17,7 +23,7 @@ export default async function DashboardIndexPage() {
   const activeSessions = portalSessions.filter((s) => s.status !== "archived" && s.ownedByCaller);
   const pastArtifacts = portalSessions.filter((s) => s.status === "archived" && s.blueprintRevealed);
 
-  if (activeSessions.length === 0 && pastArtifacts.length === 0) {
+  if (activeSessions.length === 0 && pastArtifacts.length === 0 && fileLinks.length === 0) {
     return (
       <main className="flex flex-1 items-center">
         <Container narrow className="py-20 text-center">
@@ -32,7 +38,7 @@ export default async function DashboardIndexPage() {
 
   // Preserve the common case exactly as before: one active session and
   // nothing archived to show goes straight through, no extra click.
-  if (activeSessions.length === 1 && pastArtifacts.length === 0) {
+  if (activeSessions.length === 1 && pastArtifacts.length === 0 && fileLinks.length === 0) {
     redirect(`/dashboard/${activeSessions[0].sessionId}`);
   }
 
@@ -75,6 +81,27 @@ export default async function DashboardIndexPage() {
                   </Card>
                 </Link>
               ))}
+            </div>
+          </div>
+        ) : null}
+
+        {fileLinks.length > 0 ? (
+          <div className={activeSessions.length > 0 || pastArtifacts.length > 0 ? "mt-10" : ""}>
+            <h2 className="font-serif text-2xl">Your files</h2>
+            <p className="mt-1 text-sm text-(--color-ink-muted)">Shared with you by your facilitator.</p>
+            <div className="mt-6 space-y-3">
+              {fileLinks.map((f) =>
+                f.downloadUrl ? (
+                  <a key={f.id} href={f.downloadUrl}>
+                    <Card className="transition-colors hover:border-(--color-accent)">
+                      <p className="font-medium">{f.label || f.fileName}</p>
+                      <p className="text-sm text-(--color-ink-muted)">
+                        {new Date(f.uploadedAt).toLocaleDateString()}
+                      </p>
+                    </Card>
+                  </a>
+                ) : null,
+              )}
             </div>
           </div>
         ) : null}
