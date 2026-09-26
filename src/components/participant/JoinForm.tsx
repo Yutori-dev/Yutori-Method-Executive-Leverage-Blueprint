@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { savePendingProfile } from "@/lib/pendingProfile";
@@ -195,6 +196,17 @@ export function JoinForm({ joinCode }: { joinCode?: string }) {
           className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
         />
       </div>
+
+      {mode === "signin" ? (
+        <p className="text-right">
+          <Link
+            href="/forgot-password"
+            className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
+          >
+            Forgot password?
+          </Link>
+        </p>
+      ) : null}
 
       {errorMessage ? <p className="text-sm text-[#8a3324]">{errorMessage}</p> : null}
 
