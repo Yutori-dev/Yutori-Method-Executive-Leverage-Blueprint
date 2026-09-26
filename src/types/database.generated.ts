@@ -895,6 +895,77 @@ export type Database = {
         }
         Relationships: []
       }
+      master_profile_merge_log: {
+        Row: {
+          admin_id: string | null
+          id: string
+          merged_at: string
+          new_master_profile_id: string
+          old_master_profile_id: string | null
+          participant_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          id?: string
+          merged_at?: string
+          new_master_profile_id: string
+          old_master_profile_id?: string | null
+          participant_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          id?: string
+          merged_at?: string
+          new_master_profile_id?: string
+          old_master_profile_id?: string | null
+          participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_profile_merge_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_profile_merge_log_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          inferred_role_override: string | null
+          paired_master_profile_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inferred_role_override?: string | null
+          paired_master_profile_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inferred_role_override?: string | null
+          paired_master_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_profiles_paired_master_profile_id_fkey"
+            columns: ["paired_master_profile_id"]
+            isOneToOne: false
+            referencedRelation: "master_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           active: boolean
@@ -1147,6 +1218,7 @@ export type Database = {
           intake_started_at: string | null
           last_login: string | null
           last_name: string
+          master_profile_id: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
           whole_business_os: string | null
@@ -1175,6 +1247,7 @@ export type Database = {
           intake_started_at?: string | null
           last_login?: string | null
           last_name: string
+          master_profile_id: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
           whole_business_os?: string | null
@@ -1203,12 +1276,21 @@ export type Database = {
           intake_started_at?: string | null
           last_login?: string | null
           last_name?: string
+          master_profile_id?: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
           whole_business_os?: string | null
           whole_business_os_other_text?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "participants_master_profile_id_fkey"
+            columns: ["master_profile_id"]
+            isOneToOne: false
+            referencedRelation: "master_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       priority_delegation_config: {
         Row: {
@@ -1824,6 +1906,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_merge_participant: {
+        Args: { p_participant_id: string; p_target_master_profile_id: string }
+        Returns: {
+          company_name: string | null
+          created_at: string
+          current_role_title: string | null
+          current_support_admin_or_va: boolean
+          current_support_ai_automation: boolean
+          current_support_chief_integrator: boolean
+          current_support_chief_of_staff: boolean
+          current_support_coo: boolean
+          current_support_executive_assistant: boolean
+          current_support_head_of_operations: boolean
+          current_support_none: boolean
+          current_support_other: boolean
+          current_support_other_text: string | null
+          current_support_personal_assistant: boolean
+          current_support_senior_executive_assistant: boolean
+          email: string
+          first_name: string
+          id: string
+          intake_completed_at: string | null
+          intake_started_at: string | null
+          last_login: string | null
+          last_name: string
+          master_profile_id: string
+          privacy_consent_given_at: string | null
+          privacy_consent_version: string | null
+          whole_business_os: string | null
+          whole_business_os_other_text: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_release_workshop_feedback: {
         Args: { p_session_id: string }
         Returns: undefined
@@ -2090,6 +2210,7 @@ export type Database = {
           intake_started_at: string | null
           last_login: string | null
           last_name: string
+          master_profile_id: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
           whole_business_os: string | null
@@ -2260,6 +2381,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_read_participant_session: {
+        Args: { p_participant_session_id: string }
+        Returns: boolean
+      }
       ensure_participant: {
         Args: {
           p_first_name: string
@@ -2289,6 +2414,7 @@ export type Database = {
           intake_started_at: string | null
           last_login: string | null
           last_name: string
+          master_profile_id: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
           whole_business_os: string | null
@@ -2442,6 +2568,7 @@ export type Database = {
           intake_started_at: string | null
           last_login: string | null
           last_name: string
+          master_profile_id: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
           whole_business_os: string | null
