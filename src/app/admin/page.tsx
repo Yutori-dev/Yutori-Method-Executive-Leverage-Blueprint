@@ -40,9 +40,17 @@ export default async function AdminSessionsPage() {
       <Container>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="font-serif text-3xl">Sessions</h1>
-          <Link href="/admin/sessions/new">
-            <Button>New session</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/participants"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-sm font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
+            >
+              Participants
+            </Link>
+            <Link href="/admin/sessions/new">
+              <Button>New session</Button>
+            </Link>
+          </div>
         </div>
 
         <div className="mt-8">
