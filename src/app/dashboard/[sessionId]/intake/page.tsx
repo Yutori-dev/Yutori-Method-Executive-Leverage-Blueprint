@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
+import { redirectIfArchived } from "@/lib/archivedGuard";
 import { getParticipantIntake } from "@/lib/data/participantIntake";
 import { Container } from "@/components/ui/Container";
 import { IntakeForm } from "@/components/participant/IntakeForm";
@@ -13,6 +14,7 @@ export default async function IntakePage({
   const { sessionId } = await params;
   const dashboard = await getParticipantDashboard(sessionId);
   if (!dashboard) notFound();
+  redirectIfArchived(dashboard, sessionId);
 
   const initial = await getParticipantIntake();
 

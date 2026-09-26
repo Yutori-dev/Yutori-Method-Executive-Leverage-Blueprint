@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
+import { redirectIfArchived } from "@/lib/archivedGuard";
 import { getWorkshopFeedbackPageData } from "@/lib/data/workshopFeedback";
 import { Container } from "@/components/ui/Container";
 import { WorkshopFeedbackForm } from "@/components/participant/WorkshopFeedbackForm";
@@ -12,6 +13,7 @@ export default async function WorkshopFeedbackPage({
   const { sessionId } = await params;
   const dashboard = await getParticipantDashboard(sessionId);
   if (!dashboard) notFound();
+  redirectIfArchived(dashboard, sessionId);
 
   const pageData = await getWorkshopFeedbackPageData(dashboard.participantSessionId);
 

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
+import { redirectIfArchived } from "@/lib/archivedGuard";
 import { hasCompletedIntake } from "@/lib/data/moduleZeroStatus";
 import { resolveParticipantDestination } from "@/lib/moduleState";
 import { getDemoAssessment } from "@/lib/data/moduleContent";
@@ -36,6 +37,7 @@ export default async function ModulePage({
   const { sessionId, moduleKey } = await params;
   const dashboard = await getParticipantDashboard(sessionId);
   if (!dashboard) notFound();
+  redirectIfArchived(dashboard, sessionId);
 
   const currentModule = dashboard.modules.find((m) => m.key === moduleKey);
   if (!currentModule) notFound();

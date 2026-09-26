@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getParticipantDashboard } from "@/lib/data/participantDashboard";
+import { redirectIfArchived } from "@/lib/archivedGuard";
 import { resolveParticipantDestination } from "@/lib/moduleState";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
@@ -20,6 +21,7 @@ export default async function ParticipantDashboardPage({
   const dashboard = await getParticipantDashboard(sessionId);
 
   if (!dashboard) notFound();
+  redirectIfArchived(dashboard, sessionId);
 
   const trackedModules = dashboard.modules.filter((m) => !m.requiresLiveWorkshop);
   const completedCount = trackedModules.filter((m) => m.state === "COMPLETE").length;
