@@ -159,6 +159,12 @@ export default async function SessionControlPanelPage({
             >
               Export CSV
             </a>
+            <a
+              href={`/admin/sessions/${sessionId}/export-full`}
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
+            >
+              Export all answers
+            </a>
             <Link
               href={`/admin/sessions/${sessionId}/edit`}
               className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"

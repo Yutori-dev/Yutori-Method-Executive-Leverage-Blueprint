@@ -45,6 +45,15 @@ export default async function MasterProfilePage({
           </p>
         ) : null}
 
+        <div className="mt-4">
+          <a
+            href={`/admin/participants/${profile.masterProfileId}/export`}
+            className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-xs font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
+          >
+            Download all answers (CSV)
+          </a>
+        </div>
+
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <h2 className="font-serif text-lg">Registrations</h2>
