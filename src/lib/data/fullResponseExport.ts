@@ -22,9 +22,11 @@ export interface FullExportRow {
   module: string;
   question: string;
   answer: string;
+  /** When this value was recorded, where the database kept a timestamp. */
+  recordedAt: string;
 }
 
-export const FULL_EXPORT_HEADERS = ["Participant", "Email", "Session", "Module", "Question / item", "Answer"];
+export const FULL_EXPORT_HEADERS = ["Participant", "Email", "Session", "Module", "Question / item", "Answer", "Recorded at"];
 
 /** Every participant-authored free-text answer lands in this file, and a
  * cell beginning with = + - or @ is executed as a formula when an admin
@@ -69,7 +71,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
     (ids) =>
       supabase
         .from("participant_sessions")
-        .select("id, participant_id, session_id, completion_state, started_at, completed_at, self_identification")
+        .select("id, participant_id, session_id, completion_state, started_at, completed_at, self_identification, created_at, last_active_at, zone_of_investment_viewed_at")
         .in("id", ids),
     participantSessionIds,
   );
@@ -85,7 +87,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
         supabase
           .from("participants")
           .select(
-            "id, first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none, whole_business_os, whole_business_os_other_text, intake_completed_at",
+            "id, first_name, last_name, email, company_name, current_role_title, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none, whole_business_os, whole_business_os_other_text, intake_completed_at, intake_started_at, created_at, last_login, privacy_consent_given_at, privacy_consent_version",
           )
           .in("id", ids),
       participantIds,
@@ -95,55 +97,63 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
 
   const [
     responses, zoneRows, beliefResponses, beliefResults, priorities, pressureTests,
-    auditResponses, auditResults, diagnosticResults, architecture, reflections, feedback, followUps,
+    auditResponses, auditResults, diagnosticResults, architecture, reflections, feedback, followUps, moduleProgress,
   ] = await Promise.all([
-    fetchByIds((ids) => supabase.from("responses").select("participant_session_id, question_id, answer").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("responses").select("participant_session_id, question_id, answer, submitted_at, updated_at").in("participant_session_id", ids), psIds),
     fetchByIds(
       (ids) =>
         supabase
           .from("participant_responsibilities")
-          .select("participant_session_id, competency, passion, matrix_cell, macro_zone, responsibilities(label, leverage_level, sort_order)")
+          .select("participant_session_id, competency, passion, matrix_cell, macro_zone, updated_at, responsibilities(label, leverage_level, sort_order)")
           .in("participant_session_id", ids),
       psIds,
     ),
-    fetchByIds((ids) => supabase.from("delegation_beliefs_responses").select("participant_session_id, question_id, score").in("participant_session_id", ids), psIds),
-    fetchByIds((ids) => supabase.from("delegation_beliefs_results").select("participant_session_id, trust_control_avg, team_outcomes_avg, workload_resources_avg, strongest_barrier_domains").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("delegation_beliefs_responses").select("participant_session_id, question_id, score, created_at").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("delegation_beliefs_results").select("participant_session_id, trust_control_avg, team_outcomes_avg, workload_resources_avg, strongest_barrier_domains, flagged_opportunity_question_ids, priority_opportunity_question_id, calculated_at").in("participant_session_id", ids), psIds),
     fetchByIds(
       (ids) =>
         supabase
           .from("priority_delegation_opportunities")
-          .select("participant_session_id, selection_order, leverage_level_snapshot, responsibilities(label)")
+          .select("participant_session_id, selection_order, leverage_level_snapshot, created_at, responsibilities(label)")
           .in("participant_session_id", ids)
           .order("selection_order", { ascending: true }),
       psIds,
     ),
     fetchByIds((ids) => supabase.from("priority_delegation_pressure_test").select("participant_session_id, response, revisited").in("participant_session_id", ids), psIds),
-    fetchByIds((ids) => supabase.from("executive_support_audit_responses").select("participant_session_id, question_id, selected_layer").in("participant_session_id", ids), psIds),
-    fetchByIds((ids) => supabase.from("executive_support_audit_results").select("participant_session_id, execution_score, orchestration_score, strategic_score, systems_score, primary_layers, secondary_layers").in("participant_session_id", ids), psIds),
-    fetchByIds((ids) => supabase.from("assessment_results").select("participant_session_id, assessment_id, overall_result, interpretation, total_points, internal_percentage, strongest_constraints").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("executive_support_audit_responses").select("participant_session_id, question_id, selected_layer, created_at").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("executive_support_audit_results").select("participant_session_id, execution_score, orchestration_score, strategic_score, systems_score, primary_layers, secondary_layers, calculated_at").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("assessment_results").select("participant_session_id, assessment_id, overall_result, interpretation, total_points, internal_percentage, strongest_constraints, dimension_scores, calculated_at").in("participant_session_id", ids), psIds),
     fetchByIds(
       (ids) =>
         supabase
           .from("architecture_recommendations")
-          .select("participant_session_id, primary_signal_type, primary_leverage_need, leading_leverage_need, multi_layer_levels, secondary_leverage_needs, audit_corroboration, recommended_primary_architecture, primary_recommended_action, reaction, reaction_note")
+          .select("participant_session_id, primary_signal_type, primary_leverage_need, leading_leverage_need, multi_layer_levels, secondary_leverage_needs, audit_corroboration, recommended_primary_architecture, recommended_secondary_architectures, primary_recommended_action, secondary_recommended_actions, current_support_match_state, systems_amplifier_flag, needs_recalculation, architecture_logic_version, calculated_at, reaction, reaction_note, reaction_submitted_at")
           .in("participant_session_id", ids),
       psIds,
     ),
-    fetchByIds((ids) => supabase.from("participant_reflections").select("participant_session_id, white_whale, success_vision, success_vision_white_whale_followup").in("participant_session_id", ids), psIds),
-    fetchByIds((ids) => supabase.from("workshop_feedback").select("participant_session_id, rating, written_feedback, permission").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("participant_reflections").select("participant_session_id, white_whale, success_vision, success_vision_white_whale_followup, updated_at").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("workshop_feedback").select("participant_session_id, rating, written_feedback, permission, submitted_at").in("participant_session_id", ids), psIds),
     fetchByIds((ids) => supabase.from("follow_up_interests").select("participant_session_id, requested_at, status").in("participant_session_id", ids), psIds),
+    fetchByIds((ids) => supabase.from("participant_module_progress").select("participant_session_id, module_id, status, started_at, completed_at, updated_at").in("participant_session_id", ids), psIds),
   ]);
+  const { data: moduleRows } = await supabase.from("modules").select("id, name, sort_order").order("sort_order");
+  const moduleById = new Map((moduleRows ?? []).map((m) => [m.id, m]));
 
   // Question text lives in dedicated config tables -- fetched once by id.
   const responseQuestionIds = [...new Set(responses.map((r) => r.question_id))];
-  const beliefQuestionIds = [...new Set(beliefResponses.map((r) => r.question_id))];
+  const beliefQuestionIds = [
+    ...new Set([
+      ...beliefResponses.map((r) => r.question_id),
+      ...beliefResults.flatMap((r) => [...(r.flagged_opportunity_question_ids ?? []), ...(r.priority_opportunity_question_id ? [r.priority_opportunity_question_id] : [])]),
+    ]),
+  ];
   const auditQuestionIds = [...new Set(auditResponses.map((r) => r.question_id))];
   const assessmentIds = [...new Set(diagnosticResults.map((r) => r.assessment_id))];
 
   const [questions, options, beliefQuestions, auditQuestions] = await Promise.all([
     fetchByIds((ids) => supabase.from("questions").select("id, prompt, assessment_id").in("id", ids), responseQuestionIds),
     fetchByIds((ids) => supabase.from("answer_options").select("question_id, label, value").in("question_id", ids), responseQuestionIds),
-    fetchByIds((ids) => supabase.from("delegation_beliefs_questions").select("id, prompt, section").in("id", ids), beliefQuestionIds),
+    fetchByIds((ids) => supabase.from("delegation_beliefs_questions").select("id, prompt, section, opportunity_label").in("id", ids), beliefQuestionIds),
     fetchByIds(
       (ids) =>
         supabase
@@ -190,6 +200,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
   const reflectionByPs = byPs(reflections);
   const feedbackByPs = byPs(feedback);
   const followUpByPs = byPs(followUps);
+  const progressByPs = byPs(moduleProgress);
 
   const rows: FullExportRow[] = [];
   const intakeEmitted = new Set<string>();
@@ -200,7 +211,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
     if (!p) continue;
     const name = `${p.first_name} ${p.last_name}`;
     const sessionName = sessionNameById.get(enrollment.session_id) ?? "[Deleted session]";
-    const add = (module: string, question: string, answer: string | number | null | undefined) => {
+    const add = (module: string, question: string, answer: string | number | null | undefined, recordedAt?: string | null) => {
       if (answer === null || answer === undefined || answer === "") return;
       rows.push({
         participant: safeCell(name),
@@ -209,6 +220,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
         module,
         question: safeCell(question),
         answer: safeCell(String(answer)),
+        recordedAt: recordedAt ?? "",
       });
     };
     const psId = enrollment.id;
@@ -219,7 +231,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
       const intakeSession = "(Intake -- applies to every session)";
       const addIntake = (question: string, answer: string | null | undefined) => {
         if (!answer) return;
-        rows.push({ participant: safeCell(name), email: safeCell(p.email), session: intakeSession, module: "Intake", question, answer: safeCell(answer) });
+        rows.push({ participant: safeCell(name), email: safeCell(p.email), session: intakeSession, module: "Intake", question, answer: safeCell(answer), recordedAt: "" });
       };
       addIntake("Company", p.company_name);
       addIntake("Role / title", p.current_role_title);
@@ -245,26 +257,44 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
         p.whole_business_os ? `${p.whole_business_os}${p.whole_business_os_other_text ? ` (${p.whole_business_os_other_text})` : ""}` : null,
       );
       addIntake("Intake completed at", p.intake_completed_at);
+      addIntake("Intake started at", p.intake_started_at);
+      addIntake("Registered at", p.created_at);
+      addIntake("Last login", p.last_login);
+      addIntake("Privacy notice accepted at", p.privacy_consent_given_at);
+      addIntake("Privacy notice version", p.privacy_consent_version);
     }
 
     add("Session enrollment", "Completion state", enrollment.completion_state);
     add("Session enrollment", "Started at", enrollment.started_at);
     add("Session enrollment", "Completed at", enrollment.completed_at);
+    add("Session enrollment", "Enrolled at", enrollment.created_at);
+    add("Session enrollment", "Last active at", enrollment.last_active_at);
+    add("Session enrollment", "Zone of Investment results first viewed at", enrollment.zone_of_investment_viewed_at);
+    for (const mp of (progressByPs.get(psId) ?? []).sort((a, b) => (moduleById.get(a.module_id)?.sort_order ?? 0) - (moduleById.get(b.module_id)?.sort_order ?? 0))) {
+      add(
+        "Module progress",
+        moduleById.get(mp.module_id)?.name ?? "[Removed module]",
+        `${mp.status}${mp.started_at ? ` | started ${mp.started_at}` : ""}${mp.completed_at ? ` | completed ${mp.completed_at}` : ""}`,
+        mp.completed_at ?? mp.started_at ?? mp.updated_at,
+      );
+    }
 
     // Operating Altitude
     for (const r of responsesByPs.get(psId) ?? []) {
       const q = questionById.get(r.question_id);
-      add(`Diagnostic${q ? ` -- ${assessmentNameById.get(q.assessment_id) ?? "assessment"}` : ""}`, q?.prompt ?? "[Removed question]", optionLabel(r.question_id, r.answer));
+      add(`Diagnostic${q ? ` -- ${assessmentNameById.get(q.assessment_id) ?? "assessment"}` : ""}`, q?.prompt ?? "[Removed question]", optionLabel(r.question_id, r.answer), r.submitted_at ?? r.updated_at);
     }
     for (const r of diagResultByPs.get(psId) ?? []) {
       const resultModule = `Diagnostic -- ${assessmentNameById.get(r.assessment_id) ?? "assessment"} (calculated)`;
-      add(resultModule, "Overall result", r.overall_result);
+      add(resultModule, "Overall result", r.overall_result, r.calculated_at);
       add(resultModule, "Interpretation", r.interpretation);
       add(resultModule, "Total points", r.total_points);
       add(resultModule, "Internal percentage", r.internal_percentage);
+      if (r.dimension_scores && Object.keys(r.dimension_scores as object).length > 0) add(resultModule, "Dimension scores", JSON.stringify(r.dimension_scores));
+      if (Array.isArray(r.strongest_constraints) && r.strongest_constraints.length > 0) add(resultModule, "Strongest constraints", JSON.stringify(r.strongest_constraints));
     }
     const reflection = reflectionByPs.get(psId)?.[0];
-    add("Operating Altitude -- White Whale", "White Whale", reflection?.white_whale);
+    add("Operating Altitude -- White Whale", "White Whale", reflection?.white_whale, reflection?.updated_at);
     add("Operating Altitude -- Leadership Wiring", "Leadership Wiring self-identification", enrollment.self_identification);
 
     // Investment
@@ -274,6 +304,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
         "Investment -- Zone of Investment",
         resp?.label ?? "[Removed responsibility]",
         `Competency: ${z.competency ?? "not rated"} | Passion: ${z.passion ?? "not rated"} | Cell: ${z.matrix_cell ?? "n/a"} | Zone: ${z.macro_zone ?? "n/a"}${resp?.leverage_level ? ` | Leverage level: ${resp.leverage_level}` : ""}`,
+        z.updated_at,
       );
     }
 
@@ -281,7 +312,7 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
     for (const r of beliefRespByPs.get(psId) ?? []) {
       const q = beliefQuestionById.get(r.question_id);
       const scale = q?.section === "ownership_transfer" ? OWNERSHIP_SCALE : BELIEF_SCALE;
-      add("Delegation -- Delegation Beliefs", q?.prompt ?? "[Removed question]", `${r.score} (${scale[r.score] ?? "n/a"})`);
+      add("Delegation -- Delegation Beliefs", q?.prompt ?? "[Removed question]", `${r.score} (${scale[r.score] ?? "n/a"})`, r.created_at);
     }
     const belief = beliefResultByPs.get(psId)?.[0];
     if (belief) {
@@ -290,10 +321,13 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
       add(m, "Team & Outcomes average", belief.team_outcomes_avg);
       add(m, "Workload & Resources average", belief.workload_resources_avg);
       add(m, "Strongest barrier domains", (belief.strongest_barrier_domains ?? []).join(", ") || "None above threshold");
+      const labelFor = (id: string) => beliefQuestionById.get(id)?.opportunity_label ?? beliefQuestionById.get(id)?.prompt ?? "[Removed question]";
+      add(m, "Flagged ownership-transfer opportunities", (belief.flagged_opportunity_question_ids ?? []).map(labelFor).join("; "));
+      if (belief.priority_opportunity_question_id) add(m, "Priority ownership-transfer opportunity", labelFor(belief.priority_opportunity_question_id));
     }
     for (const pr of priorityByPs.get(psId) ?? []) {
       const resp = pr.responsibilities as unknown as { label: string } | null;
-      add("Delegation -- Priority Delegation Opportunities", `Priority ${pr.selection_order}`, `${resp?.label ?? "[Removed responsibility]"} (${pr.leverage_level_snapshot ?? "unclassified"})`);
+      add("Delegation -- Priority Delegation Opportunities", `Priority ${pr.selection_order}`, `${resp?.label ?? "[Removed responsibility]"} (${pr.leverage_level_snapshot ?? "unclassified"})`, pr.created_at);
     }
     const pressure = pressureByPs.get(psId)?.[0];
     if (pressure) {
@@ -304,11 +338,12 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
     for (const r of auditRespByPs.get(psId) ?? []) {
       const q = auditQuestionById.get(r.question_id);
       const optionText = q ? (q as unknown as Record<string, string>)[`option_${r.selected_layer}`] : undefined;
-      add("Leverage -- Executive Support Audit", q?.prompt ?? "[Removed question]", `${optionText ?? "[Removed option]"} [${r.selected_layer}]`);
+      add("Leverage -- Executive Support Audit", q?.prompt ?? "[Removed question]", `${optionText ?? "[Removed option]"} [${r.selected_layer}]`, r.created_at);
     }
     const audit = auditResultByPs.get(psId)?.[0];
     if (audit) {
       const m = "Leverage -- Executive Support Audit (calculated)";
+      add(m, "Calculated at", audit.calculated_at);
       add(m, "Layer scores", `Execution ${audit.execution_score} | Orchestration ${audit.orchestration_score} | Strategic ${audit.strategic_score} | Systems ${audit.systems_score}`);
       add(m, "Primary leverage gaps", (audit.primary_layers ?? []).join(", "));
       add(m, "Secondary leverage gaps", (audit.secondary_layers ?? []).join(", "));
@@ -325,24 +360,31 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
       add(m, "Secondary leverage needs", (arch.secondary_leverage_needs ?? []).join(", "));
       add(m, "Audit corroboration", arch.audit_corroboration);
       add(m, "Recommended primary architecture", arch.recommended_primary_architecture);
+      add(m, "Recommended secondary architectures", JSON.stringify(arch.recommended_secondary_architectures ?? []) === "[]" ? "" : JSON.stringify(arch.recommended_secondary_architectures));
       add(m, "Recommended primary action", arch.primary_recommended_action);
-      add("Architecture -- participant reaction", "Does this architecture reflect the level of support required?", arch.reaction);
+      add(m, "Recommended secondary actions", JSON.stringify(arch.secondary_recommended_actions ?? []) === "[]" ? "" : JSON.stringify(arch.secondary_recommended_actions));
+      add(m, "Current support match state", (arch.current_support_match_state ?? []).join(", "));
+      add(m, "Systems amplifier flag", arch.systems_amplifier_flag ? "Yes" : "");
+      add(m, "Needs recalculation", arch.needs_recalculation ? "Yes" : "");
+      add(m, "Logic version", arch.architecture_logic_version);
+      add(m, "Calculated at", arch.calculated_at);
+      add("Architecture -- participant reaction", "Does this architecture reflect the level of support required?", arch.reaction, arch.reaction_submitted_at);
       add("Architecture -- participant reaction", "Optional note", arch.reaction_note);
     }
 
     // Success
-    add("Success -- Success Vision", "Success Vision", reflection?.success_vision);
+    add("Success -- Success Vision", "Success Vision", reflection?.success_vision, reflection?.updated_at);
     add("Success -- Success Vision", "Success Vision follow-up (White Whale)", reflection?.success_vision_white_whale_followup);
 
     // Wrap-up
     const fb = feedbackByPs.get(psId)?.[0];
     if (fb) {
-      add("Workshop feedback", "Overall rating (1-5)", fb.rating);
+      add("Workshop feedback", "Overall rating (1-5)", fb.rating, fb.submitted_at);
       add("Workshop feedback", "Written feedback", fb.written_feedback);
       add("Workshop feedback", "Permission to use feedback", fb.permission);
     }
     const followUp = followUpByPs.get(psId)?.[0];
-    if (followUp) add("Follow-up", "Requested a follow-up conversation", `${followUp.requested_at} (${followUp.status})`);
+    if (followUp) add("Follow-up", "Requested a follow-up conversation", followUp.status, followUp.requested_at);
   }
 
   return rows;

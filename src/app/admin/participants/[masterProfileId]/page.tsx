@@ -107,6 +107,43 @@ export default async function MasterProfilePage({
           </Card>
 
           <Card className="lg:col-span-2">
+            <h2 className="font-serif text-lg">Information</h2>
+            <p className="mt-1 text-xs text-(--color-ink-muted)">
+              What each registration told us at intake. Their answers to every assessment question are in the
+              download above, or open a session below.
+            </p>
+            <div className="mt-4 space-y-5">
+              {profile.participants.map((p) => (
+                <div key={p.id}>
+                  {profile.participants.length > 1 ? (
+                    <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">{p.email}</p>
+                  ) : null}
+                  <dl className="mt-2 grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+                    {[
+                      ["Company", p.companyName],
+                      ["Role / title", p.currentRoleTitle],
+                      ["Current executive support", p.currentSupport],
+                      ["Whole-business operating system", p.wholeBusinessOs],
+                      ["Intake completed", p.intakeCompletedAt ? new Date(p.intakeCompletedAt).toLocaleDateString() : "Not yet"],
+                      [
+                        "Privacy notice accepted",
+                        p.privacyConsentGivenAt
+                          ? `${new Date(p.privacyConsentGivenAt).toLocaleDateString()}${p.privacyConsentVersion ? ` (${p.privacyConsentVersion})` : ""}`
+                          : "Not recorded",
+                      ],
+                    ].map(([label, value]) => (
+                      <div key={label as string}>
+                        <dt className="text-xs text-(--color-ink-muted)">{label}</dt>
+                        <dd className="text-(--color-ink)">{value || "—"}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="lg:col-span-2">
             <h2 className="font-serif text-lg">Files</h2>
             <p className="mt-1 text-xs text-(--color-ink-muted)">
               Uploaded files show up in this person&apos;s portal alongside their Blueprints.
@@ -127,7 +164,9 @@ export default async function MasterProfilePage({
                     <tr className="border-b border-(--color-hairline) text-xs tracking-wide text-(--color-ink-muted) uppercase">
                       <th className="pb-2 pr-4">Session</th>
                       <th className="pb-2 pr-4">Status</th>
-                      <th className="pb-2">Last active</th>
+                      <th className="pb-2 pr-4">Last active</th>
+                      <th className="pb-2 pr-4">Responses</th>
+                      <th className="pb-2">Blueprint</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -142,8 +181,24 @@ export default async function MasterProfilePage({
                           </Link>
                         </td>
                         <td className="py-2 pr-4">{COMPLETION_LABEL[e.completionState] ?? e.completionState}</td>
-                        <td className="py-2 text-(--color-ink-muted)">
+                        <td className="py-2 pr-4 text-(--color-ink-muted)">
                           {new Date(e.lastActiveAt).toLocaleString()}
+                        </td>
+                        <td className="py-2 pr-4">
+                          <Link
+                            href={`/admin/sessions/${e.sessionId}/participants/${e.participantSessionId}`}
+                            className="text-(--color-accent) hover:underline"
+                          >
+                            View
+                          </Link>
+                        </td>
+                        <td className="py-2">
+                          <Link
+                            href={`/admin/sessions/${e.sessionId}/participants/${e.participantSessionId}/blueprint`}
+                            className="text-(--color-accent) hover:underline"
+                          >
+                            View
+                          </Link>
                         </td>
                       </tr>
                     ))}

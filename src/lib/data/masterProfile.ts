@@ -1,5 +1,7 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { inferRoleFromTitle, type InferredRole } from "@/lib/inferRole";
+import { formatCurrentSupport } from "@/lib/currentSupportLabels";
 
 /**
  * Master participant profile: the admin-facing, cross-session view of a
@@ -15,33 +17,33 @@ export interface MasterProfileListRow {
   masterProfileId: string;
   participants: { id: string; firstName: string; lastName: string; email: string }[];
   sessionCount: number;
+  /** Override if an admin set one, else inferred from the most recent title
+   * across every linked registration. Null when neither applies. */
+  role: InferredRole | null;
+  roleIsManual: boolean;
 }
 
-/** Simple keyword heuristic (client brief 2026-09): CEO/founder/owner-type
- * titles read as Visionary, assistant/COO/EA-type titles read as
- * Integrator. Computed on read from whichever linked participant has the
- * most recent title, never stored -- storing it would go stale the
- * moment a title changes or a new registration is merged in. */
-const VISIONARY_KEYWORDS = ["ceo", "chief executive", "founder", "owner", "president", "principal"];
-const INTEGRATOR_KEYWORDS = [
-  "assistant", "coo", "chief operating", "chief of staff", "integrator",
-  "operations", "executive assistant", "ea",
-];
+export type RoleFilter = InferredRole | "unclassified";
 
-export function inferRoleFromTitle(title: string | null): "visionary" | "integrator" | null {
-  if (!title) return null;
-  const t = title.toLowerCase();
-  if (INTEGRATOR_KEYWORDS.some((k) => t.includes(k))) return "integrator";
-  if (VISIONARY_KEYWORDS.some((k) => t.includes(k))) return "visionary";
-  return null;
+// A request URL carries every id in an .in() filter; a few hundred UUIDs
+// exceed common URL limits. Chunk instead of assuming a small cohort.
+const ID_CHUNK = 50;
+async function inChunks<T>(ids: string[], run: (chunk: string[]) => PromiseLike<{ data: T[] | null }>): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const { data } = await run(ids.slice(i, i + ID_CHUNK));
+    if (data) out.push(...data);
+  }
+  return out;
 }
 
 export async function searchMasterProfiles(params: {
   query?: string;
   sessionId?: string;
+  role?: RoleFilter;
 }): Promise<MasterProfileListRow[]> {
   const supabase = await createServerSupabaseClient();
-  const { query, sessionId } = params;
+  const { query, sessionId, role } = params;
 
   let allowedProfileIds: string[] | null = null;
 
@@ -52,16 +54,15 @@ export async function searchMasterProfiles(params: {
       .eq("session_id", sessionId);
     const participantIds = (enrolled ?? []).map((e) => e.participant_id);
     if (participantIds.length === 0) return [];
-    const { data: profilesForSession } = await supabase
-      .from("participants")
-      .select("master_profile_id")
-      .in("id", participantIds);
-    allowedProfileIds = [...new Set((profilesForSession ?? []).map((p) => p.master_profile_id))];
+    const profilesForSession = await inChunks(participantIds, (ids) =>
+      supabase.from("participants").select("master_profile_id").in("id", ids),
+    );
+    allowedProfileIds = [...new Set(profilesForSession.map((p) => p.master_profile_id))];
     if (allowedProfileIds.length === 0) return [];
   }
 
   if (query && query.trim()) {
-    const term = query.trim().replace(/[%_]/g, "");
+    const term = query.trim().replace(/[%_,()]/g, "");
     const { data: matches } = await supabase
       .from("participants")
       .select("master_profile_id")
@@ -74,41 +75,68 @@ export async function searchMasterProfiles(params: {
     if (allowedProfileIds.length === 0) return [];
   }
 
-  let rowQuery = supabase
-    .from("participants")
-    .select("id, first_name, last_name, email, master_profile_id, created_at")
-    .order("created_at", { ascending: false })
-    .limit(500);
-  if (allowedProfileIds) rowQuery = rowQuery.in("master_profile_id", allowedProfileIds);
-  const { data: rows } = await rowQuery;
-  if (!rows || rows.length === 0) return [];
+  const rows = allowedProfileIds
+    ? await inChunks(allowedProfileIds, (ids) =>
+        supabase
+          .from("participants")
+          .select("id, first_name, last_name, email, master_profile_id, current_role_title, created_at")
+          .in("master_profile_id", ids)
+          .order("created_at", { ascending: false }),
+      )
+    : ((
+        await supabase
+          .from("participants")
+          .select("id, first_name, last_name, email, master_profile_id, current_role_title, created_at")
+          .order("created_at", { ascending: false })
+          .limit(1000)
+      ).data ?? []);
+  if (rows.length === 0) return [];
 
+  // Newest registration first, so the first title found is the most recent.
+  const titleByProfile = new Map<string, string>();
   const byProfile = new Map<string, MasterProfileListRow>();
-  for (const r of rows) {
+  for (const r of rows.sort((a, b) => b.created_at.localeCompare(a.created_at))) {
     const entry = byProfile.get(r.master_profile_id) ?? {
       masterProfileId: r.master_profile_id,
       participants: [],
       sessionCount: 0,
+      role: null,
+      roleIsManual: false,
     };
     entry.participants.push({ id: r.id, firstName: r.first_name, lastName: r.last_name, email: r.email });
     byProfile.set(r.master_profile_id, entry);
+    if (r.current_role_title && !titleByProfile.has(r.master_profile_id)) {
+      titleByProfile.set(r.master_profile_id, r.current_role_title);
+    }
   }
 
-  const { data: sessionCounts } = await supabase
-    .from("participant_sessions")
-    .select("participant_id")
-    .in("participant_id", rows.map((r) => r.id));
+  const [sessionCounts, overrides] = await Promise.all([
+    inChunks(rows.map((r) => r.id), (ids) =>
+      supabase.from("participant_sessions").select("participant_id").in("participant_id", ids),
+    ),
+    inChunks([...byProfile.keys()], (ids) =>
+      supabase.from("master_profiles").select("id, inferred_role_override").in("id", ids),
+    ),
+  ]);
   const countByParticipant = new Map<string, number>();
-  for (const s of sessionCounts ?? []) {
+  for (const s of sessionCounts) {
     countByParticipant.set(s.participant_id, (countByParticipant.get(s.participant_id) ?? 0) + 1);
   }
+  const overrideByProfile = new Map(overrides.map((o) => [o.id, o.inferred_role_override as InferredRole | null]));
+
   for (const entry of byProfile.values()) {
     entry.sessionCount = entry.participants.reduce((sum, p) => sum + (countByParticipant.get(p.id) ?? 0), 0);
+    const override = overrideByProfile.get(entry.masterProfileId) ?? null;
+    entry.role = override ?? inferRoleFromTitle(titleByProfile.get(entry.masterProfileId));
+    entry.roleIsManual = override !== null;
   }
 
-  return [...byProfile.values()].sort(
-    (a, b) => a.participants[0].lastName.localeCompare(b.participants[0].lastName),
-  );
+  const filtered = [...byProfile.values()].filter((entry) => {
+    if (!role) return true;
+    return role === "unclassified" ? entry.role === null : entry.role === role;
+  });
+
+  return filtered.sort((a, b) => a.participants[0].lastName.localeCompare(b.participants[0].lastName));
 }
 
 export interface MasterProfileDetail {
@@ -125,6 +153,11 @@ export interface MasterProfileDetail {
     companyName: string | null;
     currentRoleTitle: string | null;
     createdAt: string;
+    currentSupport: string;
+    wholeBusinessOs: string | null;
+    intakeCompletedAt: string | null;
+    privacyConsentGivenAt: string | null;
+    privacyConsentVersion: string | null;
   }[];
   enrollments: {
     participantSessionId: string;
@@ -148,7 +181,7 @@ export async function getMasterProfileDetail(masterProfileId: string): Promise<M
 
   const { data: participants } = await supabase
     .from("participants")
-    .select("id, first_name, last_name, email, company_name, current_role_title, created_at")
+    .select("id, first_name, last_name, email, company_name, current_role_title, created_at, intake_completed_at, privacy_consent_given_at, privacy_consent_version, whole_business_os, whole_business_os_other_text, current_support_personal_assistant, current_support_admin_or_va, current_support_executive_assistant, current_support_senior_executive_assistant, current_support_head_of_operations, current_support_chief_of_staff, current_support_chief_integrator, current_support_coo, current_support_ai_automation, current_support_other, current_support_other_text, current_support_none")
     .eq("master_profile_id", masterProfileId)
     .order("created_at", { ascending: true });
   if (!participants || participants.length === 0) return null;
@@ -190,6 +223,26 @@ export async function getMasterProfileDetail(masterProfileId: string): Promise<M
       companyName: p.company_name,
       currentRoleTitle: p.current_role_title,
       createdAt: p.created_at,
+      currentSupport: formatCurrentSupport({
+        currentSupportPersonalAssistant: p.current_support_personal_assistant,
+        currentSupportAdminOrVa: p.current_support_admin_or_va,
+        currentSupportExecutiveAssistant: p.current_support_executive_assistant,
+        currentSupportSeniorExecutiveAssistant: p.current_support_senior_executive_assistant,
+        currentSupportHeadOfOperations: p.current_support_head_of_operations,
+        currentSupportChiefOfStaff: p.current_support_chief_of_staff,
+        currentSupportChiefIntegrator: p.current_support_chief_integrator,
+        currentSupportCoo: p.current_support_coo,
+        currentSupportAiAutomation: p.current_support_ai_automation,
+        currentSupportOther: p.current_support_other,
+        currentSupportOtherText: p.current_support_other_text,
+        currentSupportNone: p.current_support_none,
+      }),
+      wholeBusinessOs: p.whole_business_os
+        ? p.whole_business_os + (p.whole_business_os_other_text ? ` (${p.whole_business_os_other_text})` : "")
+        : null,
+      intakeCompletedAt: p.intake_completed_at,
+      privacyConsentGivenAt: p.privacy_consent_given_at,
+      privacyConsentVersion: p.privacy_consent_version,
     })),
     enrollments: (enrollmentRows ?? []).map((e) => ({
       participantSessionId: e.id,
@@ -214,7 +267,7 @@ export async function findMasterProfileIdByEmail(email: string): Promise<{
   const { data } = await supabase
     .from("participants")
     .select("id, first_name, last_name, master_profile_id")
-    .ilike("email", email.trim())
+    .eq("email", email.trim().toLowerCase())
     .maybeSingle();
   if (!data) return null;
   return {

@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { searchMasterProfiles } from "@/lib/data/masterProfile";
+import { searchMasterProfiles, type RoleFilter } from "@/lib/data/masterProfile";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 
 export default async function MasterParticipantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; session?: string }>;
+  searchParams: Promise<{ q?: string; session?: string; role?: string }>;
 }) {
-  const { q, session: sessionId } = await searchParams;
+  const { q, session: sessionId, role: roleParam } = await searchParams;
+  const role: RoleFilter | undefined =
+    roleParam === "visionary" || roleParam === "integrator" || roleParam === "unclassified" ? roleParam : undefined;
   const supabase = await createServerSupabaseClient();
 
   const [{ data: sessions }, profiles] = await Promise.all([
     supabase.from("sessions").select("id, name").order("created_at", { ascending: false }),
-    searchMasterProfiles({ query: q, sessionId }),
+    searchMasterProfiles({ query: q, sessionId, role }),
   ]);
 
   return (
@@ -66,13 +68,29 @@ export default async function MasterParticipantsPage({
                 ))}
               </select>
             </div>
+            <div style={{ minWidth: "160px" }}>
+              <label htmlFor="role" className="block text-xs font-medium text-(--color-ink-muted)">
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                defaultValue={role ?? ""}
+                className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+              >
+                <option value="">Any role</option>
+                <option value="visionary">Visionary</option>
+                <option value="integrator">Integrator</option>
+                <option value="unclassified">Not classified</option>
+              </select>
+            </div>
             <button
               type="submit"
               className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-2 text-sm font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
             >
               Search
             </button>
-            {(q || sessionId) ? (
+            {(q || sessionId || role) ? (
               <Link
                 href="/admin/participants"
                 className="text-xs text-(--color-ink-muted) underline underline-offset-4 hover:text-(--color-ink)"
@@ -87,7 +105,7 @@ export default async function MasterParticipantsPage({
           {profiles.length === 0 ? (
             <Card>
               <p className="text-sm text-(--color-ink-muted)">
-                {q || sessionId ? "No participants match that search." : "No participants registered yet."}
+                {q || sessionId || role ? "No participants match that search." : "No participants registered yet."}
               </p>
             </Card>
           ) : (
@@ -109,9 +127,19 @@ export default async function MasterParticipantsPage({
                         {others.length > 0 ? ` + ${others.length} more registration${others.length > 1 ? "s" : ""}` : ""}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs text-(--color-ink-muted)">
-                      {profile.sessionCount} session{profile.sessionCount === 1 ? "" : "s"}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-3">
+                      {profile.role ? (
+                        <span
+                          className="rounded-full border border-(--color-hairline) bg-(--color-accent-soft) px-2.5 py-0.5 text-xs font-medium capitalize text-(--color-ink)"
+                          title={profile.roleIsManual ? "Set manually" : "Inferred from job title"}
+                        >
+                          {profile.role}
+                        </span>
+                      ) : null}
+                      <span className="text-xs text-(--color-ink-muted)">
+                        {profile.sessionCount} session{profile.sessionCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
                   </Link>
                 </Card>
               );

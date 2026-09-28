@@ -32,7 +32,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const rows = await getFullResponseRows((enrollments ?? []).map((e) => e.id));
   const csv = toCsv(
     FULL_EXPORT_HEADERS,
-    rows.map((r) => [r.participant, r.email, r.session, r.module, r.question, r.answer]),
+    rows.map((r) => [r.participant, r.email, r.session, r.module, r.question, r.answer, r.recordedAt]),
   );
 
   const filename = `${session.name.replace(/[^a-z0-9]+/gi, "-")}-all-responses.csv`;
