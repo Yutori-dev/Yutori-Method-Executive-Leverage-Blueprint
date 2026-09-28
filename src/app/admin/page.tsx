@@ -47,6 +47,12 @@ export default async function AdminSessionsPage() {
             >
               Participants
             </Link>
+            <Link
+              href="/admin/character-assessments"
+              className="inline-flex items-center rounded-full border border-(--color-hairline) px-3.5 py-1.5 text-sm font-medium text-(--color-ink) transition-colors hover:border-(--color-accent)"
+            >
+              Character Assessments
+            </Link>
             <Link href="/admin/sessions/new">
               <Button>New session</Button>
             </Link>

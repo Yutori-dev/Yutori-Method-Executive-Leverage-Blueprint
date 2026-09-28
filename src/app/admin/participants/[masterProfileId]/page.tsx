@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMasterProfileDetail } from "@/lib/data/masterProfile";
 import { getParticipantFiles, getSignedFileUrl } from "@/lib/data/participantFiles";
+import { listCharacterAssessments } from "@/lib/data/characterAssessments";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { MergeParticipantControl } from "@/components/admin/MergeParticipantControl";
@@ -26,6 +27,7 @@ export default async function MasterProfilePage({
 
   const primary = profile.participants[0];
   const files = await getParticipantFiles(masterProfileId);
+  const characterAssessments = await listCharacterAssessments({ masterProfileId });
   const fileRows = await Promise.all(
     files.map(async (f) => ({ ...f, downloadUrl: await getSignedFileUrl(f.filePath) })),
   );
@@ -151,6 +153,36 @@ export default async function MasterProfilePage({
             <div className="mt-4">
               <ParticipantFilesControl masterProfileId={profile.masterProfileId} files={fileRows} />
             </div>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <h2 className="font-serif text-lg">Character Assessment</h2>
+            {characterAssessments.length === 0 ? (
+              <p className="mt-2 text-sm text-(--color-ink-muted)">
+                No Character Assessment on file. Import a LimeSurvey export from the{" "}
+                <Link href="/admin/character-assessments" className="text-(--color-accent) hover:underline">
+                  Character Assessments
+                </Link>{" "}
+                page.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {characterAssessments.map((a) => (
+                  <Link
+                    key={a.id}
+                    href={`/admin/character-assessments/${a.id}`}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-(--color-hairline) px-3 py-2 text-sm hover:border-(--color-accent)"
+                  >
+                    <span className="text-(--color-accent)">
+                      {a.sourceCompletedAt ? `Completed ${new Date(a.sourceCompletedAt).toLocaleDateString()}` : "Imported response"}
+                    </span>
+                    <span className="text-xs text-(--color-ink-muted)">
+                      {a.hasScores ? "Scored" : "Not scored"} · {a.released ? "Released" : a.reportFileName ? "Report attached" : "No report"}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card className="lg:col-span-2">

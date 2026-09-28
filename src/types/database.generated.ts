@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_users: {
@@ -329,6 +304,72 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      character_assessments: {
+        Row: {
+          id: string
+          import_key: string
+          imported_at: string
+          imported_by: string | null
+          master_profile_id: string | null
+          raw_responses: Json
+          released_at: string | null
+          released_to_participant: boolean
+          report_file_name: string | null
+          report_file_path: string | null
+          scored_at: string | null
+          scores: Json | null
+          source_completed_at: string | null
+          source_email: string | null
+        }
+        Insert: {
+          id?: string
+          import_key: string
+          imported_at?: string
+          imported_by?: string | null
+          master_profile_id?: string | null
+          raw_responses?: Json
+          released_at?: string | null
+          released_to_participant?: boolean
+          report_file_name?: string | null
+          report_file_path?: string | null
+          scored_at?: string | null
+          scores?: Json | null
+          source_completed_at?: string | null
+          source_email?: string | null
+        }
+        Update: {
+          id?: string
+          import_key?: string
+          imported_at?: string
+          imported_by?: string | null
+          master_profile_id?: string | null
+          raw_responses?: Json
+          released_at?: string | null
+          released_to_participant?: boolean
+          report_file_name?: string | null
+          report_file_path?: string | null
+          scored_at?: string | null
+          scores?: Json | null
+          source_completed_at?: string | null
+          source_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_assessments_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_assessments_master_profile_id_fkey"
+            columns: ["master_profile_id"]
+            isOneToOne: false
+            referencedRelation: "master_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delegation_beliefs_config: {
         Row: {
@@ -2435,6 +2476,10 @@ export type Database = {
         Returns: boolean
       }
       can_read_session: { Args: { p_session_id: string }; Returns: boolean }
+      delete_master_profile_if_empty: {
+        Args: { p_master_profile_id: string }
+        Returns: undefined
+      }
       ensure_participant: {
         Args: {
           p_first_name: string
@@ -2860,9 +2905,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

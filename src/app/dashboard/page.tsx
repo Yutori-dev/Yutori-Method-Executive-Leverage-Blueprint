@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getPortalSessions } from "@/lib/data/participantArtifacts";
 import { getMyFiles, getSignedFileUrl } from "@/lib/data/participantFiles";
+import { getMyCharacterReports } from "@/lib/data/characterAssessments";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 
@@ -14,6 +15,11 @@ export default async function DashboardIndexPage() {
     files.map(async (f) => ({ ...f, downloadUrl: await getSignedFileUrl(f.filePath) })),
   );
 
+  const characterReports = await getMyCharacterReports();
+  const reportLinks = (
+    await Promise.all(characterReports.map(async (r) => ({ ...r, downloadUrl: await getSignedFileUrl(r.filePath) })))
+  ).filter((r) => r.downloadUrl);
+
   // Archived sessions hide their Q&A entirely -- only the finished
   // Blueprint stays reachable, and only once it was actually revealed.
   // Active sessions are limited to enrollments under the caller's own
@@ -23,7 +29,7 @@ export default async function DashboardIndexPage() {
   const activeSessions = portalSessions.filter((s) => s.status !== "archived" && s.ownedByCaller);
   const pastArtifacts = portalSessions.filter((s) => s.status === "archived" && s.blueprintRevealed);
 
-  if (activeSessions.length === 0 && pastArtifacts.length === 0 && fileLinks.length === 0) {
+  if (activeSessions.length === 0 && pastArtifacts.length === 0 && fileLinks.length === 0 && reportLinks.length === 0) {
     return (
       <main className="flex flex-1 items-center">
         <Container narrow className="py-20 text-center">
@@ -38,7 +44,7 @@ export default async function DashboardIndexPage() {
 
   // Preserve the common case exactly as before: one active session and
   // nothing archived to show goes straight through, no extra click.
-  if (activeSessions.length === 1 && pastArtifacts.length === 0 && fileLinks.length === 0) {
+  if (activeSessions.length === 1 && pastArtifacts.length === 0 && fileLinks.length === 0 && reportLinks.length === 0) {
     redirect(`/dashboard/${activeSessions[0].sessionId}`);
   }
 
@@ -80,6 +86,27 @@ export default async function DashboardIndexPage() {
                     <p className="mt-2 text-xs text-(--color-accent)">View Blueprint</p>
                   </Card>
                 </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {reportLinks.length > 0 ? (
+          <div className={activeSessions.length > 0 || pastArtifacts.length > 0 ? "mt-10" : ""}>
+            <h2 className="font-serif text-2xl">Your Character Assessment</h2>
+            <div className="mt-6 space-y-3">
+              {reportLinks.map((r) => (
+                <a key={r.id} href={r.downloadUrl ?? undefined}>
+                  <Card className="transition-colors hover:border-(--color-accent)">
+                    <p className="font-medium">Character Assessment report</p>
+                    {r.completedAt ? (
+                      <p className="text-sm text-(--color-ink-muted)">
+                        Completed {new Date(r.completedAt).toLocaleDateString()}
+                      </p>
+                    ) : null}
+                    <p className="mt-2 text-xs text-(--color-accent)">View report</p>
+                  </Card>
+                </a>
               ))}
             </div>
           </div>

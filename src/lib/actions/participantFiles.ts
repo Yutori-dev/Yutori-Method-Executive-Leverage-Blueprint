@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { PARTICIPANT_FILES_BUCKET } from "@/lib/data/participantFiles";
 
-const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4MB: Vercel rejects request bodies over ~4.5MB
 
 function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-100);
@@ -19,7 +19,7 @@ export async function uploadParticipantFile(formData: FormData) {
 
   if (!masterProfileId) return { ok: false as const, message: "Missing profile." };
   if (!(file instanceof File) || file.size === 0) return { ok: false as const, message: "Choose a file." };
-  if (file.size > MAX_FILE_BYTES) return { ok: false as const, message: "File is larger than 20MB." };
+  if (file.size > MAX_FILE_BYTES) return { ok: false as const, message: "File is larger than 4MB." };
 
   const {
     data: { user },
