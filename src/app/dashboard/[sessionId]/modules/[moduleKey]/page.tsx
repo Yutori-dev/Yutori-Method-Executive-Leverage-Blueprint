@@ -28,6 +28,8 @@ import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitud
 import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { StructuredAssessmentFlow } from "@/components/participant/StructuredAssessmentFlow";
 import { ThinkingTrapsResults } from "@/components/participant/ThinkingTrapsResults";
+import { StartStopShiftFlow } from "@/components/participant/StartStopShiftFlow";
+import type { StartStopShiftAnswers, StartStopShiftConfig } from "@/lib/startStopShiftSchema";
 import { submitThinkingTraps } from "@/lib/actions/thinkingTraps";
 import type { StructuredAssessmentConfig } from "@/lib/structuredAssessmentSchema";
 import type { ThinkingTrapsConfig, ThinkingTrapsDerived } from "@/lib/thinkingTrapsSchema";
@@ -118,6 +120,30 @@ export default async function ModulePage({
             />
           ) : undefined
         }
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "start_stop_shift") {
+    const structured = await getStructuredAssessment("start_stop_shift", dashboard.participantSessionId);
+    content = structured ? (
+      <StartStopShiftFlow
+        assessmentId={structured.assessmentId}
+        versionId={structured.versionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        config={structured.config as unknown as StartStopShiftConfig}
+        initialAnswers={structured.answers as unknown as StartStopShiftAnswers}
+        alreadyComplete={alreadyComplete}
+        participantSessionId={dashboard.participantSessionId}
+        sessionPath={sessionPath}
       />
     ) : (
       <GenericPlaceholderModule
