@@ -35,6 +35,8 @@ export function StructuredAssessmentFlow({
   alreadyComplete,
   participantSessionId,
   sessionPath,
+  submitAction = submitStructuredAssessment,
+  resultsView,
 }: {
   assessmentId: string;
   versionId: string;
@@ -45,6 +47,15 @@ export function StructuredAssessmentFlow({
   alreadyComplete: boolean;
   participantSessionId: string;
   sessionPath: string;
+  /** Defaults to the plain save-and-mark-complete action (EA Experience
+   * Assessment). A scored module (Thinking Traps, ...) passes its own
+   * server action here instead -- same params/return shape, computes
+   * `derived` before saving. */
+  submitAction?: typeof submitStructuredAssessment;
+  /** Shown instead of the generic completion-message Card once complete,
+   * for a module whose spec calls for a participant-facing results view
+   * (Thinking Traps' ranked traps) rather than a bare "you're done". */
+  resultsView?: React.ReactNode;
 }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, Json>>(initialAnswers);
@@ -90,7 +101,7 @@ export function StructuredAssessmentFlow({
       return;
     }
     startTransition(async () => {
-      const result = await submitStructuredAssessment({
+      const result = await submitAction({
         participantSessionId,
         assessmentId,
         versionId,
@@ -109,21 +120,25 @@ export function StructuredAssessmentFlow({
 
   return (
     <div className="space-y-6">
-      <Card>
-        {config.intro.title ? <h2 className="font-serif text-lg">{config.intro.title}</h2> : null}
-        <div className="space-y-3 text-sm text-(--color-ink-muted)">
-          {config.intro.body.map((p, i) => (
-            <p key={i} className={i === 0 ? "text-(--color-ink)" : ""}>
-              {p}
-            </p>
-          ))}
-        </div>
-      </Card>
+      {alreadyComplete && resultsView ? null : (
+        <Card>
+          {config.intro.title ? <h2 className="font-serif text-lg">{config.intro.title}</h2> : null}
+          <div className="space-y-3 text-sm text-(--color-ink-muted)">
+            {config.intro.body.map((p, i) => (
+              <p key={i} className={i === 0 ? "text-(--color-ink)" : ""}>
+                {p}
+              </p>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {alreadyComplete ? (
-        <Card>
-          <p className="text-sm text-(--color-ink)">{config.completion_message}</p>
-        </Card>
+        resultsView ?? (
+          <Card>
+            <p className="text-sm text-(--color-ink)">{config.completion_message}</p>
+          </Card>
+        )
       ) : (
         <>
           {config.questions.map((q) => {

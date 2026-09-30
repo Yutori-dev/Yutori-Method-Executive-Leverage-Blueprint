@@ -27,6 +27,10 @@ import { ExecutiveSupportAuditFlow } from "@/components/participant/ExecutiveSup
 import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitudeFlow";
 import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { StructuredAssessmentFlow } from "@/components/participant/StructuredAssessmentFlow";
+import { ThinkingTrapsResults } from "@/components/participant/ThinkingTrapsResults";
+import { submitThinkingTraps } from "@/lib/actions/thinkingTraps";
+import type { StructuredAssessmentConfig } from "@/lib/structuredAssessmentSchema";
+import type { ThinkingTrapsConfig, ThinkingTrapsDerived } from "@/lib/thinkingTrapsSchema";
 import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
 
 const WIDE_MODULES = new Set(["current_structure", "delegation"]);
@@ -81,6 +85,39 @@ export default async function ModulePage({
         alreadyComplete={alreadyComplete}
         participantSessionId={dashboard.participantSessionId}
         sessionPath={sessionPath}
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "thinking_traps") {
+    const structured = await getStructuredAssessment("thinking_traps", dashboard.participantSessionId);
+    content = structured ? (
+      <StructuredAssessmentFlow
+        assessmentId={structured.assessmentId}
+        versionId={structured.versionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        config={structured.config}
+        initialAnswers={structured.answers}
+        alreadyComplete={alreadyComplete}
+        participantSessionId={dashboard.participantSessionId}
+        sessionPath={sessionPath}
+        submitAction={submitThinkingTraps}
+        resultsView={
+          alreadyComplete ? (
+            <ThinkingTrapsResults
+              config={structured.config as unknown as StructuredAssessmentConfig & ThinkingTrapsConfig}
+              qualifyingTraps={(structured.derived as unknown as ThinkingTrapsDerived).qualifyingTraps ?? []}
+            />
+          ) : undefined
+        }
       />
     ) : (
       <GenericPlaceholderModule

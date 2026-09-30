@@ -9,6 +9,11 @@ export interface StructuredAssessmentState {
   config: StructuredAssessmentConfig;
   status: "not_started" | "in_progress" | "complete";
   answers: Record<string, Json>;
+  /** Scoring/classification computed at submission time (empty until
+   * complete) -- e.g. Thinking Traps' per-trap scores and ranked
+   * qualifying traps. Shape is assessment_key-specific; see each module's
+   * submit action for what it writes here. */
+  derived: Record<string, Json>;
 }
 
 export async function getStructuredAssessment(
@@ -36,7 +41,7 @@ export async function getStructuredAssessment(
 
   const { data: submission } = await supabase
     .from("structured_assessment_submissions")
-    .select("status, answers")
+    .select("status, answers, derived")
     .eq("participant_session_id", participantSessionId)
     .eq("assessment_id", assessment.id)
     .maybeSingle();
@@ -47,5 +52,6 @@ export async function getStructuredAssessment(
     config: current.config as unknown as StructuredAssessmentConfig,
     status: (submission?.status as StructuredAssessmentState["status"]) ?? "not_started",
     answers: (submission?.answers as Record<string, Json>) ?? {},
+    derived: (submission?.derived as Record<string, Json>) ?? {},
   };
 }
