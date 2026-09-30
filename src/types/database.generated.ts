@@ -1817,6 +1817,154 @@ export type Database = {
           },
         ]
       }
+      structured_assessment_submissions: {
+        Row: {
+          answers: Json
+          assessment_id: string
+          associated_executive_participant_session_id: string | null
+          completed_at: string | null
+          derived: Json
+          dyad_id: string | null
+          id: string
+          participant_session_id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          answers?: Json
+          assessment_id: string
+          associated_executive_participant_session_id?: string | null
+          completed_at?: string | null
+          derived?: Json
+          dyad_id?: string | null
+          id?: string
+          participant_session_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          answers?: Json
+          assessment_id?: string
+          associated_executive_participant_session_id?: string | null
+          completed_at?: string | null
+          derived?: Json
+          dyad_id?: string | null
+          id?: string
+          participant_session_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "structured_assessment_submiss_associated_executive_partici_fkey"
+            columns: ["associated_executive_participant_session_id"]
+            isOneToOne: false
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "structured_assessment_submissions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "structured_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "structured_assessment_submissions_participant_session_id_fkey"
+            columns: ["participant_session_id"]
+            isOneToOne: false
+            referencedRelation: "participant_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "structured_assessment_submissions_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "structured_assessment_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      structured_assessment_versions: {
+        Row: {
+          assessment_id: string
+          config: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          version_number: number
+        }
+        Insert: {
+          assessment_id: string
+          config: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          version_number: number
+        }
+        Update: {
+          assessment_id?: string
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "structured_assessment_versions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "structured_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "structured_assessment_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      structured_assessments: {
+        Row: {
+          assessment_key: string
+          created_at: string
+          id: string
+          module_id: string
+          name: string
+        }
+        Insert: {
+          assessment_key: string
+          created_at?: string
+          id?: string
+          module_id: string
+          name: string
+        }
+        Update: {
+          assessment_key?: string
+          created_at?: string
+          id?: string
+          module_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "structured_assessments_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       white_whale_config: {
         Row: {
           active: boolean

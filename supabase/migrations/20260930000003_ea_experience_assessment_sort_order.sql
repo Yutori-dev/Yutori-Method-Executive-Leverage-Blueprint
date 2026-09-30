@@ -1,0 +1,11 @@
+-- Live-tested finding: alwaysUnlocked (moduleState.ts) only keeps a module
+-- out of the LOCKED state -- resolveParticipantDestination still walks
+-- trackedModules in sort_order and stops at the first incomplete one, so in
+-- any session where the facilitator has already cohort-unlocked later
+-- modules, EA Experience Assessment (seeded at sort_order 8, after
+-- everything) never actually became the participant's next step despite
+-- being unlockable. The spec ("does not need to complete any other
+-- activity before accessing it") means it has to win that race, not just
+-- avoid LOCKED -- so it needs the lowest sort_order of any tracked module,
+-- not the highest.
+update public.modules set sort_order = 0 where key = 'ea_experience_assessment';

@@ -15,6 +15,7 @@ import { getPriorityLeverageRevealData } from "@/lib/data/priorityLeverageReveal
 import { getOperatingAltitudeData } from "@/lib/data/operatingAltitude";
 import { getExecutiveLeverageDiagnosticData } from "@/lib/data/executiveLeverageDiagnostic";
 import { getSuccessVisionData } from "@/lib/data/successVision";
+import { getStructuredAssessment } from "@/lib/data/structuredAssessments";
 import { Container } from "@/components/ui/Container";
 import { ModuleStateBadge } from "@/components/ui/ModuleStateBadge";
 import { AssessmentForm } from "@/components/participant/AssessmentForm";
@@ -25,6 +26,7 @@ import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
 import { ExecutiveSupportAuditFlow } from "@/components/participant/ExecutiveSupportAuditFlow";
 import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitudeFlow";
 import { SuccessFlow } from "@/components/participant/SuccessFlow";
+import { StructuredAssessmentFlow } from "@/components/participant/StructuredAssessmentFlow";
 import { ModuleStartTracker } from "@/components/participant/ModuleStartTracker";
 
 const WIDE_MODULES = new Set(["current_structure", "delegation"]);
@@ -66,7 +68,31 @@ export default async function ModulePage({
 
   let content: React.ReactNode;
 
-  if (moduleKey === "operating_altitude") {
+  if (moduleKey === "ea_experience_assessment") {
+    const structured = await getStructuredAssessment("ea_experience_assessment", dashboard.participantSessionId);
+    content = structured ? (
+      <StructuredAssessmentFlow
+        assessmentId={structured.assessmentId}
+        versionId={structured.versionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        config={structured.config}
+        initialAnswers={structured.answers}
+        alreadyComplete={alreadyComplete}
+        participantSessionId={dashboard.participantSessionId}
+        sessionPath={sessionPath}
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "operating_altitude") {
     const [diagnostic, operatingAltitudeData] = await Promise.all([
       getExecutiveLeverageDiagnosticData(dashboard.participantSessionId),
       getOperatingAltitudeData(sessionId, dashboard.participantSessionId),

@@ -20,8 +20,15 @@ export function deriveModuleState(params: {
   requiresLiveWorkshop: boolean;
   cohortActiveModuleSortOrder: number | null;
   participantStatus: ModuleStatus | null;
+  /** EA Experience Assessment's spec ("the participant does not need to
+   * complete any other activity before accessing it") is a genuine
+   * exception to the guided-progression model every other module follows
+   * -- it skips the facilitator's cohort-wide reveal entirely. Driven by
+   * ALWAYS_UNLOCKED_MODULE_KEYS below rather than threaded through every
+   * call site. */
+  alwaysUnlocked?: boolean;
 }): ModuleDisplayState {
-  const { moduleSortOrder, requiresLiveWorkshop, cohortActiveModuleSortOrder, participantStatus } =
+  const { moduleSortOrder, requiresLiveWorkshop, cohortActiveModuleSortOrder, participantStatus, alwaysUnlocked } =
     params;
 
   if (requiresLiveWorkshop) {
@@ -29,7 +36,8 @@ export function deriveModuleState(params: {
   }
 
   const isCohortUnlocked =
-    cohortActiveModuleSortOrder !== null && moduleSortOrder <= cohortActiveModuleSortOrder;
+    alwaysUnlocked ||
+    (cohortActiveModuleSortOrder !== null && moduleSortOrder <= cohortActiveModuleSortOrder);
 
   if (!isCohortUnlocked) {
     return "LOCKED";
@@ -44,6 +52,9 @@ export function deriveModuleState(params: {
       return "OPEN";
   }
 }
+
+/** See deriveModuleState's alwaysUnlocked param. */
+export const ALWAYS_UNLOCKED_MODULE_KEYS = new Set(["ea_experience_assessment"]);
 
 export type ParticipantDestination =
   | { type: "context" }

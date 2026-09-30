@@ -1,6 +1,6 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { deriveModuleState, type ModuleDisplayState } from "@/lib/moduleState";
+import { deriveModuleState, ALWAYS_UNLOCKED_MODULE_KEYS, type ModuleDisplayState } from "@/lib/moduleState";
 import type { ModuleStatus } from "@/types/database";
 
 export interface DashboardModule {
@@ -126,6 +126,7 @@ export async function getParticipantDashboard(
       requiresLiveWorkshop: module.requires_live_workshop,
       cohortActiveModuleSortOrder,
       participantStatus: progressByModuleId.get(module.id) ?? null,
+      alwaysUnlocked: ALWAYS_UNLOCKED_MODULE_KEYS.has(module.key),
     }),
   }));
 
