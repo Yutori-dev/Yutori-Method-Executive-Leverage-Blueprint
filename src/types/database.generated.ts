@@ -1010,6 +1010,7 @@ export type Database = {
       modules: {
         Row: {
           active: boolean
+          audience: string
           description: string | null
           id: string
           key: string
@@ -1019,6 +1020,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          audience?: string
           description?: string | null
           id?: string
           key: string
@@ -1028,6 +1030,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          audience?: string
           description?: string | null
           id?: string
           key?: string
@@ -1307,6 +1310,7 @@ export type Database = {
           master_profile_id: string
           privacy_consent_given_at: string | null
           privacy_consent_version: string | null
+          self_identified_role: string | null
           whole_business_os: string | null
           whole_business_os_other_text: string | null
         }
@@ -1336,6 +1340,7 @@ export type Database = {
           master_profile_id: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
+          self_identified_role?: string | null
           whole_business_os?: string | null
           whole_business_os_other_text?: string | null
         }
@@ -1365,6 +1370,7 @@ export type Database = {
           master_profile_id?: string
           privacy_consent_given_at?: string | null
           privacy_consent_version?: string | null
+          self_identified_role?: string | null
           whole_business_os?: string | null
           whole_business_os_other_text?: string | null
         }
@@ -2695,6 +2701,14 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      my_role_hints: {
+        Args: never
+        Returns: {
+          role_override: string | null
+          self_identified_role: string | null
+          current_role_title: string | null
+        }[]
+      }
       is_architecture_revealed_for_session: {
         Args: { p_participant_session_id: string }
         Returns: boolean

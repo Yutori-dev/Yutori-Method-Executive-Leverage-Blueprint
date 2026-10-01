@@ -24,6 +24,7 @@ export function CompleteProfileForm({
   const router = useRouter();
   const [firstName, setFirstName] = useState(() => prefillFromPending(email).firstName);
   const [lastName, setLastName] = useState(() => prefillFromPending(email).lastName);
+  const [role, setRole] = useState<"visionary" | "integrator" | "">("");
   const [consentGiven, setConsentGiven] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,6 +44,23 @@ export function CompleteProfileForm({
       setErrorMessage(profileError.message);
       setSubmitting(false);
       return;
+    }
+
+    // Decides which modules this person is offered (e.g. the EA Experience
+    // Assessment is for assistants only). Stored on their own participant row.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { error: roleError } = await supabase
+        .from("participants")
+        .update({ self_identified_role: role })
+        .eq("id", user.id);
+      if (roleError) {
+        setErrorMessage(roleError.message);
+        setSubmitting(false);
+        return;
+      }
     }
 
     if (joinCode) {
@@ -87,6 +105,25 @@ export function CompleteProfileForm({
             className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="role" className="block text-xs font-medium text-(--color-ink-muted)">
+          Which best describes you?
+        </label>
+        <select
+          id="role"
+          required
+          value={role}
+          onChange={(e) => setRole(e.target.value as "visionary" | "integrator" | "")}
+          className="mt-1 w-full rounded-lg border border-(--color-hairline) bg-transparent px-3 py-2 text-sm outline-none focus:border-(--color-accent)"
+        >
+          <option value="" disabled>
+            Select one
+          </option>
+          <option value="visionary">I&apos;m a founder / executive (the leader being supported)</option>
+          <option value="integrator">I&apos;m an assistant / integrator (I support an executive)</option>
+        </select>
       </div>
 
       {/*

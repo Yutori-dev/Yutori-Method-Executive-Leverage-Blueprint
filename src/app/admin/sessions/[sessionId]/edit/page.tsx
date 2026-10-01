@@ -22,7 +22,7 @@ export default async function EditSessionPage({
       .maybeSingle(),
     supabase
       .from("modules")
-      .select("key, name")
+      .select("key, name, audience")
       .eq("active", true)
       .eq("requires_live_workshop", false)
       .order("sort_order", { ascending: true }),

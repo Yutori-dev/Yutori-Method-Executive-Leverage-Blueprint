@@ -7,7 +7,7 @@ export default async function NewSessionPage() {
   const supabase = await createServerSupabaseClient();
   const { data: modules } = await supabase
     .from("modules")
-    .select("key, name")
+    .select("key, name, audience")
     .eq("active", true)
     .eq("requires_live_workshop", false)
     .order("sort_order", { ascending: true });
@@ -18,7 +18,18 @@ export default async function NewSessionPage() {
         <h1 className="font-serif text-3xl">New session</h1>
         <div className="mt-8">
           <Card>
-            <SessionForm mode="create" availableModules={modules ?? []} />
+            <SessionForm
+              mode="create"
+              availableModules={modules ?? []}
+              initial={{
+                name: "",
+                organization: "",
+                eventDate: "",
+                format: "virtual",
+                // The newer, audience-specific modules are opt-in per session.
+                disabledModuleKeys: (modules ?? []).filter((m) => m.audience !== "everyone").map((m) => m.key),
+              }}
+            />
           </Card>
         </div>
       </Container>

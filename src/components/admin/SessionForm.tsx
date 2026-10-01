@@ -25,7 +25,7 @@ export function SessionForm({
   /** Toggleable modules for this session -- requires_live_workshop modules
    * are never included, that gating is separate from this per-session
    * override. */
-  availableModules: { key: string; name: string }[];
+  availableModules: { key: string; name: string; audience?: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -127,7 +127,8 @@ export function SessionForm({
       <div>
         <p className="text-xs font-medium text-(--color-ink-muted)">Modules for this session</p>
         <p className="mt-1 text-xs text-(--color-ink-muted)">
-          Uncheck any module to skip it for this session only -- other sessions are unaffected.
+          Check the modules this session runs, uncheck any to skip it -- this session only, other
+          sessions are unaffected. The newer modules start unchecked.
           Architecture&apos;s recommendation is calculated from Delegation and Investment, so
           disabling either of those leaves Architecture with nothing to work from.
         </p>
@@ -141,6 +142,11 @@ export function SessionForm({
                 className="accent-(--color-accent)"
               />
               {m.name}
+              {m.audience === "integrator" ? (
+                <span className="text-xs text-(--color-ink-muted)">(assistants / integrators only)</span>
+              ) : m.audience === "visionary" ? (
+                <span className="text-xs text-(--color-ink-muted)">(visionaries only)</span>
+              ) : null}
             </label>
           ))}
         </div>

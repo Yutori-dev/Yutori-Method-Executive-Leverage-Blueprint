@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { deriveModuleState, ALWAYS_UNLOCKED_MODULE_KEYS, type ModuleDisplayState } from "@/lib/moduleState";
+import { resolveParticipantRole, moduleVisibleToRole } from "@/lib/participantRole";
 import type { ModuleStatus } from "@/types/database";
 
 export interface DashboardModule {
@@ -50,7 +51,7 @@ export async function getParticipantDashboard(
   // matters as much as round-trip depth: each request is a connection
   // competing for PostgREST's pool to Postgres (see docs/TESTING.md's load
   // test writeup).
-  const [{ data: participant }, { data: session }, { data: modules }, { data: participantSession }] =
+  const [{ data: participant }, { data: session }, { data: modules }, { data: participantSession }, { data: roleHints }] =
     await Promise.all([
       supabase.from("participants").select("first_name, last_name, intake_completed_at").eq("id", user.id).maybeSingle(),
       supabase
@@ -67,6 +68,7 @@ export async function getParticipantDashboard(
         .eq("session_id", sessionId)
         .eq("participant_id", user.id)
         .maybeSingle(),
+      supabase.rpc("my_role_hints"),
     ]);
 
   if (!participant || !session || !modules || !participantSession) return null;
@@ -102,7 +104,10 @@ export async function getParticipantDashboard(
   // list, direct module-page navigation) just sees "the modules that exist
   // for this session" without needing its own disabled-key check.
   const disabledKeys = new Set(session.disabled_module_keys ?? []);
-  const enabledModules = modules.filter((m) => !disabledKeys.has(m.key));
+  // Modules meant for one audience only (e.g. the EA Experience Assessment is
+  // for assistants) are hidden from everyone else the same way.
+  const role = resolveParticipantRole(roleHints?.[0]);
+  const enabledModules = modules.filter((m) => !disabledKeys.has(m.key) && moduleVisibleToRole(m.audience, role));
 
   const activeModule = enabledModules.find((m) => m.id === session.active_module_id);
   const cohortActiveModuleSortOrder = activeModule ? activeModule.sort_order : null;
