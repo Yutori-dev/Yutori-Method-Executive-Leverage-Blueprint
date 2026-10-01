@@ -28,6 +28,16 @@ const LINKS: LinkItem[] = [
     ),
   },
   {
+    href: "/admin/assessment-config",
+    label: "New module assessments (edit)",
+    icon: (
+      <Icon>
+        <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+        <path d="M13.5 6.5l4 4" />
+      </Icon>
+    ),
+  },
+  {
     href: "/admin/diagnostic-config",
     label: "Executive Leverage Diagnostic",
     icon: (

@@ -30,6 +30,8 @@ import { StructuredAssessmentFlow } from "@/components/participant/StructuredAss
 import { ThinkingTrapsResults } from "@/components/participant/ThinkingTrapsResults";
 import { StartStopShiftFlow } from "@/components/participant/StartStopShiftFlow";
 import type { StartStopShiftAnswers, StartStopShiftConfig } from "@/lib/startStopShiftSchema";
+import { HandoffFlow } from "@/components/participant/HandoffFlow";
+import type { HandoffAnswers, HandoffConfig } from "@/lib/handoffSchema";
 import { LeverageAuditFlow } from "@/components/participant/LeverageAuditFlow";
 import { LeverageAuditResults } from "@/components/participant/LeverageAuditResults";
 import type { LeverageAuditAnswers, LeverageAuditConfig, LeverageAuditDerived } from "@/lib/leverageAuditSchema";
@@ -181,6 +183,49 @@ export default async function ModulePage({
             />
           ) : undefined
         }
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "high_leverage_handoff") {
+    const [structured, traps, commitments] = await Promise.all([
+      getStructuredAssessment("high_leverage_handoff", dashboard.participantSessionId),
+      getStructuredAssessment("thinking_traps", dashboard.participantSessionId),
+      getStructuredAssessment("start_stop_shift", dashboard.participantSessionId),
+    ]);
+    // Screen 6 options: the participant's own ranked Thinking Traps, same
+    // names as that module shows. If none qualified (or it wasn't taken),
+    // fall back to the full list so the question can still be answered.
+    const trapConfig = traps?.config as unknown as ThinkingTrapsConfig | undefined;
+    const qualifying = ((traps?.derived as unknown as ThinkingTrapsDerived | undefined)?.qualifyingTraps ?? []);
+    const trapNames = trapConfig
+      ? (qualifying.length > 0 ? qualifying : trapConfig.traps.map((t) => t.id)).map(
+          (id) => trapConfig.traps.find((t) => t.id === id)?.name ?? id,
+        )
+      : [];
+    const sss = (commitments?.answers ?? {}) as unknown as Record<string, string[]>;
+    const commitmentOptions = (["start", "stop", "shift"] as const).flatMap((k) =>
+      (sss[k] ?? []).map((text) => `${k.toUpperCase()}: ${text}`),
+    );
+    content = structured ? (
+      <HandoffFlow
+        assessmentId={structured.assessmentId}
+        versionId={structured.versionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        config={structured.config as unknown as HandoffConfig}
+        context={{ trapOptions: trapNames, commitmentOptions }}
+        initialAnswers={structured.answers as unknown as HandoffAnswers}
+        alreadyComplete={alreadyComplete}
+        participantSessionId={dashboard.participantSessionId}
+        sessionPath={sessionPath}
       />
     ) : (
       <GenericPlaceholderModule
