@@ -19,7 +19,6 @@ const own: Record<Filter, OwnershipClass | null> = { all: null, aligned: "Aligne
 const dir: Record<Filter, DirectionClass | null> = { all: null, aligned: null, adjacent: null, meaningful: null, same: "Same Direction", different: "Different Direction" };
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
-const dirLabel = (v: number) => (v === 1 ? "+1 More" : v === 0 ? "0 Right" : "-1 Less");
 
 /** Manually generated, facilitator-only. Nothing is computed until the
  * facilitator presses Generate (?generate=1), and then only for pairs where
@@ -43,6 +42,10 @@ export default async function ComparisonPage({
   if (!sessionName || !visionary || !ea) notFound();
 
   const config = ea.config as unknown as LeverageAuditConfig;
+  const dirLabel = (v: number) => {
+    const label = config.directionOptions.find((o) => o.value === v)?.label;
+    return `${v > 0 ? `+${v}` : v} / ${label ?? ""}`;
+  };
   const generated = generate === "1";
   const dyads = generated ? buildDyads(config, visionary.rows, ea.rows) : [];
   const cohort = generated ? cohortComparison(config, dyads) : [];

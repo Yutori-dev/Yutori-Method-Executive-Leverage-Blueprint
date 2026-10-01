@@ -78,6 +78,14 @@ export function resolveParticipantDestination(
   modules: { key: string; state: ModuleDisplayState; requiresLiveWorkshop: boolean; sortOrder: number }[],
   workshopFeedback?: { released: boolean; submitted: boolean },
 ): ParticipantDestination {
+  // Client spec: the EA Experience Assessment is the expanded intake and
+  // must be available immediately on first login, before any other
+  // activity (including the intake form). Only applies while it is enabled
+  // for the session (disabled modules are filtered out upstream) and not
+  // yet completed.
+  const earlyModule = modules.find((m) => ALWAYS_UNLOCKED_MODULE_KEYS.has(m.key) && !m.requiresLiveWorkshop && m.state !== "COMPLETE");
+  if (earlyModule) return { type: "module", moduleKey: earlyModule.key };
+
   if (!contextDone) return { type: "context" };
 
   const trackedModules = [...modules]

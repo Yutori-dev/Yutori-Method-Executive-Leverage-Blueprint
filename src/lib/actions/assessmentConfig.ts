@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { validateAssessmentConfig } from "@/lib/assessmentConfigValidation";
 import type { Json } from "@/types/database";
 
 /** Saves an edited config as a NEW version and makes it current. Older
@@ -37,6 +38,9 @@ export async function saveAssessmentVersion(assessmentKey: string, rawConfig: st
   const all = versions ?? [];
   const current = all.find((v) => (v.config as { is_current?: boolean })?.is_current === true);
   const next = Math.max(0, ...all.map((v) => v.version_number)) + 1;
+
+  const problems = validateAssessmentConfig(assessmentKey, current?.config ?? {}, parsed);
+  if (problems.length > 0) return { ok: false as const, message: problems.join("\n") };
 
   if (current && JSON.stringify({ ...(current.config as object), is_current: undefined, version: undefined }) === JSON.stringify({ ...(parsed as object), is_current: undefined, version: undefined })) {
     return { ok: false as const, message: "No changes to save." };

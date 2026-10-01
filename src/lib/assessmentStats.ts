@@ -1,5 +1,5 @@
 import { scoreThinkingTraps, type ThinkingTrapsConfig } from "@/lib/thinkingTrapsSchema";
-import type { LeverageAuditAnswers, LeverageAuditConfig } from "@/lib/leverageAuditSchema";
+import { auditRules, type AuditRules, type LeverageAuditAnswers, type LeverageAuditConfig } from "@/lib/leverageAuditSchema";
 import type { StructuredAssessmentConfig, StructuredQuestion } from "@/lib/structuredAssessmentSchema";
 import type { Json } from "@/types/database";
 
@@ -201,15 +201,16 @@ export function leverageStats(config: LeverageAuditConfig, rows: SubmissionRow[]
   const eligible = rows.filter((r) => r.status === "complete" && !noEa(r));
   const n = eligible.length;
 
+  const rules = auditRules(config);
   const eaItems = config.responsibilities.filter((r) => r.type === "EA");
   const cosItems = config.responsibilities.filter((r) => r.type === "COS");
   const opp = (r: SubmissionRow, id: string) => {
     const x = respOf(r)[id];
-    return !!x && x.current !== undefined && x.current <= 2 && x.desired === 1;
+    return !!x && x.current !== undefined && x.current < rules.orchestrationMin && x.desired === rules.moreDirection;
   };
   const appr = (r: SubmissionRow, id: string) => {
     const x = respOf(r)[id];
-    return !!x && x.current !== undefined && x.current >= 3 && x.desired === 0;
+    return !!x && x.current !== undefined && x.current >= rules.orchestrationMin && x.desired === rules.rightDirection;
   };
 
   // The tenure question's "I do not currently have an EA" option is not
@@ -237,10 +238,10 @@ export function leverageStats(config: LeverageAuditConfig, rows: SubmissionRow[]
     },
     context,
     ownership: eaItems.map((r) => {
-      const hi = eligible.filter((s) => (respOf(s)[r.id]?.current ?? -1) >= 3).length;
+      const hi = eligible.filter((s) => (respOf(s)[r.id]?.current ?? -1) >= rules.orchestrationMin).length;
       const lo = eligible.filter((s) => {
         const c = respOf(s)[r.id]?.current;
-        return c !== undefined && c <= 2;
+        return c !== undefined && c < rules.orchestrationMin;
       }).length;
       return { id: r.id, name: r.name, orchestration: pct(hi, n), below: pct(lo, n) };
     }),
@@ -248,11 +249,11 @@ export function leverageStats(config: LeverageAuditConfig, rows: SubmissionRow[]
     topOpportunities: eaItems
       .map((r) => ({ id: r.id, name: r.name, pct: pct(eligible.filter((s) => opp(s, r.id)).length, n) }))
       .sort((a, b) => b.pct - a.pct)
-      .slice(0, 5),
+      .slice(0, rules.topN),
     topAppropriate: eaItems
       .map((r) => ({ id: r.id, name: r.name, macro: macroName(r.macroCategory), pct: pct(eligible.filter((s) => appr(s, r.id)).length, n) }))
       .sort((a, b) => b.pct - a.pct)
-      .slice(0, 5),
+      .slice(0, rules.topN),
     macro: config.macroCategories.map((m) => {
       const ids = eaItems.filter((r) => r.macroCategory === m.id).map((r) => r.id);
       return {
@@ -265,9 +266,9 @@ export function leverageStats(config: LeverageAuditConfig, rows: SubmissionRow[]
     cos: cosItems.map((r) => ({
       id: r.id,
       name: r.name,
-      high: pct(eligible.filter((s) => (respOf(s)[r.id]?.current ?? -1) >= 3).length, n),
-      desired: pct(eligible.filter((s) => respOf(s)[r.id]?.desired === 1).length, n),
-      both: pct(eligible.filter((s) => (respOf(s)[r.id]?.current ?? -1) >= 3 && respOf(s)[r.id]?.desired === 1).length, n),
+      high: pct(eligible.filter((s) => (respOf(s)[r.id]?.current ?? -1) >= rules.orchestrationMin).length, n),
+      desired: pct(eligible.filter((s) => respOf(s)[r.id]?.desired === rules.moreDirection).length, n),
+      both: pct(eligible.filter((s) => (respOf(s)[r.id]?.current ?? -1) >= rules.orchestrationMin && respOf(s)[r.id]?.desired === rules.moreDirection).length, n),
     })),
   };
 }
@@ -295,9 +296,9 @@ export interface Dyad {
   rows: DyadRow[];
 }
 
-export function classifyOwnership(diff: number): OwnershipClass {
+export function classifyOwnership(diff: number, rules: Pick<AuditRules, "alignedMaxDiff" | "adjacentMaxDiff">): OwnershipClass {
   const a = Math.abs(diff);
-  return a === 0 ? "Aligned" : a === 1 ? "Adjacent" : "Meaningful Difference";
+  return a <= rules.alignedMaxDiff ? "Aligned" : a <= rules.adjacentMaxDiff ? "Adjacent" : "Meaningful Difference";
 }
 
 /** A dyad exists only when BOTH sides are complete, neither opted out as
@@ -324,7 +325,7 @@ export function buildDyads(config: LeverageAuditConfig, visionaryRows: Submissio
         execCurrent: e.current,
         eaCurrent: a.current,
         ownershipDifference: diff,
-        ownershipClass: classifyOwnership(diff),
+        ownershipClass: classifyOwnership(diff, auditRules(config)),
         execDesired: e.desired,
         eaDesired: a.desired,
         directionClass: e.desired === a.desired ? "Same Direction" : "Different Direction",

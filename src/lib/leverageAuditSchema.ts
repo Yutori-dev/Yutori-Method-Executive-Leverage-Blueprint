@@ -57,8 +57,39 @@ export interface MacroCategory {
   name: string;
 }
 
+/** Admin-editable classification/ranking rules (spec: "cohort ranking
+ * logic", "dyad comparison thresholds"). Every field falls back to the
+ * spec's published values, so configs without `rules` behave exactly as
+ * specified. */
+export interface AuditRules {
+  /** Current Ownership at or above this counts as Orchestration+ (spec: 3). */
+  orchestrationMin: number;
+  /** Desired Direction value meaning "more ownership" (spec: +1). */
+  moreDirection: number;
+  /** Desired Direction value meaning "current level is right" (spec: 0). */
+  rightDirection: number;
+  /** Dyad comparison: |difference| up to this is Aligned (spec: 0). */
+  alignedMaxDiff: number;
+  /** Dyad comparison: |difference| up to this (and above aligned) is Adjacent (spec: 1). */
+  adjacentMaxDiff: number;
+  /** How many responsibilities the cohort "top" lists show (spec: 5). */
+  topN: number;
+}
+export const DEFAULT_AUDIT_RULES: AuditRules = {
+  orchestrationMin: 3,
+  moreDirection: 1,
+  rightDirection: 0,
+  alignedMaxDiff: 0,
+  adjacentMaxDiff: 1,
+  topN: 5,
+};
+export function auditRules(config: { rules?: Partial<AuditRules> }): AuditRules {
+  return { ...DEFAULT_AUDIT_RULES, ...(config.rules ?? {}) };
+}
+
 export interface LeverageAuditConfig {
   variant: AuditVariant;
+  rules?: Partial<AuditRules>;
   intro: { title: string; body: string[] };
   contextQuestions: ContextQuestion[];
   exitMessage: string;
@@ -95,6 +126,7 @@ export function classifyLeverageAudit(
   config: LeverageAuditConfig,
   answers: LeverageAuditAnswers,
 ): LeverageAuditDerived {
+  const rules = auditRules(config);
   const ea: LeverageAuditDerived["ea"] = {};
   const cos: LeverageAuditDerived["cos"] = {};
 
@@ -106,14 +138,14 @@ export function classifyLeverageAudit(
 
     if (r.type === "EA") {
       ea[r.id] = {
-        greaterLeverageOpportunity: current <= 2 && desired === 1,
-        appropriatelySupported: current >= 3 && desired === 0,
+        greaterLeverageOpportunity: current < rules.orchestrationMin && desired === rules.moreDirection,
+        appropriatelySupported: current >= rules.orchestrationMin && desired === rules.rightDirection,
       };
     } else {
       cos[r.id] = {
-        highOwnership: current >= 3,
-        growingOwnership: current <= 2 && desired === 1,
-        highOwnershipAndMoreDesired: current >= 3 && desired === 1,
+        highOwnership: current >= rules.orchestrationMin,
+        growingOwnership: current < rules.orchestrationMin && desired === rules.moreDirection,
+        highOwnershipAndMoreDesired: current >= rules.orchestrationMin && desired === rules.moreDirection,
       };
     }
   }
