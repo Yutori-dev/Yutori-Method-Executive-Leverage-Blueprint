@@ -121,8 +121,8 @@ export function CompleteProfileForm({
           <option value="" disabled>
             Select one
           </option>
-          <option value="visionary">I&apos;m a founder / executive (the leader being supported)</option>
-          <option value="integrator">I&apos;m an assistant / integrator (I support an executive)</option>
+          <option value="visionary">I am a visionary / executive (the leader being supported)</option>
+          <option value="integrator">I am an integrator (I support an executive)</option>
         </select>
       </div>
 

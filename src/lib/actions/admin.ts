@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { ALWAYS_UNLOCKED_MODULE_KEYS } from "@/lib/moduleState";
 import type { SessionFormat, SessionStatus, FollowUpStatus } from "@/types/database";
 
 function slugifyJoinCode(name: string) {
@@ -41,7 +42,12 @@ export async function createSession(input: {
     .eq("active", true)
     .eq("requires_live_workshop", false)
     .order("sort_order", { ascending: true });
-  const firstEnabledModule = (firstModule ?? []).find((m) => !disabledModuleKeys.includes(m.key));
+  // The EA Experience Assessment is always open to participants on its own
+  // (never cohort-unlocked), so it must not take the "module 1 auto-unlocks"
+  // slot -- that stays with the first real workshop module.
+  const firstEnabledModule = (firstModule ?? []).find(
+    (m) => !disabledModuleKeys.includes(m.key) && !ALWAYS_UNLOCKED_MODULE_KEYS.has(m.key),
+  );
 
   const { data, error } = await supabase
     .from("sessions")
