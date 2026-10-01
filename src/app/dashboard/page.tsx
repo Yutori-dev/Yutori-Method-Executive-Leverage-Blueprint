@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getPortalSessions } from "@/lib/data/participantArtifacts";
+import { enrollmentsWithArtifacts } from "@/lib/data/artifactDocsData";
 import { getMyFiles, getSignedFileUrl } from "@/lib/data/participantFiles";
 import { getMyCharacterReports } from "@/lib/data/characterAssessments";
 import { Container } from "@/components/ui/Container";
@@ -27,7 +28,15 @@ export default async function DashboardIndexPage() {
   // merged sibling's active session here would link to a page the caller
   // can read but not actually participate in.
   const activeSessions = portalSessions.filter((s) => s.status !== "archived" && s.ownedByCaller);
-  const pastArtifacts = portalSessions.filter((s) => s.status === "archived" && s.blueprintRevealed);
+  // Past sessions keep every finished artifact: the Blueprint (once revealed)
+  // and the new modules' artifacts (Thinking Traps, Audit, Start-Stop-Shift,
+  // Handoff). Which enrollments have the latter is one batched lookup.
+  const withArtifacts = await enrollmentsWithArtifacts(
+    portalSessions.filter((s) => s.status === "archived").map((s) => s.participantSessionId),
+  );
+  const pastArtifacts = portalSessions.filter(
+    (s) => s.status === "archived" && (s.blueprintRevealed || withArtifacts.has(s.participantSessionId)),
+  );
 
   if (activeSessions.length === 0 && pastArtifacts.length === 0 && fileLinks.length === 0 && reportLinks.length === 0) {
     return (
@@ -71,21 +80,30 @@ export default async function DashboardIndexPage() {
 
         {pastArtifacts.length > 0 ? (
           <div className={activeSessions.length > 0 ? "mt-10" : ""}>
-            <h2 className="font-serif text-2xl">Your Blueprints</h2>
+            <h2 className="font-serif text-2xl">Your past sessions</h2>
             <p className="mt-1 text-sm text-(--color-ink-muted)">
               From past sessions you&apos;ve completed.
             </p>
             <div className="mt-6 space-y-3">
               {pastArtifacts.map((session) => (
-                <Link key={session.participantSessionId} href={`/dashboard/${session.sessionId}/blueprint`}>
-                  <Card className="transition-colors hover:border-(--color-accent)">
-                    <p className="font-medium">{session.name}</p>
-                    {session.organization ? (
-                      <p className="text-sm text-(--color-ink-muted)">{session.organization}</p>
+                <Card key={session.participantSessionId}>
+                  <p className="font-medium">{session.name}</p>
+                  {session.organization ? (
+                    <p className="text-sm text-(--color-ink-muted)">{session.organization}</p>
+                  ) : null}
+                  <div className="mt-2 flex gap-4 text-xs text-(--color-accent)">
+                    {session.blueprintRevealed ? (
+                      <Link href={`/dashboard/${session.sessionId}/blueprint`} className="underline underline-offset-4">
+                        View Blueprint
+                      </Link>
                     ) : null}
-                    <p className="mt-2 text-xs text-(--color-accent)">View Blueprint</p>
-                  </Card>
-                </Link>
+                    {withArtifacts.has(session.participantSessionId) ? (
+                      <Link href={`/dashboard/${session.sessionId}/artifacts`} className="underline underline-offset-4">
+                        View workshop artifacts
+                      </Link>
+                    ) : null}
+                  </div>
+                </Card>
               ))}
             </div>
           </div>

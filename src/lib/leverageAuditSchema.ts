@@ -116,6 +116,20 @@ export interface LeverageAuditDerived {
   ea: Record<string, { greaterLeverageOpportunity: boolean; appropriatelySupported: boolean }>;
   /** Per-COS-responsibility (COS01-03) classification. */
   cos: Record<string, { highOwnership: boolean; growingOwnership: boolean; highOwnershipAndMoreDesired: boolean }>;
+  /** Spec section 16 storage: per responsibility, the macro category and
+   * the numeric value AND label of both answers, as completed under this
+   * version (so they stay readable even if labels are later edited). */
+  detail?: Record<
+    string,
+    {
+      responsibilityId: string;
+      macroCategory: string | null;
+      currentValue: number;
+      currentLabel: string;
+      desiredValue: number;
+      desiredLabel: string;
+    }
+  >;
   dyadId: string | null;
   associatedExecutiveParticipantSessionId: string | null;
 }
@@ -129,12 +143,21 @@ export function classifyLeverageAudit(
   const rules = auditRules(config);
   const ea: LeverageAuditDerived["ea"] = {};
   const cos: LeverageAuditDerived["cos"] = {};
+  const detail: NonNullable<LeverageAuditDerived["detail"]> = {};
 
   const responses = answers.responses ?? {};
   for (const r of config.responsibilities) {
     const response = responses[r.id];
     if (!response || response.current === undefined || response.desired === undefined) continue;
     const { current, desired } = response;
+    detail[r.id] = {
+      responsibilityId: r.id,
+      macroCategory: r.macroCategory,
+      currentValue: current,
+      currentLabel: config.ownershipLevels.find((l) => l.value === current)?.label ?? "",
+      desiredValue: desired,
+      desiredLabel: config.directionOptions.find((d) => d.value === desired)?.label ?? "",
+    };
 
     if (r.type === "EA") {
       ea[r.id] = {
@@ -150,7 +173,7 @@ export function classifyLeverageAudit(
     }
   }
 
-  return { noCurrentEa: answers.noCurrentEa ?? false, ea, cos, dyadId: null, associatedExecutiveParticipantSessionId: null };
+  return { noCurrentEa: answers.noCurrentEa ?? false, ea, cos, detail, dyadId: null, associatedExecutiveParticipantSessionId: null };
 }
 
 export function missingLeverageAuditFields(

@@ -32,6 +32,14 @@ export interface ThinkingTrapsConfig {
 export interface ThinkingTrapsDerived {
   trapScores: Record<string, number>;
   qualifyingTraps: string[];
+  /** Spec section 11 storage: the internal value (0-4) of every response... */
+  itemValues: Record<string, number>;
+  /** ...whether each trap qualifies at the version's threshold... */
+  qualifies: Record<string, boolean>;
+  /** ...and the ranked top / second / third trap ids (null when absent). */
+  topTrap: string | null;
+  secondTrap: string | null;
+  thirdTrap: string | null;
 }
 
 /** Trap score = sum of its four items' internal values (label -> number via
@@ -43,10 +51,12 @@ export function scoreThinkingTraps(
   answers: Record<string, Json>,
 ): ThinkingTrapsDerived {
   const trapScores: Record<string, number> = {};
+  const itemValues: Record<string, number> = {};
   for (const trap of config.traps) {
     trapScores[trap.id] = trap.question_ids.reduce((sum, qId) => {
       const label = answers[qId];
       const value = typeof label === "string" ? (config.scale_values[label] ?? 0) : 0;
+      itemValues[qId] = value;
       return sum + value;
     }, 0);
   }
@@ -62,5 +72,14 @@ export function scoreThinkingTraps(
     .slice(0, config.max_results)
     .map((t) => t.id);
 
-  return { trapScores, qualifyingTraps };
+  const qualifies = Object.fromEntries(config.traps.map((t) => [t.id, trapScores[t.id] >= config.qualify_threshold]));
+  return {
+    trapScores,
+    qualifyingTraps,
+    itemValues,
+    qualifies,
+    topTrap: qualifyingTraps[0] ?? null,
+    secondTrap: qualifyingTraps[1] ?? null,
+    thirdTrap: qualifyingTraps[2] ?? null,
+  };
 }

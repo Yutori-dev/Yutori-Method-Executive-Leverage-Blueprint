@@ -54,6 +54,12 @@ export default async function AdminParticipantProfilePage({
             >
               Download PDF
             </a>
+            <Link
+              href={`/admin/sessions/${sessionId}/participants/${participantSessionId}/artifacts`}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-(--color-accent-soft) px-4 py-2 text-xs font-medium tracking-wide text-(--color-ink) transition-colors hover:bg-(--color-accent-soft)/70"
+            >
+              Workshop artifacts (PDFs)
+            </Link>
           </div>
         </div>
         <p className="mt-2 text-xs text-(--color-ink-muted)">

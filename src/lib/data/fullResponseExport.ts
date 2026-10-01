@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatCurrentSupport } from "@/lib/currentSupportLabels";
+import { structuredSubmissionRows, type StructuredSubmissionInput } from "@/lib/structuredExport";
 
 /**
  * Complete-response export (client brief 2026-09, item 2): every answer and
@@ -202,6 +203,35 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
   const followUpByPs = byPs(followUps);
   const progressByPs = byPs(moduleProgress);
 
+  // The six config-driven modules (EA Experience, Thinking Traps, both
+  // Leverage Audits, Start-Stop-Shift, High-Leverage Handoff). Question
+  // wording comes from the version each participant completed.
+  const structuredSubs = await fetchByIds(
+    (ids) =>
+      supabase
+        .from("structured_assessment_submissions")
+        .select(
+          "participant_session_id, status, answers, derived, dyad_id, associated_executive_participant_session_id, started_at, completed_at, structured_assessments(assessment_key), structured_assessment_versions(version_number, config)",
+        )
+        .in("participant_session_id", ids),
+    psIds,
+  );
+  const execPsIds = [...new Set(structuredSubs.map((x) => x.associated_executive_participant_session_id).filter((x): x is string => !!x))];
+  const execNameByPs = new Map<string, string>();
+  for (const e of await fetchByIds(
+    (ids) => supabase.from("participant_sessions").select("id, participants(first_name, last_name)").in("id", ids),
+    execPsIds,
+  )) {
+    const pp = e.participants as unknown as { first_name: string; last_name: string } | null;
+    if (pp) execNameByPs.set(e.id, pp.first_name + " " + pp.last_name);
+  }
+  const structuredByPs = new Map<string, typeof structuredSubs>();
+  for (const x of structuredSubs) {
+    const list = structuredByPs.get(x.participant_session_id) ?? [];
+    list.push(x);
+    structuredByPs.set(x.participant_session_id, list);
+  }
+
   const rows: FullExportRow[] = [];
   const intakeEmitted = new Set<string>();
 
@@ -375,6 +405,26 @@ export async function getFullResponseRows(participantSessionIds: string[]): Prom
     // Success
     add("Success -- Success Vision", "Success Vision", reflection?.success_vision, reflection?.updated_at);
     add("Success -- Success Vision", "Success Vision follow-up (White Whale)", reflection?.success_vision_white_whale_followup);
+
+    // Structured modules
+    for (const sub of structuredByPs.get(psId) ?? []) {
+      const asm = sub.structured_assessments as unknown as { assessment_key: string } | null;
+      const ver = sub.structured_assessment_versions as unknown as { version_number: number; config: Record<string, unknown> } | null;
+      if (!asm || !ver) continue;
+      const input: StructuredSubmissionInput = {
+        assessmentKey: asm.assessment_key,
+        versionNumber: ver.version_number,
+        config: ver.config,
+        status: sub.status,
+        answers: (sub.answers as Record<string, unknown>) ?? {},
+        derived: (sub.derived as Record<string, unknown> | null) ?? null,
+        dyadId: sub.dyad_id,
+        associatedExecutive: sub.associated_executive_participant_session_id ? (execNameByPs.get(sub.associated_executive_participant_session_id) ?? sub.associated_executive_participant_session_id) : null,
+        startedAt: sub.started_at,
+        completedAt: sub.completed_at,
+      };
+      for (const r of structuredSubmissionRows(input)) add(r.module, r.question, r.answer, r.recordedAt);
+    }
 
     // Wrap-up
     const fb = feedbackByPs.get(psId)?.[0];
