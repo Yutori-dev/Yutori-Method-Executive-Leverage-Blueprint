@@ -30,6 +30,9 @@ import { StructuredAssessmentFlow } from "@/components/participant/StructuredAss
 import { ThinkingTrapsResults } from "@/components/participant/ThinkingTrapsResults";
 import { StartStopShiftFlow } from "@/components/participant/StartStopShiftFlow";
 import type { StartStopShiftAnswers, StartStopShiftConfig } from "@/lib/startStopShiftSchema";
+import { LeverageAuditFlow } from "@/components/participant/LeverageAuditFlow";
+import { LeverageAuditResults } from "@/components/participant/LeverageAuditResults";
+import type { LeverageAuditAnswers, LeverageAuditConfig, LeverageAuditDerived } from "@/lib/leverageAuditSchema";
 import { submitThinkingTraps } from "@/lib/actions/thinkingTraps";
 import type { StructuredAssessmentConfig } from "@/lib/structuredAssessmentSchema";
 import type { ThinkingTrapsConfig, ThinkingTrapsDerived } from "@/lib/thinkingTrapsSchema";
@@ -144,6 +147,40 @@ export default async function ModulePage({
         alreadyComplete={alreadyComplete}
         participantSessionId={dashboard.participantSessionId}
         sessionPath={sessionPath}
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
+  } else if (moduleKey === "ea_leverage_audit_visionary" || moduleKey === "ea_leverage_audit_ea") {
+    const structured = await getStructuredAssessment(moduleKey, dashboard.participantSessionId);
+    content = structured ? (
+      <LeverageAuditFlow
+        assessmentId={structured.assessmentId}
+        versionId={structured.versionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionId={sessionId}
+        config={structured.config as unknown as LeverageAuditConfig}
+        initialAnswers={structured.answers as unknown as LeverageAuditAnswers}
+        alreadyComplete={alreadyComplete}
+        participantSessionId={dashboard.participantSessionId}
+        sessionPath={sessionPath}
+        resultsView={
+          alreadyComplete ? (
+            <LeverageAuditResults
+              config={structured.config as unknown as LeverageAuditConfig}
+              derived={structured.derived as unknown as LeverageAuditDerived}
+              answers={structured.answers as unknown as LeverageAuditAnswers}
+            />
+          ) : undefined
+        }
       />
     ) : (
       <GenericPlaceholderModule

@@ -2756,6 +2756,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      resolve_dyad_counterpart_session: {
+        Args: { p_session_id: string }
+        Returns: {
+          counterpart_master_profile_id: string
+          counterpart_session_id: string
+        }[]
+      }
       save_delegation_belief_response: {
         Args: {
           p_participant_session_id: string
