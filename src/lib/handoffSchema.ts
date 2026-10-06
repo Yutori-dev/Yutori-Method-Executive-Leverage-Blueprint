@@ -15,8 +15,13 @@ export interface HandoffStep {
 export interface HandoffConfig {
   intro: { title: string; body: string[]; cta: string };
   steps: HandoffStep[];
-  review: { title: string; closing: string[] };
+  /** `stick` names the "Make It Stick" answer shown first on the artifact:
+   * the Handoff shows the Thinking Trap, the Leverage Expansion Plan shows the
+   * Integrator Edge. Absent means the Handoff's original Thinking Trap. */
+  review: { title: string; closing: string[]; stick?: { label: string; field: string } };
 }
+
+export const DEFAULT_STICK = { label: "Thinking Trap to Watch", field: "trap" } as const;
 
 export interface HandoffAnswers {
   opportunity?: string;
@@ -25,6 +30,8 @@ export interface HandoffAnswers {
   success?: string;
   /** Trap display name, exactly as the Thinking Traps module shows it. */
   trap?: string;
+  /** Leverage Expansion Plan Screen 6: free-text Integrator Edge. */
+  integratorEdge?: string;
   /** Entries like "START: I will ..." so the category travels with the text. */
   commitments?: string[];
   mechanisms?: string[];

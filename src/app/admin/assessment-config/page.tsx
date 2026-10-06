@@ -8,8 +8,10 @@ const LABELS: Record<string, string> = {
   thinking_traps: "Visionary Thinking Traps Diagnostic",
   ea_leverage_audit_visionary: "EA Leverage & Orchestration Audit (Visionary)",
   ea_leverage_audit_ea: "EA Leverage & Orchestration Audit (EA)",
-  start_stop_shift: "Start-Stop-Shift",
+  start_stop_shift: "Start-Stop-Shift (Visionary)",
+  start_stop_shift_integrator: "Start-Stop-Shift (Integrator)",
   high_leverage_handoff: "High-Leverage Handoff",
+  leverage_expansion_plan: "Leverage Expansion Plan",
 };
 
 export default async function AssessmentConfigIndex() {

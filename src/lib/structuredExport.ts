@@ -13,7 +13,9 @@ export const STRUCTURED_MODULE_LABELS: Record<string, string> = {
   ea_leverage_audit_visionary: "EA Leverage & Orchestration Audit (Visionary)",
   ea_leverage_audit_ea: "EA Leverage & Orchestration Audit (EA)",
   start_stop_shift: "Start-Stop-Shift",
+  start_stop_shift_integrator: "Start-Stop-Shift (Integrator)",
   high_leverage_handoff: "High-Leverage Handoff",
+  leverage_expansion_plan: "Leverage Expansion Plan",
 };
 
 export interface StructuredSubmissionInput {
@@ -137,13 +139,13 @@ export function structuredSubmissionRows(s: StructuredSubmissionInput): Structur
     add("Associated executive", s.associatedExecutive);
   }
 
-  if (s.assessmentKey === "start_stop_shift") {
+  if (s.assessmentKey === "start_stop_shift" || s.assessmentKey === "start_stop_shift_integrator") {
     for (const [key, label] of [["start", "START"], ["stop", "STOP"], ["shift", "SHIFT"]] as const) {
       arr(a[key]).forEach((entry, i) => add(`${label} commitment ${i + 1}`, entry));
     }
   }
 
-  if (s.assessmentKey === "high_leverage_handoff") {
+  if (s.assessmentKey === "high_leverage_handoff" || s.assessmentKey === "leverage_expansion_plan") {
     for (const step of arr(cfg.steps).filter(isObj)) {
       add(`${str(step.title)} -- ${str(step.prompt)}`, a[str(step.id)]);
     }

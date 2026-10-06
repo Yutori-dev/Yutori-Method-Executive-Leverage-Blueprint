@@ -136,8 +136,8 @@ export default async function ModulePage({
         alreadyComplete={alreadyComplete}
       />
     );
-  } else if (moduleKey === "start_stop_shift") {
-    const structured = await getStructuredAssessment("start_stop_shift", dashboard.participantSessionId);
+  } else if (moduleKey === "start_stop_shift" || moduleKey === "start_stop_shift_integrator") {
+    const structured = await getStructuredAssessment(moduleKey, dashboard.participantSessionId);
     content = structured ? (
       <StartStopShiftFlow
         assessmentId={structured.assessmentId}
@@ -194,11 +194,14 @@ export default async function ModulePage({
         alreadyComplete={alreadyComplete}
       />
     );
-  } else if (moduleKey === "high_leverage_handoff") {
+  } else if (moduleKey === "high_leverage_handoff" || moduleKey === "leverage_expansion_plan") {
+    // The Leverage Expansion Plan is the integrator counterpart: it draws on
+    // the integrator's Start-Stop-Shift and has no Thinking Trap step.
+    const isPlan = moduleKey === "leverage_expansion_plan";
     const [structured, traps, commitments] = await Promise.all([
-      getStructuredAssessment("high_leverage_handoff", dashboard.participantSessionId),
-      getStructuredAssessment("thinking_traps", dashboard.participantSessionId),
-      getStructuredAssessment("start_stop_shift", dashboard.participantSessionId),
+      getStructuredAssessment(moduleKey, dashboard.participantSessionId),
+      isPlan ? Promise.resolve(null) : getStructuredAssessment("thinking_traps", dashboard.participantSessionId),
+      getStructuredAssessment(isPlan ? "start_stop_shift_integrator" : "start_stop_shift", dashboard.participantSessionId),
     ]);
     // Screen 6 options: the participant's own ranked Thinking Traps, same
     // names as that module shows. If none qualified (or it wasn't taken),

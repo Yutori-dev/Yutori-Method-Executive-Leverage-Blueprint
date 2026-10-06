@@ -38,7 +38,9 @@ export const ARTIFACT_ASSESSMENT_KEYS = [
   "ea_leverage_audit_visionary",
   "ea_leverage_audit_ea",
   "start_stop_shift",
+  "start_stop_shift_integrator",
   "high_leverage_handoff",
+  "leverage_expansion_plan",
 ] as const;
 
 type Obj = Record<string, unknown>;
@@ -140,7 +142,7 @@ export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
     return { key: s.assessmentKey, title: str(cfg.resultHeading), sections };
   }
 
-  if (s.assessmentKey === "start_stop_shift") {
+  if (s.assessmentKey === "start_stop_shift" || s.assessmentKey === "start_stop_shift_integrator") {
     const review = isObj(cfg.review) ? cfg.review : {};
     const groups = arr(cfg.categories)
       .filter(isObj)
@@ -148,8 +150,9 @@ export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
     return { key: s.assessmentKey, title: str(review.title), sections: [{ groups, closing: [str(review.closing)] }] };
   }
 
-  if (s.assessmentKey === "high_leverage_handoff") {
+  if (s.assessmentKey === "high_leverage_handoff" || s.assessmentKey === "leverage_expansion_plan") {
     const review = isObj(cfg.review) ? cfg.review : {};
+    const stick = isObj(review.stick) ? review.stick : { label: "Thinking Trap to Watch", field: "trap" };
     const mechanisms = [...arr(a.mechanisms).map(str), ...(str(a.mechanismOther).trim() ? [`Other: ${str(a.mechanismOther).trim()}`] : [])];
     const one = (label: string | undefined, text: unknown): ArtifactGroup => ({ label, lines: [line(text)] });
     return {
@@ -162,7 +165,7 @@ export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
         {
           heading: "Make It Stick",
           groups: [
-            one("Thinking Trap to Watch", a.trap),
+            one(str(stick.label), a[str(stick.field)]),
             { label: "My Commitment", lines: arr(a.commitments).map(line) },
             { label: "Supporting Mechanism", lines: mechanisms.map(line) },
           ],
