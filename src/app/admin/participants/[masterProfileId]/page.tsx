@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { MergeParticipantControl } from "@/components/admin/MergeParticipantControl";
 import { PairProfileControl } from "@/components/admin/PairProfileControl";
+import { ResetPasswordControl } from "@/components/admin/ResetPasswordControl";
 import { RoleOverrideControl } from "@/components/admin/RoleOverrideControl";
 import { ParticipantFilesControl } from "@/components/admin/ParticipantFilesControl";
 
@@ -75,6 +76,7 @@ export default async function MasterProfilePage({
                     {p.firstName} {p.lastName}
                   </p>
                   <p className="text-xs text-(--color-ink-muted)">{p.email}</p>
+                  <ResetPasswordControl participantId={p.id} />
                 </div>
               ))}
             </div>
