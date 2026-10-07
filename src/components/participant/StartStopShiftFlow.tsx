@@ -74,7 +74,14 @@ export function StartStopShiftFlow({
   function addEntry(categoryId: string) {
     const text = (drafts[categoryId] ?? "").trim();
     if (!text) return;
-    const next = { ...answers, [categoryId]: [...(answers[categoryId] ?? []), text] };
+    const existing = answers[categoryId] ?? [];
+    // Adding the same line twice (a double click, or Enter then the button)
+    // would just show it twice and later offer it twice on the next screen.
+    if (existing.some((e) => e.trim().toLowerCase() === text.toLowerCase())) {
+      setDrafts((d) => ({ ...d, [categoryId]: "" }));
+      return;
+    }
+    const next = { ...answers, [categoryId]: [...existing, text] };
     setAnswers(next);
     setDrafts((d) => ({ ...d, [categoryId]: "" }));
     scheduleSave(next);

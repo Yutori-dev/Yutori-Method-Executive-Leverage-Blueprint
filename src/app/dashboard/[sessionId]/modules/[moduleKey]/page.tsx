@@ -214,9 +214,14 @@ export default async function ModulePage({
         )
       : [];
     const sss = (commitments?.answers ?? {}) as unknown as Record<string, string[]>;
-    const commitmentOptions = (["start", "stop", "shift"] as const).flatMap((k) =>
-      (sss[k] ?? []).map((text) => `${k.toUpperCase()}: ${text}`),
-    );
+    // Each commitment once, even if the same line was saved twice earlier.
+    const commitmentOptions = [
+      ...new Set(
+        (["start", "stop", "shift"] as const).flatMap((k) =>
+          (sss[k] ?? []).map((text) => `${k.toUpperCase()}: ${text.trim()}`),
+        ),
+      ),
+    ];
     content = structured ? (
       <HandoffFlow
         assessmentId={structured.assessmentId}
