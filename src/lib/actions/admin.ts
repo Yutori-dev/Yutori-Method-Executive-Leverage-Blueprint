@@ -22,6 +22,7 @@ export async function createSession(input: {
   format: SessionFormat;
   disabledModuleKeys?: string[];
   skipDelegationBeliefs?: boolean;
+  showModulesToEveryone?: boolean;
 }) {
   const supabase = await createServerSupabaseClient();
 
@@ -62,6 +63,7 @@ export async function createSession(input: {
       active_module_id: firstEnabledModule?.id ?? null,
       disabled_module_keys: disabledModuleKeys,
       skip_delegation_beliefs: input.skipDelegationBeliefs ?? false,
+      show_modules_to_everyone: input.showModulesToEveryone ?? false,
     })
     .select("id")
     .single();
@@ -83,6 +85,7 @@ export async function updateSession(
     format: SessionFormat;
     disabledModuleKeys?: string[];
     skipDelegationBeliefs?: boolean;
+    showModulesToEveryone?: boolean;
   },
 ) {
   const supabase = await createServerSupabaseClient();
@@ -101,6 +104,9 @@ export async function updateSession(
         : {}),
       ...(input.skipDelegationBeliefs !== undefined
         ? { skip_delegation_beliefs: input.skipDelegationBeliefs }
+        : {}),
+      ...(input.showModulesToEveryone !== undefined
+        ? { show_modules_to_everyone: input.showModulesToEveryone }
         : {}),
     })
     .eq("id", sessionId);

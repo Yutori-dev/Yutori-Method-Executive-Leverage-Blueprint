@@ -1755,6 +1755,7 @@ export type Database = {
           name: string
           organization: string | null
           priority_leverage_reveal_unlocked: boolean
+          show_modules_to_everyone: boolean
           skip_delegation_beliefs: boolean
           status: string
           updated_at: string
@@ -1777,6 +1778,7 @@ export type Database = {
           name: string
           organization?: string | null
           priority_leverage_reveal_unlocked?: boolean
+          show_modules_to_everyone?: boolean
           skip_delegation_beliefs?: boolean
           status?: string
           updated_at?: string
@@ -1799,6 +1801,7 @@ export type Database = {
           name?: string
           organization?: string | null
           priority_leverage_reveal_unlocked?: boolean
+          show_modules_to_everyone?: boolean
           skip_delegation_beliefs?: boolean
           status?: string
           updated_at?: string

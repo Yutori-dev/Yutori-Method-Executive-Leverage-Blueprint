@@ -100,6 +100,13 @@ export default async function ParticipantDashboardPage({
                   <Button>CONTINUE</Button>
                 </Link>
               </>
+            ) : trackedModules.length === 0 ? (
+              <>
+                <p className="text-sm text-(--color-ink)">There is nothing for you to complete in this session yet.</p>
+                <p className="mt-1 text-sm text-(--color-ink-muted)">
+                  If you expected to see an activity here, let your facilitator know.
+                </p>
+              </>
             ) : (
               <>
                 <p className="text-sm text-(--color-ink)">You&apos;ve completed every module.</p>

@@ -57,7 +57,7 @@ export async function getParticipantDashboard(
       supabase
         .from("sessions")
         .select(
-          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys, skip_delegation_beliefs",
+          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys, skip_delegation_beliefs, show_modules_to_everyone",
         )
         .eq("id", sessionId)
         .maybeSingle(),
@@ -107,7 +107,11 @@ export async function getParticipantDashboard(
   // Modules meant for one audience only (e.g. the EA Experience Assessment is
   // for assistants) are hidden from everyone else the same way.
   const role = resolveParticipantRole(roleHints?.[0]);
-  const enabledModules = modules.filter((m) => !disabledKeys.has(m.key) && moduleVisibleToRole(m.audience, role));
+  // A single-audience session can switch the role filter off entirely, so
+  // everyone sees exactly the modules ticked for it.
+  const enabledModules = modules.filter(
+    (m) => !disabledKeys.has(m.key) && (session.show_modules_to_everyone || moduleVisibleToRole(m.audience, role)),
+  );
 
   const activeModule = enabledModules.find((m) => m.id === session.active_module_id);
   const cohortActiveModuleSortOrder = activeModule ? activeModule.sort_order : null;

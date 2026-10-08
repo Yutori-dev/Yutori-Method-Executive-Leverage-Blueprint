@@ -17,7 +17,7 @@ export default async function EditSessionPage({
   const [{ data: session }, { data: modules }] = await Promise.all([
     supabase
       .from("sessions")
-      .select("name, organization, event_date, format, disabled_module_keys, skip_delegation_beliefs")
+      .select("name, organization, event_date, format, disabled_module_keys, skip_delegation_beliefs, show_modules_to_everyone")
       .eq("id", sessionId)
       .maybeSingle(),
     supabase
@@ -47,6 +47,7 @@ export default async function EditSessionPage({
                 format: session.format as SessionFormat,
                 disabledModuleKeys: session.disabled_module_keys ?? [],
                 skipDelegationBeliefs: session.skip_delegation_beliefs ?? false,
+                showModulesToEveryone: session.show_modules_to_everyone ?? false,
               }}
             />
           </Card>

@@ -21,6 +21,7 @@ export function SessionForm({
     format: SessionFormat;
     disabledModuleKeys?: string[];
     skipDelegationBeliefs?: boolean;
+    showModulesToEveryone?: boolean;
   };
   /** Toggleable modules for this session -- requires_live_workshop modules
    * are never included, that gating is separate from this per-session
@@ -40,6 +41,7 @@ export function SessionForm({
   const [skipDelegationBeliefs, setSkipDelegationBeliefs] = useState(
     initial?.skipDelegationBeliefs ?? false,
   );
+  const [showToEveryone, setShowToEveryone] = useState(initial?.showModulesToEveryone ?? true);
 
   function toggleModule(key: string) {
     setDisabledKeys((prev) => {
@@ -57,10 +59,10 @@ export function SessionForm({
     startTransition(async () => {
       try {
         if (mode === "create") {
-          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs });
+          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone });
           router.push(`/admin/sessions/${newId}`);
         } else if (sessionId) {
-          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs });
+          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone });
           router.push(`/admin/sessions/${sessionId}`);
         }
       } catch (error) {
@@ -150,6 +152,22 @@ export function SessionForm({
             </label>
           ))}
         </div>
+
+        <label className="mt-3 flex items-start gap-2 border-t border-(--color-hairline) pt-3 text-sm text-(--color-ink)">
+          <input
+            type="checkbox"
+            checked={showToEveryone}
+            onChange={(e) => setShowToEveryone(e.target.checked)}
+            className="mt-0.5 accent-(--color-accent)"
+          />
+          <span>
+            Show every ticked module to everyone in this session
+            <span className="block text-xs text-(--color-ink-muted)">
+              Keep this on for a session that is all assistants or all visionaries. Turn it off only for a
+              mixed session, where assistant-only and visionary-only modules go to the matching role.
+            </span>
+          </span>
+        </label>
 
         {!disabledKeys.has("delegation") ? (
           <label className="mt-3 flex items-start gap-2 border-t border-(--color-hairline) pt-3 text-sm text-(--color-ink)">
