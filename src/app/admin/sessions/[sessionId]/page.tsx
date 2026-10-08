@@ -282,7 +282,7 @@ export default async function SessionControlPanelPage({
               </div>
             ) : null}
 
-            {architectureUnlocked ? (
+            {architectureUnlocked || session.blueprint_revealed ? (
               <div className="mt-6 border-t border-(--color-hairline) pt-6">
                 <h3 className="text-sm font-medium">Blueprint reveal</h3>
                 <p className="mt-1 text-xs text-(--color-ink-muted)">

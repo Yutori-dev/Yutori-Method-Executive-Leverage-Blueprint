@@ -152,6 +152,17 @@ export async function revealBlueprint(sessionId: string) {
   revalidatePath(`/dashboard/${sessionId}`);
 }
 
+/** Undo a Blueprint reveal for one session (e.g. it was switched on too early
+ * and is distracting from the modules). Participants stop seeing the link
+ * straight away; revealing again works as before. */
+export async function hideBlueprint(sessionId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("sessions").update({ blueprint_revealed: false }).eq("id", sessionId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+  revalidatePath(`/dashboard/${sessionId}`);
+}
+
 export async function revealPriorityLeverage(sessionId: string) {
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.rpc("admin_reveal_priority_leverage", { p_session_id: sessionId });
