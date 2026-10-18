@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { orderModulesForSession } from "@/lib/moduleOrder";
 import type { SelfIdentification } from "@/types/database";
 
 /**
@@ -11,18 +12,19 @@ import type { SelfIdentification } from "@/types/database";
  * routed through a SECURITY DEFINER RPC (see the migration comment in
  * 20260901000001_gap_fill_schema.sql).
  *
- * White Whale and Leadership Wiring are now individually facilitator-
- * unlocked activities (client Implementation Specifications). Since these
- * are plain RLS writes rather than RPCs, the unlock check has to live
- * here explicitly -- server-side enforcement, not just the UI declining to
- * render the step, mirroring how every other RPC in this app re-checks
- * module-unlock state itself rather than trusting the caller.
+ * White Whale and Leadership Wiring are standalone modules, opened by the
+ * facilitator like any other module. Since these are plain RLS writes rather
+ * than RPCs, the unlock check has to live here explicitly -- server-side
+ * enforcement, not just the UI declining to render the step, mirroring how
+ * every other RPC in this app re-checks module-unlock state itself rather
+ * than trusting the caller. (The older per-activity unlock flags are still
+ * honoured for sessions that were already using them.)
  */
 
-async function isSessionUnlockedFor(
+async function isModuleUnlockedFor(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   participantSessionId: string,
-  column: "white_whale_unlocked" | "leadership_wiring_unlocked",
+  moduleKey: "white_whale" | "leadership_wiring",
 ): Promise<boolean> {
   const { data: ps } = await supabase
     .from("participant_sessions")
@@ -31,12 +33,25 @@ async function isSessionUnlockedFor(
     .maybeSingle();
   if (!ps) return false;
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("white_whale_unlocked, leadership_wiring_unlocked")
-    .eq("id", ps.session_id)
-    .maybeSingle();
-  return Boolean(session?.[column]);
+  const [{ data: session }, { data: modules }] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select("active_module_id, module_order, disabled_module_keys, white_whale_unlocked, leadership_wiring_unlocked")
+      .eq("id", ps.session_id)
+      .maybeSingle(),
+    supabase.from("modules").select("id, key, sort_order").eq("active", true),
+  ]);
+  if (!session || !modules) return false;
+
+  const legacyFlag = moduleKey === "white_whale" ? session.white_whale_unlocked : session.leadership_wiring_unlocked;
+  if (legacyFlag) return true;
+  if ((session.disabled_module_keys ?? []).includes(moduleKey)) return false;
+
+  // Unlocked = at or before the cohort's active module in THIS session's order.
+  const ordered = orderModulesForSession(modules, session.module_order);
+  const active = ordered.find((m) => m.id === session.active_module_id);
+  const target = ordered.find((m) => m.key === moduleKey);
+  return Boolean(active && target && target.sort_order <= active.sort_order);
 }
 
 export async function setSelfIdentification(params: {
@@ -46,7 +61,7 @@ export async function setSelfIdentification(params: {
 }) {
   const supabase = await createServerSupabaseClient();
 
-  const unlocked = await isSessionUnlockedFor(supabase, params.participantSessionId, "leadership_wiring_unlocked");
+  const unlocked = await isModuleUnlockedFor(supabase, params.participantSessionId, "leadership_wiring");
   if (!unlocked) return { ok: false as const, message: "Leadership Wiring is not yet unlocked." };
 
   const { error } = await supabase
@@ -67,7 +82,7 @@ export async function saveReflection(params: {
   const supabase = await createServerSupabaseClient();
 
   if (params.field === "white_whale") {
-    const unlocked = await isSessionUnlockedFor(supabase, params.participantSessionId, "white_whale_unlocked");
+    const unlocked = await isModuleUnlockedFor(supabase, params.participantSessionId, "white_whale");
     if (!unlocked) return { ok: false as const, message: "White Whale is not yet unlocked." };
   }
 

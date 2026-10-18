@@ -2,6 +2,8 @@ import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { QuestionType } from "@/types/database";
 import type { DemoAssessment } from "./moduleContent";
+import { loadConstraintCards } from "./leverageProfile";
+import type { ConstraintCard } from "@/lib/leverageProfileCards";
 
 const ASSESSMENT_KEY = "executive_leverage_diagnostic";
 
@@ -9,6 +11,8 @@ export interface ExecutiveLeverageProfileResult {
   profileLabel: string;
   profileDescription: string | null;
   strongestConstraints: { label: string; interpretation: string }[];
+  /** "Leverage constraints" cards from the participant's own answers. */
+  cards: ConstraintCard[];
 }
 
 export interface ExecutiveLeverageDiagnosticData {
@@ -86,6 +90,7 @@ export async function getExecutiveLeverageDiagnosticData(
           profileDescription: resultRow.interpretation,
           strongestConstraints:
             (resultRow.strongest_constraints as { label: string; interpretation: string }[] | null) ?? [],
+          cards: await loadConstraintCards(supabase, participantSessionId),
         }
       : null;
 

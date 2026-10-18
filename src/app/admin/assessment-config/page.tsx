@@ -12,6 +12,7 @@ const LABELS: Record<string, string> = {
   start_stop_shift_integrator: "Start-Stop-Shift (Integrator)",
   high_leverage_handoff: "High-Leverage Handoff",
   leverage_expansion_plan: "Leverage Expansion Plan",
+  ea_buffer_assessment: "EA Buffer Assessment",
 };
 
 export default async function AssessmentConfigIndex() {

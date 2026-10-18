@@ -16,6 +16,7 @@ export const STRUCTURED_MODULE_LABELS: Record<string, string> = {
   start_stop_shift_integrator: "Start-Stop-Shift (Integrator)",
   high_leverage_handoff: "High-Leverage Handoff",
   leverage_expansion_plan: "Leverage Expansion Plan",
+  ea_buffer_assessment: "EA Buffer Assessment",
 };
 
 export interface StructuredSubmissionInput {
@@ -137,6 +138,36 @@ export function structuredSubmissionRows(s: StructuredSubmissionInput): Structur
     }
     add("Dyad ID", s.dyadId);
     add("Associated executive", s.associatedExecutive);
+  }
+
+  if (s.assessmentKey === "ea_buffer_assessment") {
+    const ctx = isObj(a.context) ? a.context : {};
+    add("No current EA", yesNo(a.noCurrentEa === true));
+    for (const q of arr(cfg.contextQuestions).filter(isObj)) {
+      const v = ctx[str(q.id)];
+      const label = arr(q.options).filter(isObj).find((o) => str(o.value) === str(v))?.label;
+      add(str(q.prompt), label ?? v);
+    }
+    const levels = arr(cfg.ownershipLevels).filter(isObj);
+    const ownership = isObj(a.ownership) ? a.ownership : {};
+    const classLabels = isObj(cfg.classificationLabels) ? cfg.classificationLabels : {};
+    const derivedFns = s.derived ? arr(s.derived.functions).filter(isObj) : [];
+    for (const fn of arr(cfg.functions).filter(isObj)) {
+      for (const r of arr(fn.responsibilities).filter(isObj)) {
+        const v = ownership[str(r.id)];
+        if (v === undefined) continue;
+        const lvl = levels.find((l) => l.value === v)?.label;
+        add(`${str(r.id)} ${str(r.name)} (${str(fn.name)}) -- Current Ownership`, `${str(v)} / ${str(lvl)}`);
+      }
+      const d = derivedFns.find((x) => str(x.id) === str(fn.id));
+      if (d) {
+        add(`${str(fn.name)} -- Function average`, d.average);
+        add(`${str(fn.name)} -- Buffer classification`, classLabels[str(d.classification)] ?? d.classification);
+        add(`${str(fn.name)} -- Relative ranking`, d.rank);
+        add(`${str(fn.name)} -- Strongest function`, yesNo(d.strongest));
+        add(`${str(fn.name)} -- Greatest leverage opportunity`, yesNo(d.opportunity));
+      }
+    }
   }
 
   if (s.assessmentKey === "start_stop_shift" || s.assessmentKey === "start_stop_shift_integrator") {

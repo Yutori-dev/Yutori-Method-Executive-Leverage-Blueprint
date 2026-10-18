@@ -8,12 +8,11 @@ import { SessionStatusSelect } from "@/components/admin/SessionStatusSelect";
 import { UnlockModuleControl } from "@/components/admin/UnlockModuleControl";
 import { RevealPriorityLeverageControl } from "@/components/admin/RevealPriorityLeverageControl";
 import { RevealZoneOfInvestmentControl } from "@/components/admin/RevealZoneOfInvestmentControl";
-import { UnlockWhiteWhaleControl } from "@/components/admin/UnlockWhiteWhaleControl";
-import { UnlockLeadershipWiringControl } from "@/components/admin/UnlockLeadershipWiringControl";
 import { ReleaseWorkshopFeedbackControl } from "@/components/admin/ReleaseWorkshopFeedbackControl";
 import { RevealBlueprintControl } from "@/components/admin/RevealBlueprintControl";
 import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import { cn } from "@/lib/cn";
+import { orderModulesForSession } from "@/lib/moduleOrder";
 import type { ModuleDisplayState } from "@/lib/moduleState";
 import type { SessionStatus } from "@/types/database";
 
@@ -25,12 +24,14 @@ export default async function SessionControlPanelPage({
   const { sessionId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const [{ data: session }, { data: modules }] = await Promise.all([
+  const [{ data: session }, { data: rawModules }] = await Promise.all([
     supabase.from("sessions").select("*").eq("id", sessionId).maybeSingle(),
     supabase.from("modules").select("*").eq("active", true).order("sort_order", { ascending: true }),
   ]);
 
-  if (!session || !modules) notFound();
+  if (!session || !rawModules) notFound();
+  // This session's own module order (or the global one when it has none).
+  const modules = orderModulesForSession(rawModules, session.module_order);
 
   const { data: enrollments } = await supabase
     .from("participant_sessions")
@@ -83,13 +84,6 @@ export default async function SessionControlPanelPage({
       activeModule &&
       currentStructureModule.sort_order <= activeModule.sort_order &&
       !disabledModuleKeys.has("current_structure"),
-  );
-  const operatingAltitudeModule = modules.find((m) => m.key === "operating_altitude");
-  const operatingAltitudeUnlocked = Boolean(
-    operatingAltitudeModule &&
-      activeModule &&
-      operatingAltitudeModule.sort_order <= activeModule.sort_order &&
-      !disabledModuleKeys.has("operating_altitude"),
   );
   const leverageModule = modules.find((m) => m.key === "leverage");
   const leverageUnlocked = Boolean(
@@ -220,35 +214,6 @@ export default async function SessionControlPanelPage({
             <div className="mt-6">
               <UnlockModuleControl sessionId={sessionId} nextModuleName={nextModule?.name ?? null} />
             </div>
-
-            {operatingAltitudeUnlocked || session.white_whale_unlocked ? (
-              <div className="mt-6 border-t border-(--color-hairline) pt-6">
-                <h3 className="text-sm font-medium">White Whale unlock</h3>
-                <p className="mt-1 text-xs text-(--color-ink-muted)">
-                  Separate from module unlocking -- comes after the Executive Leverage Diagnostic
-                  within Operating Altitude.
-                </p>
-                <div className="mt-3">
-                  <UnlockWhiteWhaleControl sessionId={sessionId} alreadyUnlocked={session.white_whale_unlocked} />
-                </div>
-              </div>
-            ) : null}
-
-            {operatingAltitudeUnlocked || session.leadership_wiring_unlocked ? (
-              <div className="mt-6 border-t border-(--color-hairline) pt-6">
-                <h3 className="text-sm font-medium">Leadership Wiring unlock</h3>
-                <p className="mt-1 text-xs text-(--color-ink-muted)">
-                  The last of the three Operating Altitude activities -- completing it marks the
-                  module complete.
-                </p>
-                <div className="mt-3">
-                  <UnlockLeadershipWiringControl
-                    sessionId={sessionId}
-                    alreadyUnlocked={session.leadership_wiring_unlocked}
-                  />
-                </div>
-              </div>
-            ) : null}
 
             {currentStructureUnlocked || session.zone_of_investment_revealed ? (
               <div className="mt-6 border-t border-(--color-hairline) pt-6">

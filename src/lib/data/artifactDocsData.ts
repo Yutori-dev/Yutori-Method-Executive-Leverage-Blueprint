@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { ARTIFACT_ASSESSMENT_KEYS, buildArtifactDoc, type ArtifactDoc } from "@/lib/artifactDocs";
+import { ARTIFACT_ASSESSMENT_KEYS, buildArtifactDoc, buildProfileArtifactDoc, type ArtifactDoc } from "@/lib/artifactDocs";
+import { getExecutiveLeverageDiagnosticData } from "@/lib/data/executiveLeverageDiagnostic";
 
 const ORDER = new Map<string, number>(ARTIFACT_ASSESSMENT_KEYS.map((k, i) => [k, i]));
 
@@ -28,6 +29,9 @@ export async function getArtifactDocs(participantSessionId: string): Promise<Art
     });
     if (doc) docs.push(doc);
   }
+  // The Executive Leverage Profile (from the diagnostic itself).
+  const diagnostic = await getExecutiveLeverageDiagnosticData(participantSessionId);
+  if (diagnostic.result) docs.push(buildProfileArtifactDoc(diagnostic.result));
   return docs.sort((x, y) => (ORDER.get(x.key) ?? 99) - (ORDER.get(y.key) ?? 99));
 }
 
@@ -42,6 +46,13 @@ export async function enrollmentsWithArtifacts(participantSessionIds: string[]):
     .in("participant_session_id", participantSessionIds)
     .eq("status", "complete");
   const out = new Set<string>();
+  // A saved Executive Leverage Profile is an artifact too.
+  const { data: profiles } = await supabase
+    .from("assessment_results")
+    .select("participant_session_id, assessments!inner(key)")
+    .in("participant_session_id", participantSessionIds)
+    .eq("assessments.key", "executive_leverage_diagnostic");
+  for (const row of profiles ?? []) out.add(row.participant_session_id);
   for (const row of data ?? []) {
     const asm = row.structured_assessments as unknown as { assessment_key: string } | null;
     if (asm && ORDER.has(asm.assessment_key)) out.add(row.participant_session_id);

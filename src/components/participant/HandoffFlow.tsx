@@ -7,6 +7,7 @@ import {
   DEFAULT_STICK,
   firstUnansweredHandoffStep,
   isHandoffStepAnswered,
+  toggleHandoffChoice,
   type HandoffAnswers,
   type HandoffConfig,
   type HandoffContext,
@@ -78,9 +79,8 @@ export function HandoffFlow({
     saveTimer.current = setTimeout(() => persist(next), 500);
   }
 
-  function toggle(field: "commitments" | "mechanisms", value: string) {
-    const current = answers[field] ?? [];
-    update({ [field]: current.includes(value) ? current.filter((v) => v !== value) : [...current, value] });
+  function toggle(field: "commitments" | "mechanisms", value: string, noneOption?: string) {
+    update({ [field]: toggleHandoffChoice(answers[field] ?? [], value, noneOption) });
   }
 
   const total = config.steps.length;
@@ -134,8 +134,8 @@ export function HandoffFlow({
   }
 
   if (index >= total) {
-    const stick = config.review.stick ?? DEFAULT_STICK;
-    const stickDisplay = (answers[stick.field as keyof HandoffAnswers] as string | undefined) ?? "";
+    const stick = config.review.stick === null ? null : (config.review.stick ?? DEFAULT_STICK);
+    const stickDisplay = stick ? ((answers[stick.field as keyof HandoffAnswers] as string | undefined) ?? "") : "";
     const mechanisms = [...(answers.mechanisms ?? []), ...(answers.mechanismOther?.trim() ? [`Other: ${answers.mechanismOther.trim()}`] : [])];
     return (
       <div className="space-y-6">
@@ -153,8 +153,12 @@ export function HandoffFlow({
             <ArtifactBlock label="Definition of Success">{answers.success}</ArtifactBlock>
             <div>
               <p className="text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">Make It Stick</p>
-              <p className="mt-2 text-xs font-medium text-(--color-ink-muted)">{stick.label}</p>
-              <p className="text-(--color-ink)">{stickDisplay}</p>
+              {stick ? (
+                <>
+                  <p className="mt-2 text-xs font-medium text-(--color-ink-muted)">{stick.label}</p>
+                  <p className="text-(--color-ink)">{stickDisplay}</p>
+                </>
+              ) : null}
               <p className="mt-2 text-xs font-medium text-(--color-ink-muted)">My Commitment</p>
               <ul className="space-y-1 text-(--color-ink)">
                 {(answers.commitments ?? []).map((c) => (
@@ -241,9 +245,9 @@ export function HandoffFlow({
               Your Start-Stop-Shift commitments will appear here once you have completed that module.
             </p>
           ) : null}
-          {context.commitmentOptions.map((c) => (
+          {[...context.commitmentOptions, ...(step.noneOption ? [step.noneOption] : [])].map((c) => (
             <label key={c} className="flex cursor-pointer items-start gap-2 text-sm text-(--color-ink)">
-              <input type="checkbox" checked={(answers.commitments ?? []).includes(c)} onChange={() => toggle("commitments", c)} className="mt-1" />
+              <input type="checkbox" checked={(answers.commitments ?? []).includes(c)} onChange={() => toggle("commitments", c, step.noneOption)} className="mt-1" />
               <span>{c}</span>
             </label>
           ))}
@@ -252,9 +256,9 @@ export function HandoffFlow({
 
       {step.kind === "mechanism_multi" ? (
         <div className="mt-3 space-y-1.5">
-          {(step.options ?? []).map((o) => (
+          {[...(step.options ?? []), ...(step.noneOption ? [step.noneOption] : [])].map((o) => (
             <label key={o} className="flex cursor-pointer items-start gap-2 text-sm text-(--color-ink)">
-              <input type="checkbox" checked={(answers.mechanisms ?? []).includes(o)} onChange={() => toggle("mechanisms", o)} className="mt-1" />
+              <input type="checkbox" checked={(answers.mechanisms ?? []).includes(o)} onChange={() => toggle("mechanisms", o, step.noneOption)} className="mt-1" />
               <span>{o}</span>
             </label>
           ))}

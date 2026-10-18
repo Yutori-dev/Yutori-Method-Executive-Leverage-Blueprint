@@ -15,8 +15,6 @@ import {
   summaryLevelDisplay,
   LEADERSHIP_WIRING_EYEBROW,
   DELEGATION_BELIEFS_EYEBROW,
-  CHARACTER_FIT_CARDS,
-  CHARACTER_FIT_MARKER,
   WHITE_WHALE_SUPPORTING_COPY,
   BLUEPRINT_FOOTER_PRIMARY,
   BLUEPRINT_FOOTER_SECONDARY,
@@ -305,19 +303,6 @@ export function BlueprintView({
           </div>
         </SectionBand>
       ) : null}
-
-      {/* 05 -- Character Profile & Future Fit */}
-      <SectionBand number="5" title="Character Profile & Future Fit" subtitle={SECTION_SUBTITLE.characterFit} striped>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CHARACTER_FIT_CARDS.map((c) => (
-            <Card key={c.title}>
-              <p className="text-xs font-medium tracking-wide text-(--color-accent) uppercase">{c.title}</p>
-              <p className="mt-2 text-sm text-(--color-ink-muted)">{c.body}</p>
-            </Card>
-          ))}
-        </div>
-        <p className="mt-4 text-xs font-medium tracking-wide text-(--color-ink-muted) uppercase">{CHARACTER_FIT_MARKER}</p>
-      </SectionBand>
 
       <section className="space-y-6 border-t border-(--color-hairline) pt-6">
         <div>

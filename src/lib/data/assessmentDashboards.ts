@@ -8,6 +8,7 @@ export const DASHBOARD_ASSESSMENTS = [
   { key: "thinking_traps", label: "Visionary Thinking Traps" },
   { key: "ea_leverage_audit_visionary", label: "EA Leverage Audit (Visionary)" },
   { key: "ea_leverage_audit_ea", label: "EA Leverage Audit (EA)" },
+  { key: "ea_buffer_assessment", label: "EA Buffer Assessment" },
 ] as const;
 
 export interface DashboardData {

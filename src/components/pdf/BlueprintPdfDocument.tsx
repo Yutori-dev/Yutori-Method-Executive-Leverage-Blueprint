@@ -12,8 +12,6 @@ import {
   summaryLevelDisplay,
   LEADERSHIP_WIRING_EYEBROW,
   DELEGATION_BELIEFS_EYEBROW,
-  CHARACTER_FIT_CARDS,
-  CHARACTER_FIT_MARKER,
   WHITE_WHALE_SUPPORTING_COPY,
   BLUEPRINT_FOOTER_PRIMARY,
   BLUEPRINT_FOOTER_SECONDARY,
@@ -212,19 +210,6 @@ export function BlueprintPdfDocument({
             </View>
           </>
         ) : null}
-
-        {/* 05 -- Character Profile & Future Fit */}
-        <Text style={styles.sectionTitle}>5 · Character Profile & Future Fit</Text>
-        <Text style={styles.sectionSubtitle}>{SECTION_SUBTITLE.characterFit}</Text>
-        <View style={styles.grid4}>
-          {CHARACTER_FIT_CARDS.map((c) => (
-            <View key={c.title} style={styles.gridCard4}>
-              <Text style={{ ...styles.label, color: ACCENT }}>{c.title}</Text>
-              <Text style={styles.value}>{c.body}</Text>
-            </View>
-          ))}
-        </View>
-        <Text style={{ ...styles.label, marginTop: 6 }}>{CHARACTER_FIT_MARKER}</Text>
 
         <Text style={styles.footer}>
           {BLUEPRINT_FOOTER_PRIMARY}

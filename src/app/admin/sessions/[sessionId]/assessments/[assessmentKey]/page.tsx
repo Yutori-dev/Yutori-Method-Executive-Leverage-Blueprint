@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DASHBOARD_ASSESSMENTS, getDashboardData, getSessionName } from "@/lib/data/assessmentDashboards";
 import {
   describeAnswer,
+  eaBufferStats,
   eaExperienceStats,
   fmtPct,
   leverageStats,
@@ -11,6 +12,8 @@ import {
 import type { StructuredAssessmentConfig } from "@/lib/structuredAssessmentSchema";
 import type { ThinkingTrapsConfig } from "@/lib/thinkingTrapsSchema";
 import type { LeverageAuditConfig } from "@/lib/leverageAuditSchema";
+import type { EaBufferConfig } from "@/lib/eaBufferSchema";
+import { LiveRosterRefresher } from "@/components/admin/LiveRosterRefresher";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { CompletionBlock, StatBars } from "@/components/admin/StatBars";
@@ -172,6 +175,75 @@ export default async function AssessmentDashboardPage({
             </tbody>
           </table>
         </Card>
+      </>
+    );
+  } else if (assessmentKey === "ea_buffer_assessment") {
+    // Spec section 9: one page, three sections, simple tables and percentages.
+    const config = data.config as unknown as EaBufferConfig;
+    const s = eaBufferStats(config, data.rows);
+    const d = config.dashboard;
+    body = (
+      <>
+        <LiveRosterRefresher sessionId={sessionId} />
+        <p className="text-sm text-(--color-ink)">
+          <span className="font-serif text-xl">{s.eligibleCount}</span> {d.completedSuffix}.
+        </p>
+        {s.eligibleCount === 0 ? (
+          <Card>
+            <p className="text-sm text-(--color-ink-muted)">{d.waiting}</p>
+          </Card>
+        ) : (
+          <>
+            <Card>
+              <h2 className="font-serif text-lg">{d.sectionA.heading}</h2>
+              <p className="mt-1 text-xs text-(--color-ink-muted)">{d.sectionA.supporting}</p>
+              <ul className="mt-4 space-y-3">
+                {s.functions.map((f) => (
+                  <li key={f.id}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="text-(--color-ink)">{f.name}</span>
+                      <span className="text-(--color-ink-muted)">{f.average.toFixed(1)}</span>
+                    </div>
+                    <div className="mt-1 h-2 rounded-full bg-(--color-hairline)">
+                      <div className="h-2 rounded-full bg-(--color-accent)" style={{ width: `${Math.min(100, Math.max(0, (f.average / 4) * 100))}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 space-y-1 border-t border-(--color-hairline) pt-3 text-sm">
+                <p><span className="font-medium">Strongest Function:</span> {s.strongestFunction}</p>
+                <p><span className="font-medium">Greatest Opportunity:</span> {s.greatestOpportunity}</p>
+              </div>
+            </Card>
+            {([
+              { copy: d.sectionB, rows: s.topEaLed, column: "EA-Led Ownership" },
+              { copy: d.sectionC, rows: s.topExecutiveInvolved, column: "Executive-Involved" },
+            ] as const).map((t) => (
+              <Card key={t.copy.heading} className="overflow-x-auto">
+                <h2 className="font-serif text-lg">{t.copy.heading}</h2>
+                <p className="mt-1 text-xs text-(--color-ink-muted)">{t.copy.supporting}</p>
+                <table className="mt-3 w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-(--color-hairline) text-xs text-(--color-ink-muted)">
+                      <th className="pb-2 pr-3 font-medium">Responsibility</th>
+                      <th className="pb-2 pr-3 font-medium">Buffer Function</th>
+                      <th className="pb-2 font-medium">{t.column}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {t.rows.map((r) => (
+                      <tr key={r.id} className="border-b border-(--color-hairline)/60">
+                        <td className="py-2 pr-3 text-(--color-ink)">{r.name}</td>
+                        <td className="py-2 pr-3">{r.functionName}</td>
+                        <td className="py-2">{fmtPct(r.pct)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+            ))}
+          </>
+        )}
       </>
     );
   } else {

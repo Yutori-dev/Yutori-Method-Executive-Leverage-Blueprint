@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { deriveModuleState, ALWAYS_UNLOCKED_MODULE_KEYS, type ModuleDisplayState } from "@/lib/moduleState";
+import { orderModulesForSession } from "@/lib/moduleOrder";
 import { resolveParticipantRole, moduleVisibleToRole } from "@/lib/participantRole";
 import type { ModuleStatus } from "@/types/database";
 
@@ -57,7 +58,7 @@ export async function getParticipantDashboard(
       supabase
         .from("sessions")
         .select(
-          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys, skip_delegation_beliefs, show_modules_to_everyone",
+          "id, name, organization, status, active_module_id, workshop_feedback_released, blueprint_revealed, disabled_module_keys, skip_delegation_beliefs, show_modules_to_everyone, module_order",
         )
         .eq("id", sessionId)
         .maybeSingle(),
@@ -109,7 +110,7 @@ export async function getParticipantDashboard(
   const role = resolveParticipantRole(roleHints?.[0]);
   // A single-audience session can switch the role filter off entirely, so
   // everyone sees exactly the modules ticked for it.
-  const enabledModules = modules.filter(
+  const enabledModules = orderModulesForSession(modules, session.module_order).filter(
     (m) => !disabledKeys.has(m.key) && (session.show_modules_to_everyone || moduleVisibleToRole(m.audience, role)),
   );
 

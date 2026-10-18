@@ -34,6 +34,9 @@ export interface ArtifactDoc {
 }
 
 export const ARTIFACT_ASSESSMENT_KEYS = [
+  // The Executive Leverage Profile comes from the diagnostic (not a structured
+  // assessment); it is built by buildProfileArtifactDoc below.
+  "executive_leverage_profile",
   "thinking_traps",
   "ea_leverage_audit_visionary",
   "ea_leverage_audit_ea",
@@ -41,6 +44,7 @@ export const ARTIFACT_ASSESSMENT_KEYS = [
   "start_stop_shift_integrator",
   "high_leverage_handoff",
   "leverage_expansion_plan",
+  "ea_buffer_assessment",
 ] as const;
 
 type Obj = Record<string, unknown>;
@@ -54,6 +58,42 @@ export interface ArtifactSource {
   config: Obj;
   answers: Obj;
   derived: Obj | null;
+}
+
+/** The saved Executive Leverage Profile as a persistent artifact: the same
+ * summary, strongest constraints and grouped response cards as the results
+ * page, rebuilt from the saved answers so it never depends on the session
+ * staying open. */
+export function buildProfileArtifactDoc(profile: {
+  profileLabel: string;
+  profileDescription: string | null;
+  strongestConstraints: { label: string; interpretation: string }[];
+  cards: { title: string; answer: string; level: "very_high" | "high" | "moderate" }[];
+}): ArtifactDoc {
+  const labels = { very_high: "Very high constraint", high: "High constraint", moderate: "Moderate constraint" } as const;
+  const groups: ArtifactGroup[] = (Object.keys(labels) as (keyof typeof labels)[])
+    .map((level) => ({
+      label: labels[level],
+      lines: profile.cards.filter((c) => c.level === level).map((c) => ({ text: c.title, sub: c.answer })),
+    }))
+    .filter((g) => g.lines.length > 0);
+  return {
+    key: "executive_leverage_profile",
+    title: "Your Executive Leverage Profile",
+    sections: [
+      {
+        heading: profile.profileLabel,
+        intro: profile.profileDescription ?? undefined,
+        groups:
+          profile.strongestConstraints.length > 0
+            ? [{ label: "Strongest Leverage Constraints", lines: profile.strongestConstraints.map((c) => ({ text: c.label, sub: c.interpretation })) }]
+            : [],
+      },
+      groups.length > 0
+        ? { heading: "Leverage constraints", groups, closing: ["Only moderate, high and very high constraints are shown."] }
+        : { heading: "Leverage constraints", intro: "None of your responses fall in the moderate, high or very high constraint range.", groups: [] },
+    ],
+  };
 }
 
 export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
@@ -142,6 +182,45 @@ export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
     return { key: s.assessmentKey, title: str(cfg.resultHeading), sections };
   }
 
+  if (s.assessmentKey === "ea_buffer_assessment") {
+    const results = isObj(cfg.results) ? cfg.results : {};
+    if (s.derived?.noCurrentEa === true || a.noCurrentEa === true) {
+      return { key: s.assessmentKey, title: str(results.title), sections: [{ intro: str(cfg.exitMessage), groups: [] }] };
+    }
+    const fns = arr(s.derived?.functions).filter(isObj);
+    const labels = isObj(cfg.classificationLabels) ? cfg.classificationLabels : {};
+    const interpretations = isObj(results.interpretations) ? results.interpretations : {};
+    const headings = isObj(results.headings) ? results.headings : {};
+    const text = (id: string) => {
+      const f = fns.find((x) => str(x.id) === id);
+      const byFn = isObj(interpretations[id]) ? (interpretations[id] as Obj) : {};
+      return f ? str(byFn[str(f.classification)]) : "";
+    };
+    const list = (ids: unknown): ArtifactGroup => ({ lines: arr(ids).map(str).map((id) => line(text(id))) });
+    const sections: ArtifactSection[] = [
+      {
+        intro: str(results.intro),
+        groups: [
+          {
+            label: str(results.subtitle),
+            lines: arr(cfg.functions).filter(isObj).map((fn) => {
+              const f = fns.find((x) => str(x.id) === str(fn.id));
+              return { text: str(fn.name), sub: f ? str(labels[str(f.classification)]) : "" };
+            }),
+          },
+        ],
+      },
+      { heading: str(headings.strongest), groups: [list(s.derived?.strongestIds)] },
+      { heading: str(headings.needs), groups: [list(s.derived?.needsIds)] },
+      {
+        heading: str(headings.opportunity),
+        intro: s.derived?.allStrong === true ? str(results.allStrongFraming) : undefined,
+        groups: [list(s.derived?.opportunityIds)],
+      },
+    ];
+    return { key: s.assessmentKey, title: str(results.title), sections };
+  }
+
   if (s.assessmentKey === "start_stop_shift" || s.assessmentKey === "start_stop_shift_integrator") {
     const review = isObj(cfg.review) ? cfg.review : {};
     const groups = arr(cfg.categories)
@@ -152,7 +231,8 @@ export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
 
   if (s.assessmentKey === "high_leverage_handoff" || s.assessmentKey === "leverage_expansion_plan") {
     const review = isObj(cfg.review) ? cfg.review : {};
-    const stick = isObj(review.stick) ? review.stick : { label: "Thinking Trap to Watch", field: "trap" };
+    // `null` = this version has no "stick" line (the Handoff dropped its Thinking Trap question).
+    const stick = review.stick === null ? null : isObj(review.stick) ? review.stick : { label: "Thinking Trap to Watch", field: "trap" };
     const mechanisms = [...arr(a.mechanisms).map(str), ...(str(a.mechanismOther).trim() ? [`Other: ${str(a.mechanismOther).trim()}`] : [])];
     const one = (label: string | undefined, text: unknown): ArtifactGroup => ({ label, lines: [line(text)] });
     return {
@@ -165,7 +245,7 @@ export function buildArtifactDoc(s: ArtifactSource): ArtifactDoc | null {
         {
           heading: "Make It Stick",
           groups: [
-            one(str(stick.label), a[str(stick.field)]),
+            ...(stick ? [one(str(stick.label), a[str(stick.field)])] : []),
             { label: "My Commitment", lines: arr(a.commitments).map(line) },
             { label: "Supporting Mechanism", lines: mechanisms.map(line) },
           ],

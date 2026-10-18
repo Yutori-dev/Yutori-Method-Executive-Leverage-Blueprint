@@ -25,6 +25,8 @@ import { DelegationFlow } from "@/components/participant/DelegationFlow";
 import { ArchitectureFlow } from "@/components/participant/ArchitectureFlow";
 import { ExecutiveSupportAuditFlow } from "@/components/participant/ExecutiveSupportAuditFlow";
 import { OperatingAltitudeFlow } from "@/components/participant/OperatingAltitudeFlow";
+import { WhiteWhaleFlow } from "@/components/participant/WhiteWhaleFlow";
+import { LeadershipWiringFlow } from "@/components/participant/LeadershipWiringFlow";
 import { SuccessFlow } from "@/components/participant/SuccessFlow";
 import { StructuredAssessmentFlow } from "@/components/participant/StructuredAssessmentFlow";
 import { ThinkingTrapsResults } from "@/components/participant/ThinkingTrapsResults";
@@ -32,6 +34,9 @@ import { StartStopShiftFlow } from "@/components/participant/StartStopShiftFlow"
 import type { StartStopShiftAnswers, StartStopShiftConfig } from "@/lib/startStopShiftSchema";
 import { HandoffFlow } from "@/components/participant/HandoffFlow";
 import type { HandoffAnswers, HandoffConfig } from "@/lib/handoffSchema";
+import { EaBufferFlow } from "@/components/participant/EaBufferFlow";
+import { EaBufferResults } from "@/components/participant/EaBufferResults";
+import type { EaBufferAnswers, EaBufferConfig, EaBufferDerived } from "@/lib/eaBufferSchema";
 import { LeverageAuditFlow } from "@/components/participant/LeverageAuditFlow";
 import { LeverageAuditResults } from "@/components/participant/LeverageAuditResults";
 import type { LeverageAuditAnswers, LeverageAuditConfig, LeverageAuditDerived } from "@/lib/leverageAuditSchema";
@@ -194,6 +199,38 @@ export default async function ModulePage({
         alreadyComplete={alreadyComplete}
       />
     );
+  } else if (moduleKey === "ea_buffer_assessment") {
+    const structured = await getStructuredAssessment("ea_buffer_assessment", dashboard.participantSessionId);
+    content = structured ? (
+      <EaBufferFlow
+        assessmentId={structured.assessmentId}
+        versionId={structured.versionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        config={structured.config as unknown as EaBufferConfig}
+        initialAnswers={structured.answers as unknown as EaBufferAnswers}
+        alreadyComplete={alreadyComplete}
+        participantSessionId={dashboard.participantSessionId}
+        sessionPath={sessionPath}
+        resultsView={
+          alreadyComplete ? (
+            <EaBufferResults
+              config={structured.config as unknown as EaBufferConfig}
+              derived={structured.derived as unknown as EaBufferDerived}
+            />
+          ) : undefined
+        }
+      />
+    ) : (
+      <GenericPlaceholderModule
+        moduleName={currentModule.name}
+        participantSessionId={dashboard.participantSessionId}
+        moduleId={currentModule.id}
+        moduleKey={currentModule.key}
+        sessionPath={sessionPath}
+        alreadyComplete={alreadyComplete}
+      />
+    );
   } else if (moduleKey === "high_leverage_handoff" || moduleKey === "leverage_expansion_plan") {
     // The Leverage Expansion Plan is the integrator counterpart: it draws on
     // the integrator's Start-Stop-Shift and has no Thinking Trap step.
@@ -246,22 +283,40 @@ export default async function ModulePage({
       />
     );
   } else if (moduleKey === "operating_altitude") {
-    const [diagnostic, operatingAltitudeData] = await Promise.all([
-      getExecutiveLeverageDiagnosticData(dashboard.participantSessionId),
-      getOperatingAltitudeData(sessionId, dashboard.participantSessionId),
-    ]);
+    const diagnostic = await getExecutiveLeverageDiagnosticData(dashboard.participantSessionId);
     content = (
       <OperatingAltitudeFlow
         diagnosticAssessment={diagnostic.assessment}
         diagnosticResult={diagnostic.result}
-        data={operatingAltitudeData}
         participantSessionId={dashboard.participantSessionId}
         moduleId={currentModule.id}
-        sessionId={sessionId}
         sessionPath={sessionPath}
         alreadyComplete={alreadyComplete}
       />
     );
+  } else if (moduleKey === "white_whale" || moduleKey === "leadership_wiring") {
+    // Standalone modules (no dependency on the diagnostic or its results).
+    const altitude = await getOperatingAltitudeData(sessionId, dashboard.participantSessionId);
+    content =
+      moduleKey === "white_whale" ? (
+        <WhiteWhaleFlow
+          config={altitude.whiteWhaleConfig}
+          initialValue={altitude.whiteWhale}
+          participantSessionId={dashboard.participantSessionId}
+          moduleId={currentModule.id}
+          sessionPath={sessionPath}
+          alreadyComplete={alreadyComplete}
+        />
+      ) : (
+        <LeadershipWiringFlow
+          config={altitude.leadershipWiringConfig}
+          initialSelection={altitude.selfIdentification}
+          participantSessionId={dashboard.participantSessionId}
+          moduleId={currentModule.id}
+          sessionPath={sessionPath}
+          alreadyComplete={alreadyComplete}
+        />
+      );
   } else if (moduleKey === "success") {
     const successData = await getSuccessVisionData(dashboard.participantSessionId);
     content = (

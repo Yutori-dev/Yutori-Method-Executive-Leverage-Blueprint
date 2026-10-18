@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { AssessmentForm } from "./AssessmentForm";
+import { ExecutiveLeverageProfileView } from "./ExecutiveLeverageProfileView";
 import { calculateExecutiveLeverageDiagnostic } from "@/lib/actions/executiveLeverageDiagnostic";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +12,13 @@ import type { ExecutiveLeverageProfileResult } from "@/lib/data/executiveLeverag
 /** Executive Leverage Diagnostic (TM) -- Developer Implementation
  * Specification V1. Mirrors DelegationFlow's "assessment -> calculate ->
  * show interpreted result" shape. Never renders a score or percentage
- * anywhere -- the action this calls is incapable of returning one. */
+ * anywhere -- the action this calls is incapable of returning one.
+ *
+ * Once a result exists (just submitted, or saved from an earlier visit) the
+ * questionnaire is replaced by the "Your Executive Leverage Profile" page;
+ * an incomplete diagnostic keeps the questionnaire and its resume behavior.
+ * If saving fails the answers stay on screen and Submit can simply be
+ * pressed again -- a result that was not saved is never shown. */
 export function ExecutiveLeverageDiagnosticFlow({
   assessment,
   result,
@@ -37,19 +44,24 @@ export function ExecutiveLeverageDiagnosticFlow({
   function handleCalculate() {
     setErrorMessage(null);
     startTransition(async () => {
-      const outcome = await calculateExecutiveLeverageDiagnostic({ participantSessionId, sessionPath });
+      const outcome = await calculateExecutiveLeverageDiagnostic({ participantSessionId, sessionPath, moduleId });
       if (!outcome.ok) {
-        setErrorMessage(outcome.message);
+        setErrorMessage(`We couldn't save your answers (${outcome.message}). Your answers are still here -- please try submitting again.`);
         return;
       }
       const next: ExecutiveLeverageProfileResult = {
         profileLabel: outcome.profileLabel ?? "",
         profileDescription: outcome.profileDescription,
         strongestConstraints: outcome.strongestConstraints,
+        cards: outcome.cards,
       };
       setProfileResult(next);
       onResultChange(next);
     });
+  }
+
+  if (profileResult) {
+    return <ExecutiveLeverageProfileView result={profileResult} />;
   }
 
   return (
@@ -82,37 +94,9 @@ export function ExecutiveLeverageDiagnosticFlow({
 
       {requiredAnswered ? (
         <section>
-          <h2 className="font-serif text-xl">Your Executive Leverage Profile</h2>
-          <div className="mt-4">
-            {profileResult ? (
-              <Card>
-                <p className="font-serif text-lg text-(--color-ink)">{profileResult.profileLabel}</p>
-                {profileResult.profileDescription ? (
-                  <p className="mt-2 text-sm text-(--color-ink-muted)">
-                    {profileResult.profileDescription}
-                  </p>
-                ) : null}
-
-                {profileResult.strongestConstraints.length > 0 ? (
-                  <div className="mt-6 space-y-4 border-t border-(--color-hairline) pt-4">
-                    <p className="text-xs tracking-wide text-(--color-ink-muted) uppercase">
-                      Strongest Leverage Constraints
-                    </p>
-                    {profileResult.strongestConstraints.map((c) => (
-                      <div key={c.label}>
-                        <p className="text-sm font-medium text-(--color-ink)">{c.label}</p>
-                        <p className="mt-1 text-sm text-(--color-ink-muted)">{c.interpretation}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </Card>
-            ) : (
-              <Button onClick={handleCalculate} disabled={isPending}>
-                {isPending ? "Calculating..." : "Submit"}
-              </Button>
-            )}
-          </div>
+          <Button onClick={handleCalculate} disabled={isPending}>
+            {isPending ? "Calculating..." : "Submit"}
+          </Button>
         </section>
       ) : null}
 

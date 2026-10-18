@@ -1,5 +1,6 @@
 import { scoreThinkingTraps, type ThinkingTrapsConfig } from "@/lib/thinkingTrapsSchema";
 import { auditRules, type AuditRules, type LeverageAuditAnswers, type LeverageAuditConfig } from "@/lib/leverageAuditSchema";
+import { scoreEaBuffer, bufferRules, type EaBufferAnswers, type EaBufferConfig } from "@/lib/eaBufferSchema";
 import type { StructuredAssessmentConfig, StructuredQuestion } from "@/lib/structuredAssessmentSchema";
 import type { Json } from "@/types/database";
 
@@ -366,4 +367,64 @@ export function cohortComparison(config: LeverageAuditConfig, dyads: Dyad[]): Co
       avgEa: avg((x) => x.eaCurrent),
     };
   });
+}
+
+/* ------------------------------ EA Buffer ------------------------------- */
+
+export interface EaBufferStats {
+  /** Completed assessments from participants who currently have an EA. */
+  eligibleCount: number;
+  /** Fixed function order (Capture ... Escalate); average on the 0-4 scale. */
+  functions: { id: string; name: string; average: number }[];
+  /** Highest / lowest cohort average; ties go to the fixed function order. */
+  strongestFunction: string | null;
+  greatestOpportunity: string | null;
+  /** Top responsibilities by share of participants answering 3-4 / 0-2. */
+  topEaLed: { id: string; name: string; functionName: string; pct: number }[];
+  topExecutiveInvolved: { id: string; name: string; functionName: string; pct: number }[];
+}
+
+/** Spec section 9: simple tables and percentages, no narrative. Only
+ * completed submissions from participants with an EA count. Ranking uses the
+ * unrounded figures (counts share one denominator, so comparing counts is the
+ * same thing without float noise); ties fall back to question order. */
+export function eaBufferStats(config: EaBufferConfig, rows: SubmissionRow[]): EaBufferStats {
+  const rules = bufferRules(config);
+  const eligible = rows.filter((r) => r.status === "complete" && (r.answers as unknown as EaBufferAnswers).noCurrentEa !== true);
+  const n = eligible.length;
+  const scored = eligible.map((r) => scoreEaBuffer(config, r.answers as unknown as EaBufferAnswers));
+
+  const sums = config.functions.map((fn) => scored.reduce((t, d) => t + (d.functions.find((f) => f.id === fn.id)?.average ?? 0), 0));
+  const functions = config.functions.map((fn, i) => ({ id: fn.id, name: fn.name, average: n > 0 ? sums[i] / n : 0 }));
+  const order = (cmp: (a: number, b: number) => number) =>
+    sums.map((sum, i) => ({ sum, i })).sort((a, b) => cmp(a.sum, b.sum) || a.i - b.i)[0]?.i;
+  const strongestIdx = n > 0 ? order((a, b) => b - a) : undefined;
+  const lowestIdx = n > 0 ? order((a, b) => a - b) : undefined;
+
+  const items = config.functions.flatMap((fn) => fn.responsibilities.map((r) => ({ r, fn })));
+  const counts = items.map(({ r, fn }, position) => {
+    let ea = 0;
+    let exec = 0;
+    for (const row of eligible) {
+      const v = (row.answers as unknown as EaBufferAnswers).ownership?.[r.id];
+      if (typeof v !== "number") continue;
+      if (v >= 3) ea += 1;
+      else exec += 1;
+    }
+    return { id: r.id, name: r.name, functionName: fn.name, ea, exec, position };
+  });
+  const top = (key: "ea" | "exec") =>
+    [...counts]
+      .sort((a, b) => b[key] - a[key] || a.position - b.position)
+      .slice(0, rules.topN)
+      .map((c) => ({ id: c.id, name: c.name, functionName: c.functionName, pct: pct(c[key], n) }));
+
+  return {
+    eligibleCount: n,
+    functions,
+    strongestFunction: strongestIdx === undefined ? null : config.functions[strongestIdx].name,
+    greatestOpportunity: lowestIdx === undefined ? null : config.functions[lowestIdx].name,
+    topEaLed: n > 0 ? top("ea") : [],
+    topExecutiveInvolved: n > 0 ? top("exec") : [],
+  };
 }

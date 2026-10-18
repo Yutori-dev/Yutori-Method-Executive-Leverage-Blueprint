@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createSession, updateSession } from "@/lib/actions/admin";
 import { Button } from "@/components/ui/Button";
+import { architectureOrderWarnings, orderModulesForSession } from "@/lib/moduleOrder";
 import type { SessionFormat } from "@/types/database";
 
 export function SessionForm({
@@ -22,6 +23,8 @@ export function SessionForm({
     disabledModuleKeys?: string[];
     skipDelegationBeliefs?: boolean;
     showModulesToEveryone?: boolean;
+    /** The session's own module order (edit mode); absent = global order. */
+    moduleOrder?: string[] | null;
   };
   /** Toggleable modules for this session -- requires_live_workshop modules
    * are never included, that gating is separate from this per-session
@@ -42,6 +45,33 @@ export function SessionForm({
     initial?.skipDelegationBeliefs ?? false,
   );
   const [showToEveryone, setShowToEveryone] = useState(initial?.showModulesToEveryone ?? true);
+  // The order modules run in. New sessions can reorder it here (the order is
+  // saved with the session); existing sessions show their current order.
+  const [order, setOrder] = useState<string[]>(() =>
+    orderModulesForSession(
+      availableModules.map((m, i) => ({ ...m, sort_order: i })),
+      initial?.moduleOrder,
+    ).map((m) => m.key),
+  );
+  const orderedModules = order
+    .map((key) => availableModules.find((m) => m.key === key))
+    .filter((m): m is (typeof availableModules)[number] => !!m);
+  const canReorder = mode === "create";
+  const warnings = architectureOrderWarnings(
+    order,
+    new Set(availableModules.filter((m) => !disabledKeys.has(m.key)).map((m) => m.key)),
+  );
+
+  function moveModule(key: string, direction: -1 | 1) {
+    setOrder((prev) => {
+      const i = prev.indexOf(key);
+      const j = i + direction;
+      if (i === -1 || j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  }
 
   function toggleModule(key: string) {
     setDisabledKeys((prev) => {
@@ -59,7 +89,7 @@ export function SessionForm({
     startTransition(async () => {
       try {
         if (mode === "create") {
-          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone });
+          const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone, moduleOrder: order });
           router.push(`/admin/sessions/${newId}`);
         } else if (sessionId) {
           await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone });
@@ -130,13 +160,15 @@ export function SessionForm({
         <p className="text-xs font-medium text-(--color-ink-muted)">Modules for this session</p>
         <p className="mt-1 text-xs text-(--color-ink-muted)">
           Check the modules this session runs, uncheck any to skip it -- this session only, other
-          sessions are unaffected. The newer modules start unchecked.
+          sessions are unaffected.{canReorder ? " Use the arrows to set the order participants complete them in." : ""} The newer modules start unchecked.
           Architecture&apos;s recommendation is calculated from Delegation and Investment, so
           disabling either of those leaves Architecture with nothing to work from.
         </p>
-        <div className="mt-2 space-y-1.5">
-          {availableModules.map((m) => (
-            <label key={m.key} className="flex items-center gap-2 text-sm text-(--color-ink)">
+        <ol className="mt-2 space-y-1.5">
+          {orderedModules.map((m, index) => (
+            <li key={m.key} className="flex items-center gap-2 text-sm text-(--color-ink)">
+              <span className="w-5 text-right text-xs text-(--color-ink-muted)">{index + 1}.</span>
+              <label className="flex flex-1 items-center gap-2">
               <input
                 type="checkbox"
                 checked={!disabledKeys.has(m.key)}
@@ -149,9 +181,39 @@ export function SessionForm({
               ) : m.audience === "visionary" ? (
                 <span className="text-xs text-(--color-ink-muted)">(visionaries only)</span>
               ) : null}
-            </label>
+              </label>
+              {canReorder ? (
+                <span className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveModule(m.key, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move ${m.name} up`}
+                    className="rounded border border-(--color-hairline) px-2 py-0.5 text-xs disabled:opacity-30"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveModule(m.key, 1)}
+                    disabled={index === orderedModules.length - 1}
+                    aria-label={`Move ${m.name} down`}
+                    className="rounded border border-(--color-hairline) px-2 py-0.5 text-xs disabled:opacity-30"
+                  >
+                    ↓
+                  </button>
+                </span>
+              ) : null}
+            </li>
           ))}
-        </div>
+        </ol>
+        {warnings.length > 0 ? (
+          <div className="mt-3 rounded-lg border border-[#c0661c] bg-[#fbeee0] px-3 py-2 text-xs text-(--color-ink)" role="status">
+            {warnings.map((w) => (
+              <p key={w}>{w}</p>
+            ))}
+          </div>
+        ) : null}
 
         <label className="mt-3 flex items-start gap-2 border-t border-(--color-hairline) pt-3 text-sm text-(--color-ink)">
           <input

@@ -9,6 +9,8 @@ export interface HandoffStep {
   helper: string[];
   example?: string;
   options?: string[];
+  /** Adds an exclusive "none" checkbox to a multi-select step (e.g. "None of the above"). */
+  noneOption?: string;
   cta?: string;
 }
 
@@ -17,8 +19,10 @@ export interface HandoffConfig {
   steps: HandoffStep[];
   /** `stick` names the "Make It Stick" answer shown first on the artifact:
    * the Handoff shows the Thinking Trap, the Leverage Expansion Plan shows the
-   * Integrator Edge. Absent means the Handoff's original Thinking Trap. */
-  review: { title: string; closing: string[]; stick?: { label: string; field: string } };
+   * Integrator Edge. Absent means the Handoff's original Thinking Trap;
+   * `null` means the artifact has no such line (the Handoff dropped its
+   * Thinking Trap question). */
+  review: { title: string; closing: string[]; stick?: { label: string; field: string } | null };
 }
 
 export const DEFAULT_STICK = { label: "Thinking Trap to Watch", field: "trap" } as const;
@@ -60,4 +64,12 @@ export function isHandoffStepAnswered(step: HandoffStep, answers: HandoffAnswers
 export function firstUnansweredHandoffStep(config: HandoffConfig, answers: HandoffAnswers): number {
   const i = config.steps.findIndex((s) => !isHandoffStepAnswered(s, answers));
   return i === -1 ? config.steps.length : i;
+}
+
+/** Multi-select toggle with an exclusive "none" choice: picking the none
+ * option clears every other tick, and ticking anything else clears it. */
+export function toggleHandoffChoice(current: string[], value: string, noneOption?: string): string[] {
+  if (current.includes(value)) return current.filter((v) => v !== value);
+  if (noneOption && value === noneOption) return [value];
+  return [...current.filter((v) => v !== noneOption), value];
 }

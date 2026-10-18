@@ -80,9 +80,6 @@ export interface BlueprintData {
   highestValueFocus: { investmentPct: number; items: { responsibilityId: string; label: string; blueprintDescription: string | null }[] };
   followUpRequested: boolean;
   reflections: { whiteWhale: string | null; successVision: string | null; successVisionFollowup: string | null };
-  /** Section 05 -- always "PREVIEW" for the current virtual product; models
-   * the future live-workshop-completed state without requiring it now. */
-  characterFitStatus: "PREVIEW" | "COMPLETE";
 }
 
 /**
@@ -292,6 +289,5 @@ export async function getBlueprintData(
       successVision: reflectionRow?.success_vision ?? null,
       successVisionFollowup: reflectionRow?.success_vision_white_whale_followup ?? null,
     },
-    characterFitStatus: "PREVIEW",
   };
 }

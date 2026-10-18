@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ALWAYS_UNLOCKED_MODULE_KEYS } from "@/lib/moduleState";
+import { orderModulesForSession } from "@/lib/moduleOrder";
 import type { SessionFormat, SessionStatus, FollowUpStatus } from "@/types/database";
 
 function slugifyJoinCode(name: string) {
@@ -23,6 +24,8 @@ export async function createSession(input: {
   disabledModuleKeys?: string[];
   skipDelegationBeliefs?: boolean;
   showModulesToEveryone?: boolean;
+  /** Module keys in the order participants complete them. */
+  moduleOrder?: string[];
 }) {
   const supabase = await createServerSupabaseClient();
 
@@ -39,14 +42,14 @@ export async function createSession(input: {
   // doesn't open on a module that isn't running.
   const { data: firstModule } = await supabase
     .from("modules")
-    .select("id, key")
+    .select("id, key, sort_order")
     .eq("active", true)
     .eq("requires_live_workshop", false)
     .order("sort_order", { ascending: true });
   // The EA Experience Assessment is always open to participants on its own
   // (never cohort-unlocked), so it must not take the "module 1 auto-unlocks"
   // slot -- that stays with the first real workshop module.
-  const firstEnabledModule = (firstModule ?? []).find(
+  const firstEnabledModule = orderModulesForSession(firstModule ?? [], input.moduleOrder).find(
     (m) => !disabledModuleKeys.includes(m.key) && !ALWAYS_UNLOCKED_MODULE_KEYS.has(m.key),
   );
 
@@ -64,6 +67,7 @@ export async function createSession(input: {
       disabled_module_keys: disabledModuleKeys,
       skip_delegation_beliefs: input.skipDelegationBeliefs ?? false,
       show_modules_to_everyone: input.showModulesToEveryone ?? false,
+      module_order: input.moduleOrder && input.moduleOrder.length > 0 ? input.moduleOrder : null,
     })
     .select("id")
     .single();
@@ -173,20 +177,6 @@ export async function revealPriorityLeverage(sessionId: string) {
 export async function revealZoneOfInvestment(sessionId: string) {
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.rpc("admin_reveal_zone_of_investment", { p_session_id: sessionId });
-  if (error) throw new Error(error.message);
-  revalidatePath(`/admin/sessions/${sessionId}`);
-}
-
-export async function unlockWhiteWhale(sessionId: string) {
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.rpc("admin_unlock_white_whale", { p_session_id: sessionId });
-  if (error) throw new Error(error.message);
-  revalidatePath(`/admin/sessions/${sessionId}`);
-}
-
-export async function unlockLeadershipWiring(sessionId: string) {
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.rpc("admin_unlock_leadership_wiring", { p_session_id: sessionId });
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/sessions/${sessionId}`);
 }

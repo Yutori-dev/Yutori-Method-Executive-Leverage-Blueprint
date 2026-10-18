@@ -369,31 +369,10 @@ export function summaryLevelDisplay(level: LeverageLevel): string {
 }
 
 // ---------------------------------------------------------------------------
-// Section 04 / 05 / footer -- fixed copy
+// Section 04 / footer -- fixed copy
 // ---------------------------------------------------------------------------
 
 export const WHITE_WHALE_SUPPORTING_COPY = "This meaningful ambition has remained on the horizon longer than it should have.";
-
-export const CHARACTER_FIT_CARDS: { title: string; body: string }[] = [
-  {
-    title: "DEEPER CHARACTER PROFILE",
-    body: "Understand the patterns and preferences that shape how you lead and work with others.",
-  },
-  {
-    title: "COMPLEMENT & COUNTERBALANCE",
-    body: "Identify where similarity supports alignment and where opposite strengths create leverage.",
-  },
-  {
-    title: "ROLE DESIGN & FIT",
-    body: "Define the right scope, authority and expectations for the leverage you need.",
-  },
-  {
-    title: "THE RIGHT PERSON",
-    body: "Find and engage the person who can create the leverage this architecture requires.",
-  },
-];
-
-export const CHARACTER_FIT_MARKER = "TO BE COMPLETED IN THE IN-PERSON WORKSHOP";
 
 export const BLUEPRINT_FOOTER_PRIMARY = "DEFINE THE OWNERSHIP BEFORE YOU DEFINE THE ROLE.";
 export const BLUEPRINT_FOOTER_SECONDARY = "RIGHT OWNERSHIP. RIGHT SUPPORT. MAXIMUM LEVERAGE.";
@@ -405,5 +384,4 @@ export const SECTION_SUBTITLE = {
   ownershipToTransfer: "The three opportunities with the greatest potential to create near-term capacity.",
   officeOfTheCeo: "The structure to unlock leverage.",
   whatThisMakesPossible: "The impact of leverage in your life.",
-  characterFit: "The next step: your ideal right-hand role.",
 } as const;
