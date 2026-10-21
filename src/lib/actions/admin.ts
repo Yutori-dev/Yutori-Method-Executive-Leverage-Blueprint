@@ -90,6 +90,7 @@ export async function updateSession(
     disabledModuleKeys?: string[];
     skipDelegationBeliefs?: boolean;
     showModulesToEveryone?: boolean;
+    moduleOrder?: string[];
   },
 ) {
   const supabase = await createServerSupabaseClient();
@@ -111,6 +112,9 @@ export async function updateSession(
         : {}),
       ...(input.showModulesToEveryone !== undefined
         ? { show_modules_to_everyone: input.showModulesToEveryone }
+        : {}),
+      ...(input.moduleOrder !== undefined
+        ? { module_order: input.moduleOrder.length > 0 ? input.moduleOrder : null }
         : {}),
     })
     .eq("id", sessionId);

@@ -52,13 +52,15 @@ export function EaBufferFlow({
     ownership: initialAnswers?.ownership ?? {},
     noCurrentEa: initialAnswers?.noCurrentEa,
   });
-  // Stages: 0 intro, 1 context, 2 scale intro, 3.. one per function.
+  // Stages: 1 context, 3.. one per function. (0 = intro and 2 = scale intro are
+  // no longer shown; the questions start straight away and each option already
+  // carries its ownership description.)
   const functionStages = config.functions.length;
   const lastStage = 2 + functionStages;
   const [stage, setStage] = useState<number>(() => {
     const a = initialAnswers ?? ({ context: {}, ownership: {} } as EaBufferAnswers);
     const hasAny = Object.keys(a.context ?? {}).length > 0 || Object.keys(a.ownership ?? {}).length > 0;
-    if (!hasAny) return 0;
+    if (!hasAny) return 1;
     const contextDone = config.contextQuestions.every((q) => a.context?.[q.id]);
     if (!contextDone) return 1;
     const firstOpen = config.functions.findIndex((fn) => fn.responsibilities.some((r) => typeof a.ownership?.[r.id] !== "number"));
@@ -148,14 +150,14 @@ export function EaBufferFlow({
       }
     }
     setShowMissing(false);
-    if (stage < lastStage) setStage(stage + 1);
+    if (stage < lastStage) setStage(stage === 1 ? 3 : stage + 1);
     else submit();
   }
 
   function goBack() {
     setError(null);
     setShowMissing(false);
-    setStage(Math.max(0, stage - 1));
+    setStage(stage <= 3 ? 1 : stage - 1);
   }
 
   if (result) {
@@ -191,8 +193,9 @@ export function EaBufferFlow({
   }
 
   const activeFunction = stage >= 3 ? config.functions[stage - 3] : null;
-  const totalSteps = lastStage; // intro isn't counted
-  const progress = stage === 0 ? 0 : Math.round((stage / totalSteps) * 100);
+  const totalSteps = lastStage - 1;
+  const stepNumber = stage === 1 ? 1 : stage - 1;
+  const progress = Math.round((stepNumber / totalSteps) * 100);
 
   return (
     <div className="space-y-6">
@@ -200,7 +203,7 @@ export function EaBufferFlow({
         <div>
           <div className="flex items-center justify-between text-xs text-(--color-ink-muted)">
             <span>
-              Step {stage} of {totalSteps}
+              Step {stepNumber} of {totalSteps}
             </span>
             <span>{saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : ""}</span>
           </div>
@@ -325,7 +328,7 @@ export function EaBufferFlow({
               Back
             </button>
             <Button onClick={goNext} disabled={isPending}>
-              {isPending ? "Submitting..." : stage === lastStage ? "Submit assessment" : stage === 2 ? config.scale.cta : "Continue"}
+              {isPending ? "Submitting..." : stage === lastStage ? "Submit assessment" : "Continue"}
             </Button>
           </div>
         </div>

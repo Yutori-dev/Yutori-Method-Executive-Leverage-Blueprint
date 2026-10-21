@@ -56,7 +56,13 @@ export function SessionForm({
   const orderedModules = order
     .map((key) => availableModules.find((m) => m.key === key))
     .filter((m): m is (typeof availableModules)[number] => !!m);
-  const canReorder = mode === "create";
+  const canReorder = true;
+  const initialOrderKey = orderModulesForSession(
+    availableModules.map((m, i) => ({ ...m, sort_order: i })),
+    initial?.moduleOrder,
+  )
+    .map((m) => m.key)
+    .join(",");
   const warnings = architectureOrderWarnings(
     order,
     new Set(availableModules.filter((m) => !disabledKeys.has(m.key)).map((m) => m.key)),
@@ -92,7 +98,7 @@ export function SessionForm({
           const newId = await createSession({ name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone, moduleOrder: order });
           router.push(`/admin/sessions/${newId}`);
         } else if (sessionId) {
-          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone });
+          await updateSession(sessionId, { name, organization, eventDate, format, disabledModuleKeys, skipDelegationBeliefs, showModulesToEveryone: showToEveryone, ...(order.join(",") !== initialOrderKey ? { moduleOrder: order } : {}) });
           router.push(`/admin/sessions/${sessionId}`);
         }
       } catch (error) {
@@ -160,7 +166,7 @@ export function SessionForm({
         <p className="text-xs font-medium text-(--color-ink-muted)">Modules for this session</p>
         <p className="mt-1 text-xs text-(--color-ink-muted)">
           Check the modules this session runs, uncheck any to skip it -- this session only, other
-          sessions are unaffected.{canReorder ? " Use the arrows to set the order participants complete them in." : ""} The newer modules start unchecked.
+          sessions are unaffected.{canReorder ? " Use the arrows to set the order participants complete them in." : ""} The newer modules start unchecked.{mode === "edit" ? " On a session that is already running, modules you place before the one currently open count as open for participants." : ""}
           Architecture&apos;s recommendation is calculated from Delegation and Investment, so
           disabling either of those leaves Architecture with nothing to work from.
         </p>
