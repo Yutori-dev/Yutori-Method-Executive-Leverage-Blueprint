@@ -15,6 +15,14 @@ const LEVEL_STYLE: Record<ConstraintLevel, { accent: string; tint: string }> = {
   moderate: { accent: "#b08a1f", tint: "#f8f1da" },
 };
 
+/** Overall result colour: green = high, orange = constrained, red = insufficient.
+ * The label itself is always shown in words as well. */
+const PROFILE_STYLE: Record<string, { accent: string; tint: string }> = {
+  "HIGH LEVERAGE": { accent: "#2f7d4f", tint: "#e7f3ec" },
+  "CONSTRAINED LEVERAGE": { accent: "#c0661c", tint: "#fbeee0" },
+  "INSUFFICIENT LEVERAGE": { accent: "#a3392b", tint: "#f8e9e5" },
+};
+
 /** Two columns on wide screens, one on mobile. The whole-person capacity card
  * (question 1) spans both columns at the start of its group, and a final
  * unpaired card spans both so no row is left half empty. */
@@ -39,12 +47,23 @@ export function ExecutiveLeverageProfileView({ result }: { result: ExecutiveLeve
     cards: result.cards.filter((c) => c.level === level),
   })).filter((g) => g.cards.length > 0);
 
+  const profileStyle = PROFILE_STYLE[result.profileLabel.trim().toUpperCase()] ?? null;
+
   return (
     <div className="space-y-8">
       <h2 className="font-serif text-3xl">Your Executive Leverage Profile</h2>
 
-      <section className="rounded-2xl border border-(--color-hairline) bg-(--color-accent-soft) p-6 sm:p-8">
-        <p className="font-serif text-xl tracking-wide text-(--color-ink) uppercase">{result.profileLabel}</p>
+      <section
+        className="rounded-2xl border border-(--color-hairline) bg-(--color-accent-soft) p-6 sm:p-8"
+        style={profileStyle ? { backgroundColor: profileStyle.tint, borderColor: profileStyle.accent } : undefined}
+      >
+        <p
+          className="flex items-center gap-2.5 font-serif text-xl tracking-wide text-(--color-ink) uppercase"
+          style={profileStyle ? { color: profileStyle.accent } : undefined}
+        >
+          {profileStyle ? <span aria-hidden className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: profileStyle.accent }} /> : null}
+          {result.profileLabel}
+        </p>
         {result.profileDescription ? (
           <p className="mt-3 text-sm text-(--color-ink)">{result.profileDescription}</p>
         ) : null}

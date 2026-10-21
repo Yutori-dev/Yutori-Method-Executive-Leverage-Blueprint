@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { AssessmentForm } from "./AssessmentForm";
 import { ExecutiveLeverageProfileView } from "./ExecutiveLeverageProfileView";
 import { calculateExecutiveLeverageDiagnostic } from "@/lib/actions/executiveLeverageDiagnostic";
@@ -42,6 +42,12 @@ export function ExecutiveLeverageDiagnosticFlow({
   const [showMissing, setShowMissing] = useState(false);
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
+
+  // Show the profile from its top, not wherever the questionnaire was scrolled to.
+  const showingProfile = profileResult !== null;
+  useEffect(() => {
+    if (showingProfile) window.scrollTo({ top: 0, behavior: "instant" });
+  }, [showingProfile]);
 
   function handleCalculate() {
     setErrorMessage(null);
