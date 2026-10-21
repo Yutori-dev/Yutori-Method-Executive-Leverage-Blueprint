@@ -30,7 +30,9 @@ begin
   if not exists (select 1 from public.modules where key = 'white_whale') then
     -- Relative order of every existing module is preserved; the two new ones
     -- sit directly after Operating Altitude, where they used to run.
-    update public.modules set sort_order = sort_order + 2 where sort_order > v_oa_sort;
+    -- sort_order is unique and checked row by row, so shift in two steps.
+    update public.modules set sort_order = sort_order + 100000 where sort_order > v_oa_sort;
+    update public.modules set sort_order = sort_order - 99998 where sort_order > 100000;
 
     insert into public.modules (key, name, description, sort_order, active, requires_live_workshop, audience) values
       ('white_whale', 'White Whale', 'The meaningful ambition that has stayed on the horizon.', v_oa_sort + 1, true, false, 'everyone'),
