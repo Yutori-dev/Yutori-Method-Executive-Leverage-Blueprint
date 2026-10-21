@@ -39,10 +39,19 @@ export function ExecutiveLeverageDiagnosticFlow({
   const [requiredAnswered, setRequiredAnswered] = useState(result !== null);
   const [profileResult, setProfileResult] = useState<ExecutiveLeverageProfileResult | null>(result);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showMissing, setShowMissing] = useState(false);
+  const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
 
   function handleCalculate() {
     setErrorMessage(null);
+    if (!requiredAnswered && assessment) {
+      setShowMissing(true);
+      setErrorMessage("A few questions above are still unanswered -- they're outlined in red. Answer them and press Submit again.");
+      const first = assessment.questions.find((q) => q.required && !answeredIds.has(q.id));
+      if (first) document.getElementById(`question-${first.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     startTransition(async () => {
       const outcome = await calculateExecutiveLeverageDiagnostic({ participantSessionId, sessionPath, moduleId });
       if (!outcome.ok) {
@@ -80,6 +89,8 @@ export function ExecutiveLeverageDiagnosticFlow({
               isPlaceholder={false}
               hideCompleteButton
               onRequiredAnsweredChange={setRequiredAnswered}
+              onAnsweredIdsChange={setAnsweredIds}
+              highlightMissing={showMissing}
             />
           ) : (
             <Card>
@@ -92,7 +103,7 @@ export function ExecutiveLeverageDiagnosticFlow({
         </div>
       </section>
 
-      {requiredAnswered ? (
+      {assessment ? (
         <section>
           <Button onClick={handleCalculate} disabled={isPending}>
             {isPending ? "Calculating..." : "Submit"}

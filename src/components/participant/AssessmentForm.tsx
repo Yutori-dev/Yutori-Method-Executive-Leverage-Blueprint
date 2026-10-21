@@ -21,6 +21,8 @@ export function AssessmentForm({
   isPlaceholder,
   hideCompleteButton = false,
   onRequiredAnsweredChange,
+  onAnsweredIdsChange,
+  highlightMissing = false,
 }: {
   assessment: DemoAssessment;
   participantSessionId: string;
@@ -37,6 +39,10 @@ export function AssessmentForm({
    * just wants to know when required questions are answered. */
   hideCompleteButton?: boolean;
   onRequiredAnsweredChange?: (allAnswered: boolean) => void;
+  /** Reports which questions currently have an answer. */
+  onAnsweredIdsChange?: (ids: Set<string>) => void;
+  /** Marks required questions that are still blank (used after a Submit attempt). */
+  highlightMissing?: boolean;
 }) {
   const [answers, setAnswers] = useState<Record<string, Json>>(() =>
     Object.fromEntries(assessment.questions.map((q) => [q.id, q.existingAnswer as Json])),
@@ -86,6 +92,12 @@ export function AssessmentForm({
     .filter((q) => q.required)
     .every((q) => isAnswered(answers[q.id] ?? null));
 
+  const answeredKey = assessment.questions.filter((q) => isAnswered(answers[q.id] ?? null)).map((q) => q.id).join(",");
+  useEffect(() => {
+    onAnsweredIdsChange?.(new Set(answeredKey ? answeredKey.split(",") : []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answeredKey]);
+
   useEffect(() => {
     onRequiredAnsweredChange?.(requiredComplete);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,7 +119,10 @@ export function AssessmentForm({
       ) : null}
 
       {assessment.questions.map((question) => (
-        <Card key={question.id}>
+        <div key={question.id} id={`question-${question.id}`}>
+        <Card
+          className={highlightMissing && question.required && !isAnswered(answers[question.id] ?? null) ? "border-[#8a3324]" : ""}
+        >
           <p className="text-(--color-ink)">{question.prompt}</p>
 
           <div className="mt-4">
@@ -211,6 +226,7 @@ export function AssessmentForm({
             )}
           </div>
         </Card>
+        </div>
       ))}
 
       <div className="flex items-center gap-4">
