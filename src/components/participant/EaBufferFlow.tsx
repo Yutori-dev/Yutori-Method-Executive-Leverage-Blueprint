@@ -1,5 +1,6 @@
 "use client";
 
+import { useScrollToTop } from "@/lib/useScrollToTop";
 import { useCallback, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveEaBufferAnswers, submitEaBuffer } from "@/lib/actions/eaBuffer";
@@ -71,6 +72,7 @@ export function EaBufferFlow({
   const [showMissing, setShowMissing] = useState(false);
   const [result, setResult] = useState<EaBufferDerived | null>(null);
   const [isPending, startTransition] = useTransition();
+  useScrollToTop(`${stage}-${result ? "result" : ""}-${answers.noCurrentEa ? "exit" : ""}`);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persist = useCallback(

@@ -94,9 +94,40 @@ export async function updateSession(
   },
 ) {
   const supabase = await createServerSupabaseClient();
+
+  // Which module is "open" is a pointer into the session's order, so moving
+  // modules around would otherwise open (or close) whatever now sits before
+  // the pointer. When the order changes, move the pointer so nothing that was
+  // closed becomes open: it stops just before the first module that was not
+  // open before the change. Facilitators then use Unlock next as usual.
+  let activeModuleId: string | null | undefined;
+  if (input.moduleOrder !== undefined) {
+    const [{ data: current }, { data: allModules }] = await Promise.all([
+      supabase.from("sessions").select("active_module_id, module_order, disabled_module_keys").eq("id", sessionId).single(),
+      supabase.from("modules").select("id, key, sort_order").eq("active", true),
+    ]);
+    if (current?.active_module_id && allModules) {
+      const wasDisabled = new Set(current.disabled_module_keys ?? []);
+      const before = orderModulesForSession(allModules, current.module_order).filter((m) => !wasDisabled.has(m.key));
+      const pointer = before.findIndex((m) => m.id === current.active_module_id);
+      if (pointer !== -1) {
+        const wasOpen = new Set(before.slice(0, pointer + 1).map((m) => m.key));
+        const nowDisabled = new Set(input.disabledModuleKeys ?? current.disabled_module_keys ?? []);
+        const after = orderModulesForSession(allModules, input.moduleOrder).filter((m) => !nowDisabled.has(m.key));
+        let last: string | null = null;
+        for (const m of after) {
+          if (!wasOpen.has(m.key)) break;
+          last = m.id;
+        }
+        activeModuleId = last;
+      }
+    }
+  }
+
   const { error } = await supabase
     .from("sessions")
     .update({
+      ...(activeModuleId !== undefined ? { active_module_id: activeModuleId } : {}),
       name: input.name,
       organization: input.organization || null,
       event_date: input.eventDate || null,

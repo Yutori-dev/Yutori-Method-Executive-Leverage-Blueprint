@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useScrollToTop } from "@/lib/useScrollToTop";
 import { saveStructuredAssessmentAnswers, submitStructuredAssessment } from "@/lib/actions/structuredAssessments";
 import {
   DEFAULT_STICK,
@@ -58,6 +59,7 @@ export function HandoffFlow({
   });
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  useScrollToTop(index);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persist = useCallback(

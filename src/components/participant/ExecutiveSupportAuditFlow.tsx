@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useScrollToTop } from "@/lib/useScrollToTop";
 import {
   saveExecutiveSupportAuditResponse,
   calculateExecutiveSupportAuditResults,
@@ -49,6 +50,7 @@ export function ExecutiveSupportAuditFlow({
     return firstUnanswered === -1 ? 0 : firstUnanswered;
   });
   const [saving, setSaving] = useState(false);
+  useScrollToTop(`${started}-${index}`);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   function handleMarkComplete() {

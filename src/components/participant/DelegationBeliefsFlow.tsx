@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useScrollToTop } from "@/lib/useScrollToTop";
 import {
   saveDelegationBeliefResponse,
   calculateDelegationBeliefsResults,
@@ -39,6 +40,7 @@ export function DelegationBeliefsFlow({
 }) {
   const [answers, setAnswers] = useState<Record<string, number>>(data.responses);
   const [index, setIndex] = useState(0);
+  useScrollToTop(index);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
